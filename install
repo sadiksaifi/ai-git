@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Define variables
+BINARY_NAME="ai-git"
+INSTALL_DIR="$HOME/.local/bin"
+SOURCE_BINARY="./dist/$BINARY_NAME"
+
+# Ensure the source binary exists
+if [ ! -f "$SOURCE_BINARY" ]; then
+    echo "Error: Source binary '$SOURCE_BINARY' not found."
+    echo "Please run 'bun run build' first."
+    exit 1
+fi
+
+# Ensure the installation directory exists
+if [ ! -d "$INSTALL_DIR" ]; then
+    echo "Creating directory '$INSTALL_DIR'..."
+    mkdir -p "$INSTALL_DIR"
+fi
+
+# Move/Copy the binary
+echo "Installing '$BINARY_NAME' to '$INSTALL_DIR'..."
+cp "$SOURCE_BINARY" "$INSTALL_DIR/$BINARY_NAME"
+
+# Make it executable (should already be, but good practice)
+chmod +x "$INSTALL_DIR/$BINARY_NAME"
+
+echo "✅ Installation complete!"
+echo "Make sure '$INSTALL_DIR' is in your PATH."

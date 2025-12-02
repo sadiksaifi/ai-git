@@ -1,0 +1,33 @@
+{
+  "name": "ai-git",
+  "version": "0.2.0",
+  "description": "A CLI tool that leverages Gemini 2.5 Flash to automatically generate semantically correct, Conventional Commits-compliant git messages from staged changes.",
+  "author": "Sadik Saifi <mail@sadiksaifi.dev>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sadiksaifi/ai-git"
+  },
+  "module": "src/index.ts",
+  "type": "module",
+  "bin": {
+    "ai-git": "src/index.ts"
+  },
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "build": "bun build --compile --minify --sourcemap src/index.ts --outfile dist/ai-git",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.11.0",
+    "@toon-format/toon": "^2.0.1",
+    "cac": "^6.7.14",
+    "picocolors": "^1.1.1"
+  }
+}
