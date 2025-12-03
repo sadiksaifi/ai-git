@@ -101,6 +101,7 @@ cli
   .option("-y, --yes", "Run fully automated (Stage All + Commit + Push)")
   .option("-H, --hint <text>", "Provide a hint/context to the AI")
   .option("--dry-run", "Print the prompt and diff without calling AI")
+  .option("-v, --version", "Display version number")
   .action(async (options) => {
     // Handle -y alias
     if (options.yes) {
