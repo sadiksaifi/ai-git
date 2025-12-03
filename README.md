@@ -1,6 +1,6 @@
 # AI Git
 
-A powerful CLI tool that leverages **Gemini 2.5 Flash** to automatically generate semantically correct, **Conventional Commits**-compliant git messages from your staged changes.
+A CLI tool that leverages AI to automatically generate semantically correct, **Conventional Commits**-compliant git messages from your staged changes.
 
 Built with **Bun**, **TypeScript**, and **@clack/prompts** for a beautiful, interactive terminal experience.
 
@@ -26,7 +26,7 @@ Built with **Bun**, **TypeScript**, and **@clack/prompts** for a beautiful, inte
 Install `ai-git` using Homebrew:
 
 ```bash
-brew tap sadiksaifi/ai-git
+brew tap sadiksaifi/ai-git https://github.com/sadiksaifi/ai-git
 brew install ai-git
 ```
 
@@ -44,15 +44,6 @@ bun run build
 
 # Add to your PATH manually or move to a bin directory
 mv dist/ai-git ~/.local/bin/
-```
-
-### Option 2: Run with Bun
-
-If you prefer not to compile:
-
-```bash
-bun install
-bun run index.ts
 ```
 
 ## Usage

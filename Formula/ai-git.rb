@@ -1,15 +1,15 @@
 class AiGit < Formula
-  desc "A CLI tool that leverages Gemini 2.5 Flash to automatically generate semantically correct, Conventional Commits-compliant git messages from staged changes."
+  desc "A CLI tool that leverages AI to automatically generate semantically correct, Conventional Commits compliant git messages from your staged changes."
   homepage "https://github.com/sadiksaifi/ai-git"
-  version 0.1.0
+  version 0.1.1
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/sadiksaifi/ai-git/releases/download/v0.1.0/ai-git-darwin-arm64.tar.gz"
-      sha256 "fe5d5d1c5d4f20fe04c1bb939652ab0fcfc458a017991deade0c104421cd6e93"
+      url "https://github.com/sadiksaifi/ai-git/releases/download/v0.1.1/ai-git-darwin-arm64.tar.gz"
+      sha256 "cc728744787e33ad5b19f06cca41173c280b0b474538d14528f714e12598a83a"
     else
-      url "https://github.com/sadiksaifi/ai-git/releases/download/v0.1.0/ai-git-darwin-x64.tar.gz"
-      sha256 "c97cff201e2e931453c0d17bf3020acb13b64360291306707730caaf34353334"
+      url "https://github.com/sadiksaifi/ai-git/releases/download/v0.1.1/ai-git-darwin-x64.tar.gz"
+      sha256 "b39ad159e7828bf33c25c192d4acfbecf0bb1588116b7e415d0ac5a41bd28fd1"
     end
   end
 
