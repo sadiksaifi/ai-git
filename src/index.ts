@@ -7,12 +7,13 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import { encode } from '@toon-format/toon';
 import { SYSTEM_PROMPT_DATA } from './prompt.ts';
+import packageJson from '../package.json';
 
 // ==============================================================================
 // METADATA & CONFIG
 // ==============================================================================
 const cli = cac('ai-git');
-const VERSION = '0.2.0';
+const VERSION = packageJson.version;
 const GEMINI_CMD = process.env.GEMINI_CMD || 'gemini';
 const MODEL = process.env.MODEL || 'gemini-2.5-flash';
 

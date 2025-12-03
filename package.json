@@ -1,6 +1,6 @@
 {
   "name": "ai-git",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "A CLI tool that leverages Gemini 2.5 Flash to automatically generate semantically correct, Conventional Commits-compliant git messages from staged changes.",
   "author": "Sadik Saifi <mail@sadiksaifi.dev>",
   "license": "MIT",

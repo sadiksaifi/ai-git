@@ -21,7 +21,16 @@ Built with **Bun**, **TypeScript**, and **@clack/prompts** for a beautiful, inte
 
 ## Installation
 
-### Option 1: Build from Source (Recommended)
+### Option 1: Homebrew (Recommended)
+
+Install `ai-git` using Homebrew:
+
+```bash
+brew tap sadiksaifi/ai-git
+brew install ai-git
+```
+
+### Option 2: Build from Source
 
 Clone the repository and build the single-file executable:
 
@@ -33,8 +42,8 @@ bun install
 bun run build
 # The compiled binary will be in `dist/ai-git`
 
-# Install to ~/.local/bin (ensure this is in your PATH)
-./install
+# Add to your PATH manually or move to a bin directory
+mv dist/ai-git ~/.local/bin/
 ```
 
 ### Option 2: Run with Bun

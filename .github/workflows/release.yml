@@ -23,6 +23,13 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Sync version with tag
+        run: |
+          VERSION=${{ github.ref_name }}
+          CLEAN_VERSION="${VERSION#v}"
+          echo "Syncing package.json version to $CLEAN_VERSION"
+          sed -i "s/\"version\": \".*\"/\"version\": \"$CLEAN_VERSION\"/" package.json
+
       - name: Build for macOS ARM64
         run: |
           bun build --compile --minify --sourcemap src/index.ts --outfile dist/ai-git-arm64 --target bun-darwin-arm64
@@ -78,6 +85,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "chore: update homebrew formula for ${VERSION}"
+            git commit -m "release(${VERSION}): update pkg version & homebrew formula"
             git push origin HEAD:main
           fi
