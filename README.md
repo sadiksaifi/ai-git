@@ -1,8 +1,8 @@
 # AI Git
 
-A CLI tool that leverages AI to automatically generate semantically correct, **Conventional Commits**-compliant git messages from your staged changes.
+A CLI tool that leverages AI to automatically generate semantically correct, **Conventional Commits**-compliant git messages.
 
-Built with **Bun**, **TypeScript**, and **@clack/prompts** for a beautiful, interactive terminal experience.
+<img width="1512" height="949" alt="Screenshot 2025-12-03 at 19 22 41" src="https://github.com/user-attachments/assets/cee1e37e-cf93-46dd-a443-bae51c2812cb" />
 
 ## Features
 
@@ -52,46 +52,6 @@ Run the tool in your git repository:
 
 ```bash
 ai-git
-```
-
-It will guide you through the process of generating a commit message based on your staged changes.
-```bash
-┌   ai-git v0.2.0
-│
-◇  No staged changes detected. What would you like to do?
-│  Select Files
-│
-◇  Select files to stage
-│  README.md
-│
-◇  Staged selected files
-│
-◇  Message generated
-│
-◇  Generated Commit Message ────────────────────────╮
-│                                                   │
-│  docs: update project title in readme             │
-│                                                   │
-│  - add " - kindo app" to project title in readme  │
-│                                                   │
-├───────────────────────────────────────────────────╯
-│
-◇  Action
-│  Commit
-[main 5869b55] docs: update project title in readme
- 1 file changed, 1 insertion(+), 1 deletion(-)
-│
-└  Commit created successfully.
-
-│
-◇  Do you want to git push?
-│  Yes
-│
-◑  Pushing changes.To https://github.com/KinTechnology/surface.git
-   8d9ac45..5869b55  main -> main
-◇  Pushed successfully
-│
-└  All done!
 ```
 
 ### Options & Flags
