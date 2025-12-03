@@ -1,24 +1,34 @@
 #!/usr/bin/env bun
-import { intro, outro, spinner, select, confirm, multiselect, isCancel, note } from '@clack/prompts';
-import cac from 'cac';
-import pc from 'picocolors';
-import { $ } from 'bun';
-import * as path from 'node:path';
-import * as os from 'node:os';
-import { encode } from '@toon-format/toon';
-import { SYSTEM_PROMPT_DATA } from './prompt.ts';
-import packageJson from '../package.json';
+import {
+  intro,
+  outro,
+  spinner,
+  select,
+  confirm,
+  multiselect,
+  isCancel,
+  note,
+  log,
+} from "@clack/prompts";
+import cac from "cac";
+import pc from "picocolors";
+import { $ } from "bun";
+import * as path from "node:path";
+import * as os from "node:os";
+import { encode } from "@toon-format/toon";
+import { SYSTEM_PROMPT_DATA } from "./prompt.ts";
+import packageJson from "../package.json";
 
 // ==============================================================================
 // METADATA & CONFIG
 // ==============================================================================
-const cli = cac('ai-git');
+const cli = cac("ai-git");
 const VERSION = packageJson.version;
-const GEMINI_CMD = process.env.GEMINI_CMD || 'gemini';
-const MODEL = process.env.MODEL || 'gemini-2.5-flash';
+const GEMINI_CMD = process.env.GEMINI_CMD || "gemini";
+const MODEL = process.env.MODEL || "gemini-2.5-flash";
 
 // Temporary files
-const TEMP_MSG_FILE = path.join(os.tmpdir(), 'ai-git-msg.txt');
+const TEMP_MSG_FILE = path.join(os.tmpdir(), "ai-git-msg.txt");
 
 const LOCKFILES = [
   ":(exclude)package-lock.json",
@@ -31,7 +41,7 @@ const LOCKFILES = [
   ":(exclude)composer.lock",
   ":(exclude)poetry.lock",
   ":(exclude)deno.lock",
-  ":(exclude)go.sum"
+  ":(exclude)go.sum",
 ];
 
 // ==============================================================================
@@ -67,14 +77,14 @@ async function checkDependencies() {
 
 async function getStagedFiles(): Promise<string[]> {
   const output = await $`git diff --cached --name-only`.text();
-  return output.trim().split('\n').filter(Boolean);
+  return output.trim().split("\n").filter(Boolean);
 }
 
 async function getUnstagedFiles(): Promise<string[]> {
   const modified = await $`git ls-files -m --exclude-standard`.text();
   const untracked = await $`git ls-files -o --exclude-standard`.text();
-  return [...modified.split('\n'), ...untracked.split('\n')]
-    .map(f => f.trim())
+  return [...modified.split("\n"), ...untracked.split("\n")]
+    .map((f) => f.trim())
     .filter(Boolean)
     .filter((v, i, a) => a.indexOf(v) === i); // unique
 }
@@ -84,13 +94,13 @@ async function getUnstagedFiles(): Promise<string[]> {
 // ==============================================================================
 
 cli
-  .command('', 'Generate a commit message using Gemini')
-  .option('-a, --stage-all', 'Automatically stage all changes')
-  .option('-c, --commit', 'Automatically commit (skip editor/confirmation)')
-  .option('-p, --push', 'Automatically push after commit')
-  .option('-y, --yes', 'Run fully automated (Stage All + Commit + Push)')
-  .option('-H, --hint <text>', 'Provide a hint/context to the AI')
-  .option('--dry-run', 'Print the prompt and diff without calling AI')
+  .command("", "Generate a commit message using Gemini")
+  .option("-a, --stage-all", "Automatically stage all changes")
+  .option("-c, --commit", "Automatically commit (skip editor/confirmation)")
+  .option("-p, --push", "Automatically push after commit")
+  .option("-y, --yes", "Run fully automated (Stage All + Commit + Push)")
+  .option("-H, --hint <text>", "Provide a hint/context to the AI")
+  .option("--dry-run", "Print the prompt and diff without calling AI")
   .action(async (options) => {
     // Handle -y alias
     if (options.yes) {
@@ -105,11 +115,63 @@ cli
     await checkDependencies();
 
     // 1. STAGE MANAGEMENT
-    const stagedFiles = await getStagedFiles();
-    
-    if (stagedFiles.length === 0) {
+    let stagedFiles = await getStagedFiles();
+
+    if (stagedFiles.length > 0) {
+      note(
+        stagedFiles.map((f) => `+ ${f}`).join("\n"),
+        "Currently Staged Files"
+      );
+
       const unstagedFiles = await getUnstagedFiles();
-      
+      if (unstagedFiles.length > 0 && !options.stageAll && !options.yes) {
+        const action = await select({
+          message:
+            "You have unstaged changes. Would you like to stage more files?",
+          options: [
+            { value: "continue", label: "No, proceed with generation" },
+            { value: "select", label: "Yes, select files to stage" },
+            { value: "all", label: "Stage All (git add -A)" },
+          ],
+        });
+
+        if (isCancel(action)) {
+          outro("Aborted.");
+          process.exit(1);
+        }
+
+        if (action === "all") {
+          const s = spinner();
+          s.start("Staging all changes...");
+          await $`git add -A`;
+          s.stop("Staged all changes");
+          stagedFiles = await getStagedFiles();
+        } else if (action === "select") {
+          const selected = await multiselect({
+            message: "Select files to stage",
+            options: unstagedFiles.map((f) => ({ value: f, label: f })),
+            required: false,
+          });
+
+          if (isCancel(selected)) {
+            outro("Aborted.");
+            process.exit(1);
+          }
+
+          if (selected.length > 0) {
+            const s = spinner();
+            s.start("Staging selected files...");
+            for (const file of selected as string[]) {
+              await $`git add ${file}`;
+            }
+            s.stop("Staged selected files");
+            stagedFiles = await getStagedFiles();
+          }
+        }
+      }
+    } else {
+      const unstagedFiles = await getUnstagedFiles();
+
       if (unstagedFiles.length === 0) {
         outro(pc.yellow("Working directory is clean. Nothing to do."));
         process.exit(0);
@@ -117,48 +179,48 @@ cli
 
       if (options.stageAll) {
         const s = spinner();
-        s.start('Staging all changes...');
+        s.start("Staging all changes...");
         await $`git add -A`;
-        s.stop('Staged all changes');
+        s.stop("Staged all changes");
       } else {
         // Interactive Staging
         const action = await select({
-          message: 'No staged changes detected. What would you like to do?',
+          message: "No staged changes detected. What would you like to do?",
           options: [
-            { value: 'all', label: 'Stage All (git add -A)' },
-            { value: 'select', label: 'Select Files' },
-            { value: 'quit', label: 'Quit' }
-          ]
+            { value: "all", label: "Stage All (git add -A)" },
+            { value: "select", label: "Select Files" },
+            { value: "quit", label: "Quit" },
+          ],
         });
 
-        if (isCancel(action) || action === 'quit') {
-          outro('Aborted.');
+        if (isCancel(action) || action === "quit") {
+          outro("Aborted.");
           process.exit(1);
         }
 
-        if (action === 'all') {
+        if (action === "all") {
           const s = spinner();
-          s.start('Staging all changes...');
+          s.start("Staging all changes...");
           await $`git add -A`;
-          s.stop('Staged all changes');
-        } else if (action === 'select') {
+          s.stop("Staged all changes");
+        } else if (action === "select") {
           const selected = await multiselect({
-            message: 'Select files to stage',
-            options: unstagedFiles.map(f => ({ value: f, label: f })),
-            required: true
+            message: "Select files to stage",
+            options: unstagedFiles.map((f) => ({ value: f, label: f })),
+            required: true,
           });
 
           if (isCancel(selected)) {
-            outro('Aborted.');
+            outro("Aborted.");
             process.exit(1);
           }
 
           const s = spinner();
-          s.start('Staging selected files...');
+          s.start("Staging selected files...");
           for (const file of selected as string[]) {
             await $`git add ${file}`;
           }
-          s.stop('Staged selected files');
+          s.stop("Staged selected files");
         }
       }
     }
@@ -169,9 +231,11 @@ cli
       // Get Diff
       const s = spinner();
       s.start(`Analyzing changes with ${MODEL}...`);
-      
-      const branchName = (await $`git rev-parse --abbrev-ref HEAD`.text()).trim();
-      // Using .join(' ') for LOCKFILES might not work as expected if spaces are in paths, 
+
+      const branchName = (
+        await $`git rev-parse --abbrev-ref HEAD`.text()
+      ).trim();
+      // Using .join(' ') for LOCKFILES might not work as expected if spaces are in paths,
       // but git diff expects separate arguments.
       // Bun $ template literal with array works by joining with space? Or passing as args?
       // $`git diff --staged -- . ${LOCKFILES}` passes LOCKFILES elements as separate arguments.
@@ -184,98 +248,103 @@ cli
       }
 
       // Truncate if massive
-      const lines = diffOutput.split('\n');
+      const lines = diffOutput.split("\n");
       if (lines.length > 2500) {
-        diffOutput = lines.slice(0, 2500).join('\n') + '\n... [DIFF TRUNCATED] ...';
+        diffOutput =
+          lines.slice(0, 2500).join("\n") + "\n... [DIFF TRUNCATED] ...";
       }
 
-      let dynamicContext = '';
-      if (branchName) dynamicContext += `# CURRENT BRANCH NAME\n${branchName}\n\n`;
+      let dynamicContext = "";
+      if (branchName)
+        dynamicContext += `# CURRENT BRANCH NAME\n${branchName}\n\n`;
       if (options.hint) dynamicContext += `# USER HINT\n${options.hint}\n\n`;
 
-      const fullInput = `${encode(SYSTEM_PROMPT_DATA)}\n\n${dynamicContext}\n# GIT DIFF OUTPUT\n${diffOutput}`;
+      const fullInput = `${encode(
+        SYSTEM_PROMPT_DATA
+      )}\n\n${dynamicContext}\n# GIT DIFF OUTPUT\n${diffOutput}`;
 
       if (options.dryRun) {
-        s.stop('Dry run complete');
-        note(fullInput, 'Dry Run: Full Prompt');
+        s.stop("Dry run complete");
+        note(fullInput, "Dry Run: Full Prompt");
         process.exit(0);
       }
 
       // Call Gemini
-      let rawMsg = '';
+      let rawMsg = "";
       try {
         // Passing arguments to GEMINI_CMD
         // If GEMINI_CMD is "gemini", it runs `gemini --model ...`
         // $`${GEMINI_CMD} ...` splits GEMINI_CMD if it has spaces? No, it treats it as command.
         // If GEMINI_CMD="echo", it works.
-        const result = await $`${GEMINI_CMD} --model ${MODEL} ${fullInput}`.text();
+        const result =
+          await $`${GEMINI_CMD} --model ${MODEL} ${fullInput}`.text();
         rawMsg = result;
-        s.stop('Message generated');
+        s.stop("Message generated");
       } catch (e) {
-        s.stop('Generation failed');
+        s.stop("Generation failed");
         console.error(e);
         process.exit(1);
       }
 
       // Cleanup message
       let cleanMsg = rawMsg
-        .replace(/^```.*/gm, '') // Remove code blocks
-        .replace(/```$/gm, '')
+        .replace(/^```.*/gm, "") // Remove code blocks
+        .replace(/```$/gm, "")
         .trim();
 
       if (!cleanMsg) {
-        console.error(pc.red('Error: AI returned empty message.'));
+        console.error(pc.red("Error: AI returned empty message."));
         process.exit(1);
       }
 
       // 3. COMMIT LOGIC
       if (options.commit) {
         await $`git commit -m ${cleanMsg}`;
-        outro(pc.green(`Commit created: ${cleanMsg.split('\n')[0]}`));
+        outro(pc.green(`Commit created: ${cleanMsg.split("\n")[0]}`));
         loop = false;
       } else {
-        note(cleanMsg, 'Generated Commit Message');
-        
+        note(cleanMsg, "Generated Commit Message");
+
         const action = await select({
-          message: 'Action',
+          message: "Action",
           options: [
-            { value: 'commit', label: 'Commit' },
-            { value: 'edit', label: 'Edit Message' },
-            { value: 'retry', label: 'Regenerate' },
-            { value: 'abort', label: 'Abort' }
-          ]
+            { value: "commit", label: "Commit" },
+            { value: "edit", label: "Edit Message" },
+            { value: "retry", label: "Regenerate" },
+            { value: "abort", label: "Abort" },
+          ],
         });
 
-        if (isCancel(action) || action === 'abort') {
-          outro('Aborted.');
+        if (isCancel(action) || action === "abort") {
+          outro("Aborted.");
           process.exit(1);
         }
 
-        if (action === 'retry') {
+        if (action === "retry") {
           continue;
-        } else if (action === 'commit') {
+        } else if (action === "commit") {
           await $`git commit -m ${cleanMsg}`;
-          outro(pc.green('Commit created successfully.'));
+          outro(pc.green("Commit created successfully."));
           loop = false;
-        } else if (action === 'edit') {
+        } else if (action === "edit") {
           // Edit Flow
           await Bun.write(TEMP_MSG_FILE, cleanMsg);
-          const editor = process.env.EDITOR || 'vim';
-          
+          const editor = process.env.EDITOR || "vim";
+
           const editProc = Bun.spawn([editor, TEMP_MSG_FILE], {
-            stdin: 'inherit',
-            stdout: 'inherit',
-            stderr: 'inherit'
+            stdin: "inherit",
+            stdout: "inherit",
+            stderr: "inherit",
           });
           await editProc.exited;
 
           const finalMsg = await Bun.file(TEMP_MSG_FILE).text();
           if (finalMsg.trim()) {
             await $`git commit -m ${finalMsg.trim()}`;
-            outro(pc.green('Commit created successfully (edited).'));
+            outro(pc.green("Commit created successfully (edited)."));
             loop = false;
           } else {
-            outro(pc.yellow('Message cleared. Aborting.'));
+            outro(pc.yellow("Message cleared. Aborting."));
             process.exit(1);
           }
         }
@@ -285,24 +354,24 @@ cli
     // 4. PUSH LOGIC
     if (options.push) {
       const s = spinner();
-      s.start('Pushing changes...');
+      s.start("Pushing changes...");
       await $`git push`;
-      s.stop('Pushed successfully');
+      s.stop("Pushed successfully");
     } else if (!options.yes) {
       const shouldPush = await confirm({
-        message: 'Do you want to git push?',
-        initialValue: false
+        message: "Do you want to git push?",
+        initialValue: false,
       });
 
       if (shouldPush && !isCancel(shouldPush)) {
         const s = spinner();
-        s.start('Pushing changes...');
+        s.start("Pushing changes...");
         await $`git push`;
-        s.stop('Pushed successfully');
+        s.stop("Pushed successfully");
       }
     }
 
-    outro('All done!');
+    outro("All done!");
   });
 
 cli.help();

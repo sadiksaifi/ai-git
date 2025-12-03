@@ -16,7 +16,8 @@
   "scripts": {
     "start": "bun run src/index.ts",
     "build": "bun build --compile --minify --sourcemap src/index.ts --outfile dist/ai-git",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
   "devDependencies": {
     "@types/bun": "latest"
