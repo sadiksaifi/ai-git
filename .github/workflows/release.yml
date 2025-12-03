@@ -81,10 +81,11 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add Formula/ai-git.rb
+          git add package.json
           
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "release(${VERSION}): update pkg version & homebrew formula"
+            git commit -m "release: update pkg version ${VERSION}"
             git push origin HEAD:main
           fi

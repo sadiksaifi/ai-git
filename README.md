@@ -1,17 +1,8 @@
 # AI Git
 
-A CLI tool that leverages AI to automatically generate semantically correct, **Conventional Commits**-compliant git messages.
+A CLI tool that leverages AI to automatically generate semantically correct, Conventional Commits compliant git messages.
 
 <img width="1512" height="949" alt="Screenshot 2025-12-03 at 19 22 41" src="https://github.com/user-attachments/assets/cee1e37e-cf93-46dd-a443-bae51c2812cb" />
-
-## Features
-
-- 🤖 **AI-Powered**: Uses Gemini 2.5 Flash to analyze diffs and understand the *intent* of your changes.
-- 📝 **Conventional Commits**: Strictly adheres to the v1.0.0 specification (`feat`, `fix`, `chore`, etc.).
-- ⚡ **Fast & Native**: compiled to a single binary using Bun.
-- 🎨 **Interactive TUI**: Beautiful prompts for staging files, editing messages, and confirming actions.
-- 🪙 **Token Efficient**: Uses [TOON](https://toonformat.dev/) (Token-Oriented Object Notation) to minimize prompt size and cost.
-- 🛠️ **Flexible**: Supports fully automated workflows (`-y`) or granular control.
 
 ## Prerequisites
 
@@ -45,7 +36,6 @@ bun run build
 # Add to your PATH manually or move to a bin directory
 mv dist/ai-git ~/.local/bin/
 ```
-
 ## Usage
 
 Run the tool in your git repository:
@@ -53,6 +43,15 @@ Run the tool in your git repository:
 ```bash
 ai-git
 ```
+
+## Features
+
+- 🤖 **AI-Powered**: Uses Gemini 2.5 Flash to analyze diffs and understand the *intent* of your changes.
+- 📝 **Conventional Commits**: Strictly adheres to the v1.0.0 specification (`feat`, `fix`, `chore`, etc.).
+- ⚡ **Fast & Native**: compiled to a single binary using Bun.
+- 🎨 **Interactive TUI**: Beautiful prompts for staging files, editing messages, and confirming actions.
+- 🪙 **Token Efficient**: Uses [TOON](https://toonformat.dev/) (Token-Oriented Object Notation) to minimize prompt size and cost.
+- 🛠️ **Flexible**: Supports fully automated workflows (`-y`) or granular control.
 
 ### Options & Flags
 
@@ -92,4 +91,4 @@ bun run typecheck
 
 ## License
 
-MIT
+[MIT](LICENSE)
