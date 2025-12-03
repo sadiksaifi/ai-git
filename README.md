@@ -7,8 +7,8 @@ A CLI tool that leverages AI to automatically generate semantically correct, Con
 ## Prerequisites
 
 1.  **Git**: Must be installed and running inside a git repository.
-2.  **Gemini CLI**: You need a command-line tool that interfaces with Gemini (default command is `gemini`).
-    *   *Note: This tool expects `gemini` to be in your PATH. You can override this with the `GEMINI_CMD` environment variable.*
+2.  **AI CLI**: You need a command-line tool that interfaces with an LLM (default command is `gemini`).
+    *   *Note: This tool expects an AI CLI (e.g., `gemini`, `claude`, `codex`) to be in your PATH. It defaults to `gemini`. You can override this with the `--ai-binary` flag or via `AI_GIT_OPTS`.*
 
 ## Installation
 
@@ -46,7 +46,7 @@ ai-git
 
 ## Features
 
-- 🤖 **AI-Powered**: Uses Gemini 2.5 Flash to analyze diffs and understand the *intent* of your changes.
+- 🤖 **AI-Powered**: Uses AI (defaults to Gemini 2.5 Flash) to analyze diffs and understand the *intent* of your changes.
 - 📝 **Conventional Commits**: Strictly adheres to the v1.0.0 specification (`feat`, `fix`, `chore`, etc.).
 - ⚡ **Fast & Native**: compiled to a single binary using Bun.
 - 🎨 **Interactive TUI**: Beautiful prompts for staging files, editing messages, and confirming actions.
@@ -66,10 +66,12 @@ ai-git
 
 ### Environment Variables
 
-| Variable | Default | Description |
+You can configure the tool using environment variables or by passing flags.
+For persistent configuration, we recommend using `AI_GIT_OPTS`.
+
+| Variable | Example | Description |
 | :--- | :--- | :--- |
-| `GEMINI_CMD` | `gemini` | The CLI command to invoke the Gemini model. |
-| `MODEL` | `gemini-2.5-flash` | The specific model version to use. |
+| `AI_GIT_OPTS` | `--ai-binary claude --ai-model claude-3-opus` | Default options to pass to the CLI. |
 
 ## Contributing
 
@@ -92,6 +94,13 @@ bun run index.ts --dry-run -a
 # Typecheck
 bun run typecheck
 ```
+
+## TODO
+
+- [ ] **Expand AI CLI Support**: Currently defaults to Gemini.
+  - [ ] Implement support for Claude CLI.
+  - [ ] Implement support for Codex CLI.
+  - [ ] Investigate and support other popular AI CLIs/SDKs.
 
 ## License
 

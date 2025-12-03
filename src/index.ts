@@ -24,8 +24,22 @@ import packageJson from "../package.json";
 // ==============================================================================
 const cli = cac("ai-git");
 const VERSION = packageJson.version;
-const GEMINI_CMD = process.env.GEMINI_CMD || "gemini";
-const MODEL = process.env.MODEL || "gemini-2.5-flash";
+
+function parseShellArgs(input: string): string[] {
+  const regex = /[^\s"']+|"([^"]*)"|'([^']*)'/g;
+  const args = [];
+  let match;
+  while ((match = regex.exec(input)) !== null) {
+    if (match[1] !== undefined) {
+      args.push(match[1]);
+    } else if (match[2] !== undefined) {
+      args.push(match[2]);
+    } else {
+      args.push(match[0]);
+    }
+  }
+  return args;
+}
 
 // Temporary files
 const TEMP_MSG_FILE = path.join(os.tmpdir(), "ai-git-msg.txt");
@@ -52,7 +66,7 @@ const LOCKFILES = [
 // HELPER FUNCTIONS
 // ==============================================================================
 
-async function checkDependencies() {
+async function checkDependencies(binaryCmd: string) {
   try {
     await $`git --version`.quiet();
   } catch {
@@ -61,9 +75,9 @@ async function checkDependencies() {
   }
 
   try {
-    await $`which ${GEMINI_CMD}`.quiet();
+    await $`which ${binaryCmd}`.quiet();
   } catch {
-    console.error(pc.red(`Error: '${GEMINI_CMD}' cli tool not found in PATH.`));
+    console.error(pc.red(`Error: '${binaryCmd}' cli tool not found in PATH.`));
     process.exit(1);
   }
 
@@ -94,13 +108,19 @@ async function getUnstagedFiles(): Promise<string[]> {
 // ==============================================================================
 
 cli
-  .command("", "Generate a commit message using Gemini")
+  .command("", "Generate a commit message using AI")
   .option("-a, --stage-all", "Automatically stage all changes")
   .option("-c, --commit", "Automatically commit (skip editor/confirmation)")
   .option("-p, --push", "Automatically push after commit")
   .option("-y, --yes", "Run fully automated (Stage All + Commit + Push)")
   .option("-H, --hint <text>", "Provide a hint/context to the AI")
   .option("--dry-run", "Print the prompt and diff without calling AI")
+  .option("--ai-model <model>", "AI Model to use", {
+    default: "gemini-2.5-flash",
+  })
+  .option("--ai-binary <cmd>", "AI Binary to use", {
+    default: "gemini",
+  })
   .option("-v, --version", "Display version number")
   .action(async (options) => {
     // Handle -y alias
@@ -110,10 +130,14 @@ cli
       options.push = true;
     }
 
+    // Resolve AI options
+    const MODEL = options.aiModel;
+    const AI_BINARY = options.aiBinary;
+
     console.clear();
     intro(pc.bgCyan(pc.black(` AI Git ${VERSION} `)));
 
-    await checkDependencies();
+    await checkDependencies(AI_BINARY);
 
     // 1. STAGE MANAGEMENT
     let stagedFiles = await getStagedFiles();
@@ -270,15 +294,15 @@ cli
         process.exit(0);
       }
 
-      // Call Gemini
+      // Call AI
       let rawMsg = "";
       try {
-        // Passing arguments to GEMINI_CMD
-        // If GEMINI_CMD is "gemini", it runs `gemini --model ...`
-        // $`${GEMINI_CMD} ...` splits GEMINI_CMD if it has spaces? No, it treats it as command.
-        // If GEMINI_CMD="echo", it works.
+        // Passing arguments to AI_BINARY
+        // If AI_BINARY is "gemini", it runs `gemini --model ...`
+        // $`${AI_BINARY} ...` splits AI_BINARY if it has spaces? No, it treats it as command.
+        // If AI_BINARY="echo", it works.
         const result =
-          await $`${GEMINI_CMD} --model ${MODEL} ${fullInput}`.text();
+          await $`${AI_BINARY} --model ${MODEL} ${fullInput}`.text();
         rawMsg = result;
         s.stop("Message generated");
       } catch (e) {
@@ -378,7 +402,17 @@ cli
 cli.help();
 
 try {
-  const parsed = cli.parse(process.argv, { run: false });
+  // Parse AI_GIT_OPTS
+  const envOpts = process.env.AI_GIT_OPTS
+    ? parseShellArgs(process.env.AI_GIT_OPTS)
+    : [];
+  const args = [
+    ...process.argv.slice(0, 2),
+    ...envOpts,
+    ...process.argv.slice(2),
+  ];
+
+  const parsed = cli.parse(args, { run: false });
   if (parsed.options.version) {
     console.log(VERSION);
     process.exit(0);
