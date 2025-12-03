@@ -71,6 +71,10 @@ ai-git
 | `GEMINI_CMD` | `gemini` | The CLI command to invoke the Gemini model. |
 | `MODEL` | `gemini-2.5-flash` | The specific model version to use. |
 
+## Contributing
+
+We welcome contributions to AI Git! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute.
+
 ## Development
 
 This project is built with Bun.
