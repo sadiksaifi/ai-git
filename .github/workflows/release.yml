@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build for macOS ARM64
+        run: |
+          bun build --compile --minify --sourcemap src/index.ts --outfile dist/ai-git-arm64 --target bun-darwin-arm64
+          cd dist
+          mv ai-git-arm64 ai-git
+          tar -czf ai-git-darwin-arm64.tar.gz ai-git
+          rm ai-git
+
+      - name: Build for macOS x64
+        run: |
+          bun build --compile --minify --sourcemap src/index.ts --outfile dist/ai-git-x64 --target bun-darwin-x64
+          cd dist
+          mv ai-git-x64 ai-git
+          tar -czf ai-git-darwin-x64.tar.gz ai-git
+          rm ai-git
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/ai-git-darwin-arm64.tar.gz
+            dist/ai-git-darwin-x64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Homebrew Formula
+        run: |
+          VERSION=${{ github.ref_name }}
+          
+          URL_ARM64="https://github.com/${{ github.repository }}/releases/download/${VERSION}/ai-git-darwin-arm64.tar.gz"
+          SHA256_ARM64=$(shasum -a 256 dist/ai-git-darwin-arm64.tar.gz | awk '{print $1}')
+          
+          URL_X64="https://github.com/${{ github.repository }}/releases/download/${VERSION}/ai-git-darwin-x64.tar.gz"
+          SHA256_X64=$(shasum -a 256 dist/ai-git-darwin-x64.tar.gz | awk '{print $1}')
+
+          echo "Updating Formula for version $VERSION..."
+          
+          # Update Version
+          sed -i "s|version ".*"|version "${VERSION#v}"|" Formula/ai-git.rb
+
+          # Update ARM64 (range: if arm? ... else)
+          sed -i '/if Hardware::CPU.arm?/,/else/s|url ".*"|url "'$URL_ARM64'"|' Formula/ai-git.rb
+          sed -i '/if Hardware::CPU.arm?/,/else/s|sha256 ".*"|sha256 "'$SHA256_ARM64'"|' Formula/ai-git.rb
+          
+          # Update X64 (range: else ... end)
+          sed -i '/else/,/end/s|url ".*"|url "'$URL_X64'"|' Formula/ai-git.rb
+          sed -i '/else/,/end/s|sha256 ".*"|sha256 "'$SHA256_X64'"|' Formula/ai-git.rb
+          
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add Formula/ai-git.rb
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: update homebrew formula for ${VERSION}"
+            git push origin HEAD:main
+          fi
