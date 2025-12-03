@@ -171,6 +171,10 @@ cli
           await $`git add -A`;
           s.stop("Staged all changes");
           stagedFiles = await getStagedFiles();
+          note(
+            stagedFiles.map((f) => `+ ${f}`).join("\n"),
+            "Staged Files"
+          );
         } else if (action === "select") {
           const selected = await multiselect({
             message: "Select files to stage",
@@ -207,6 +211,11 @@ cli
         s.start("Staging all changes...");
         await $`git add -A`;
         s.stop("Staged all changes");
+        stagedFiles = await getStagedFiles();
+        note(
+          stagedFiles.map((f) => `+ ${f}`).join("\n"),
+          "Staged Files"
+        );
       } else {
         // Interactive Staging
         const action = await select({
@@ -228,6 +237,11 @@ cli
           s.start("Staging all changes...");
           await $`git add -A`;
           s.stop("Staged all changes");
+          stagedFiles = await getStagedFiles();
+          note(
+            stagedFiles.map((f) => `+ ${f}`).join("\n"),
+            "Staged Files"
+          );
         } else if (action === "select") {
           const selected = await multiselect({
             message: "Select files to stage",

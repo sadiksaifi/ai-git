@@ -67,7 +67,7 @@ describe("ai-git CLI", () => {
 
     expect(stdout).toContain("Dry Run: Full Prompt");
     expect(stdout).toContain(
-      'Role: "Expert Developer (Conventional Commits v1.0.0)"'
+      'Role: Expert Developer (Conventional Commits v1.0.0)'
     );
     expect(proc.exitCode).toBe(0);
   });

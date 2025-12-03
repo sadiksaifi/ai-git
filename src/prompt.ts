@@ -9,7 +9,7 @@ export const SYSTEM_PROMPT_DATA = {
   ],
   Commit_Schema: {
     Header:
-      "Max 72 chars TOTAL (including type, scope, punctuation, spaces). <type>(<scope>): <subject>",
+      "Max 72 chars TOTAL (including type, scope, punctuation, spaces). <type>(<scope>)<!>: <subject>. Use '!' for breaking changes.",
     Types: {
       feat: "New feature",
       fix: "Bug fix",
@@ -30,6 +30,13 @@ export const SYSTEM_PROMPT_DATA = {
       Separation: "1 blank line after header",
       Content:
         "Technical context (WHY/WHAT) and implementation details. Wrap lines at 72 chars (including all punctuation/spaces). Max 20 lines.",
+    },
+    Footer: {
+      Format: "key: value",
+      Separation: "One blank line after body (or header if body is missing).",
+      Content:
+        "Use for 'BREAKING CHANGE: <description>' or issue references (e.g. 'Closes: #123').",
+      Note: "BREAKING CHANGE token must be uppercase.",
     },
   },
   Examples: [
