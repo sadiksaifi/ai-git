@@ -2,7 +2,7 @@
 
 A CLI tool that leverages AI to automatically generate semantically correct, Conventional Commits compliant git messages.
 
-<img width="1512" height="949" alt="Screenshot 2025-12-03 at 19 22 41" src="https://github.com/user-attachments/assets/cee1e37e-cf93-46dd-a443-bae51c2812cb" />
+<img width="1512" height="949" alt="Screenshot 2025-12-03 at 20 30 32" src="https://github.com/user-attachments/assets/165330d2-64e1-44ed-829f-8aec980254ab" />
 
 ## Prerequisites
 
