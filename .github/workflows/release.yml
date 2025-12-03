@@ -68,7 +68,7 @@ jobs:
           echo "Updating Formula for version $VERSION..."
           
           # Update Version
-          sed -i "s|version ".*"|version "${VERSION#v}"|" Formula/ai-git.rb
+          sed -i "s|version \".*\"|version \"${VERSION#v}\"|" Formula/ai-git.rb
 
           # Update ARM64 (range: if arm? ... else)
           sed -i '/if Hardware::CPU.arm?/,/else/s|url ".*"|url "'$URL_ARM64'"|' Formula/ai-git.rb

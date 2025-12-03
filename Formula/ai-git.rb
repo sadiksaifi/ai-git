@@ -1,7 +1,7 @@
 class AiGit < Formula
   desc "A CLI tool that leverages AI to automatically generate semantically correct, Conventional Commits compliant git messages from your staged changes."
   homepage "https://github.com/sadiksaifi/ai-git"
-  version 0.1.1
+  version "0.1.1"
 
   on_macos do
     if Hardware::CPU.arm?
