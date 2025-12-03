@@ -110,7 +110,7 @@ cli
     }
 
     console.clear();
-    intro(pc.bgCyan(pc.black(` ai-git v${VERSION} `)));
+    intro(pc.bgCyan(pc.black(` AI Git ${VERSION} `)));
 
     await checkDependencies();
 
@@ -375,10 +375,18 @@ cli
   });
 
 cli.help();
-cli.version(VERSION);
 
 try {
-  cli.parse();
+  const parsed = cli.parse(process.argv, { run: false });
+  if (parsed.options.version) {
+    console.log(VERSION);
+    process.exit(0);
+  } else if (parsed.options.help) {
+    cli.outputHelp();
+    process.exit(0);
+  } else {
+    cli.runMatchedCommand();
+  }
 } catch (error) {
   console.error(error);
   process.exit(1);
