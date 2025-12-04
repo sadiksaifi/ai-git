@@ -6,10 +6,11 @@ export const SYSTEM_PROMPT_DATA = {
     "NO Markdown (```)",
     "NO conversational filler",
     "NO explanations outside commit body",
+    "CRITICAL: Header MUST be max 72 characters",
   ],
   Commit_Schema: {
     Header:
-      "Max 72 chars TOTAL (including type, scope, punctuation, spaces). <type>(<scope>)<!>: <subject>. Use '!' for breaking changes.",
+      "STRICT MAX 72 chars TOTAL (including type, scope, punctuation, spaces). <type>(<scope>)<!>: <subject>. Use '!' for breaking changes.",
     Types: {
       feat: "New feature",
       fix: "Bug fix",

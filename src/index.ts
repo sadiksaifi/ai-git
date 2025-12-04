@@ -266,6 +266,9 @@ cli
 
     // 2. GENERATION ENGINE
     let loop = true;
+    let autoRetries = 0;
+    let generationErrors: string[] = [];
+
     while (loop) {
       // Get Diff
       const s = spinner();
@@ -297,6 +300,10 @@ cli
       if (branchName)
         dynamicContext += `# CURRENT BRANCH NAME\n${branchName}\n\n`;
       if (options.hint) dynamicContext += `# USER HINT\n${options.hint}\n\n`;
+      if (generationErrors.length > 0)
+        dynamicContext += `# PREVIOUS FAILED ATTEMPTS ERRORS\n${generationErrors.join(
+          "\n"
+        )}\nFIX THIS ERROR IN NEXT GENERATION.\n\n`;
 
       const fullInput = `${encode(
         SYSTEM_PROMPT_DATA
@@ -336,6 +343,32 @@ cli
         process.exit(1);
       }
 
+      // Validation: Check Header Length
+      const headerLine = cleanMsg.split("\n")[0];
+      if (headerLine.length > 72) {
+        if (autoRetries < 3) {
+          autoRetries++;
+          const err = `Header too long (${headerLine.length} chars). Max 72.`;
+          generationErrors.push(err);
+          log.warn(
+            pc.yellow(
+              `Generated header too long (${headerLine.length} chars). Retrying (${autoRetries}/3)...`
+            )
+          );
+          continue;
+        } else {
+          log.warn(
+            pc.yellow(
+              `Warning: Header exceeds 72 chars (${headerLine.length}). Auto-fix retries exhausted.`
+            )
+          );
+        }
+      } else {
+        // Reset on success
+        autoRetries = 0;
+        generationErrors = [];
+      }
+
       // 3. COMMIT LOGIC
       if (options.commit) {
         await $`git commit -m ${cleanMsg}`;
@@ -360,6 +393,8 @@ cli
         }
 
         if (action === "retry") {
+          autoRetries = 0;
+          generationErrors = [];
           continue;
         } else if (action === "commit") {
           await $`git commit -m ${cleanMsg}`;
