@@ -9,6 +9,7 @@ import {
   isCancel,
   note,
   log,
+  text,
 } from "@clack/prompts";
 import cac from "cac";
 import pc from "picocolors";
@@ -171,10 +172,7 @@ cli
           await $`git add -A`;
           s.stop("Staged all changes");
           stagedFiles = await getStagedFiles();
-          note(
-            stagedFiles.map((f) => `+ ${f}`).join("\n"),
-            "Staged Files"
-          );
+          note(stagedFiles.map((f) => `+ ${f}`).join("\n"), "Staged Files");
         } else if (action === "select") {
           const selected = await multiselect({
             message: "Select files to stage",
@@ -212,10 +210,7 @@ cli
         await $`git add -A`;
         s.stop("Staged all changes");
         stagedFiles = await getStagedFiles();
-        note(
-          stagedFiles.map((f) => `+ ${f}`).join("\n"),
-          "Staged Files"
-        );
+        note(stagedFiles.map((f) => `+ ${f}`).join("\n"), "Staged Files");
       } else {
         // Interactive Staging
         const action = await select({
@@ -238,10 +233,7 @@ cli
           await $`git add -A`;
           s.stop("Staged all changes");
           stagedFiles = await getStagedFiles();
-          note(
-            stagedFiles.map((f) => `+ ${f}`).join("\n"),
-            "Staged Files"
-          );
+          note(stagedFiles.map((f) => `+ ${f}`).join("\n"), "Staged Files");
         } else if (action === "select") {
           const selected = await multiselect({
             message: "Select files to stage",
@@ -268,6 +260,8 @@ cli
     let loop = true;
     let autoRetries = 0;
     let generationErrors: string[] = [];
+    let userRefinements: string[] = [];
+    let lastGeneratedMessage: string = "";
 
     while (loop) {
       // Get Diff
@@ -304,6 +298,14 @@ cli
         dynamicContext += `# PREVIOUS FAILED ATTEMPTS ERRORS\n${generationErrors.join(
           "\n"
         )}\nFIX THIS ERROR IN NEXT GENERATION.\n\n`;
+
+      // Inject refinements if available
+      if (lastGeneratedMessage && userRefinements.length > 0) {
+        dynamicContext += `# PREVIOUS GENERATED MESSAGE\n${lastGeneratedMessage}\n\n`;
+        dynamicContext += `# USER REFINEMENT INSTRUCTIONS\n${userRefinements.join(
+          "\n"
+        )}\n\nIMPORTANT: You must still strictly adhere to the Conventional Commits schema and the 72-character header limit. If the user asks for a longer header, ignore that part of the request and keep it under 72 characters.\n\n`;
+      }
 
       const fullInput = `${encode(
         SYSTEM_PROMPT_DATA
@@ -344,7 +346,7 @@ cli
       }
 
       // Validation: Check Header Length
-      const headerLine = cleanMsg.split("\n")[0];
+      const headerLine = cleanMsg.split("\n")[0] || "";
       if (headerLine.length > 72) {
         if (autoRetries < 3) {
           autoRetries++;
@@ -369,6 +371,8 @@ cli
         generationErrors = [];
       }
 
+      lastGeneratedMessage = cleanMsg;
+
       // 3. COMMIT LOGIC
       if (options.commit) {
         await $`git commit -m ${cleanMsg}`;
@@ -382,6 +386,7 @@ cli
           options: [
             { value: "commit", label: "Commit" },
             { value: "edit", label: "Edit Message" },
+            { value: "edit-ai", label: "Edit with AI" },
             { value: "retry", label: "Regenerate" },
             { value: "abort", label: "Abort" },
           ],
@@ -390,6 +395,24 @@ cli
         if (isCancel(action) || action === "abort") {
           outro("Aborted.");
           process.exit(1);
+        }
+
+        if (action === "edit-ai") {
+          const instruction = await text({
+            message: "Enter instructions for AI refinement:",
+            placeholder: "e.g. 'Make it more enthusiastic' or 'Fix the typo'",
+            validate: (value) => {
+              if (!value) return "Please enter an instruction.";
+            },
+          });
+
+          if (isCancel(instruction)) {
+            outro("Aborted.");
+            process.exit(1);
+          }
+
+          userRefinements.push(instruction as string);
+          continue;
         }
 
         if (action === "retry") {
