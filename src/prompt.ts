@@ -6,11 +6,11 @@ export const SYSTEM_PROMPT_DATA = {
     "NO Markdown (```)",
     "NO conversational filler",
     "NO explanations outside commit body",
-    "CRITICAL: Header MUST be max 72 characters",
+    "CRITICAL: Header MUST be max 50 characters",
   ],
   Commit_Schema: {
     Header:
-      "STRICT MAX 72 chars TOTAL (including type, scope, punctuation, spaces). <type>(<scope>)<!>: <subject>. Use '!' for breaking changes.",
+      "STRICT MAX 50 chars TOTAL (including type, scope, punctuation, spaces). <type>(<scope>)<!>: <subject>. Use '!' for breaking changes.",
     Types: {
       feat: "New feature",
       fix: "Bug fix",
@@ -34,7 +34,7 @@ export const SYSTEM_PROMPT_DATA = {
       Format: "Hyphenated bullet list (-)",
       Separation: "1 blank line after header",
       Content:
-        "Explain WHY the change was made, not just WHAT. Focus on technical context and implementation details. Wrap lines at 72 chars. Max 20 lines.",
+        "Explain both WHAT changed and WHY. Focus on technical context and implementation details. Wrap lines at 72 chars. Max 20 lines.",
     },
     Footer: {
       Format: "key: value",
@@ -62,7 +62,7 @@ Refs: bd-a1b2`,
     "1. Analyze Context: Check staged diff, branch name, and any provided hints.",
     "2. Identify Scope: Determine if changes focus on a single module or cross multiple.",
     "3. Determine Type: Classify as feat, fix, refactor, etc.",
-    "4. Draft Message: Write header under 72 chars. Write body explaining the 'Why'.",
+    "4. Draft Message: Write header under 50 chars. Write body explaining 'What' and 'Why'.",
     "5. Review: Ensure imperative mood and no markdown formatting.",
   ],
   Instruction:
