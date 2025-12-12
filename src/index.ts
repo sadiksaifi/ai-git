@@ -266,11 +266,36 @@ cli
     while (loop) {
       // Get Diff
       const s = spinner();
-      s.start(`Analyzing changes with ${MODEL}...`);
 
-      const branchName = (
-        await $`git rev-parse --abbrev-ref HEAD`.text()
-      ).trim();
+      let branchName = "";
+      try {
+        branchName = (await $`git rev-parse --abbrev-ref HEAD`.text()).trim();
+      } catch (error) {
+        // This likely means it's a new repo with no commits
+        if (options.yes) {
+          branchName = "main";
+        } else {
+          const newBranch = await text({
+            message: "No commits found. Set initial branch name?",
+            placeholder: "main",
+            initialValue: "main",
+            validate: (value) => {
+              if (!value) return "Please enter a branch name.";
+            },
+          });
+
+          if (isCancel(newBranch)) {
+            outro("Aborted.");
+            process.exit(1);
+          }
+          branchName = newBranch as string;
+        }
+
+        // Rename/Create the branch
+        await $`git branch -M ${branchName}`;
+      }
+
+      s.start(`Analyzing changes with ${MODEL}...`);
       // Using .join(' ') for LOCKFILES might not work as expected if spaces are in paths,
       // but git diff expects separate arguments.
       // Bun $ template literal with array works by joining with space? Or passing as args?
@@ -449,11 +474,75 @@ cli
     }
 
     // 4. PUSH LOGIC
-    if (options.push) {
+    async function safePush() {
       const s = spinner();
       s.start("Pushing changes...");
-      await $`git push`;
-      s.stop("Pushed successfully");
+      try {
+        await $`git push`;
+        s.stop("Pushed successfully");
+      } catch (error: any) {
+        s.stop("Push failed");
+
+        // Check for missing remote error
+        // git usually says "fatal: No configured push destination."
+        const stderr = error.stderr?.toString() || "";
+        if (
+          stderr.includes("No configured push destination") ||
+          stderr.includes("no remote repository specified")
+        ) {
+          if (options.yes) {
+            console.error(
+              pc.red("Error: No remote repository configured. Cannot push.")
+            );
+            return; // Don't exit 1, just fail the push part? Or exit 1? User said "just inform them whatever we should".
+            // Since it's automated -y, we probably can't prompt.
+          }
+
+          log.warn("No remote repository configured.");
+
+          const addRemote = await confirm({
+            message: "Do you want to add a remote repository?",
+            initialValue: true,
+          });
+
+          if (isCancel(addRemote) || !addRemote) {
+            log.info("Skipping push.");
+            return;
+          }
+
+          const remoteUrl = await text({
+            message: "Enter the remote repository URL:",
+            placeholder: "git@github.com:user/repo.git",
+            validate: (value) => {
+              if (!value) return "URL is required";
+            },
+          });
+
+          if (isCancel(remoteUrl)) {
+            outro("Aborted.");
+            process.exit(1);
+          }
+
+          const s2 = spinner();
+          s2.start("Adding remote and pushing...");
+          try {
+            await $`git remote add origin ${remoteUrl}`;
+            await $`git push -u origin HEAD`;
+            s2.stop("Remote added and pushed successfully");
+          } catch (e) {
+            s2.stop("Failed to push to new remote");
+            console.error(e);
+          }
+        } else {
+          // Some other error
+          console.error(pc.red("Error pushing changes:"));
+          console.error(error); // Bun's ShellError prints nicely
+        }
+      }
+    }
+
+    if (options.push) {
+      await safePush();
     } else if (!options.yes) {
       const shouldPush = await confirm({
         message: "Do you want to git push?",
@@ -461,10 +550,7 @@ cli
       });
 
       if (shouldPush && !isCancel(shouldPush)) {
-        const s = spinner();
-        s.start("Pushing changes...");
-        await $`git push`;
-        s.stop("Pushed successfully");
+        await safePush();
       }
     }
 
