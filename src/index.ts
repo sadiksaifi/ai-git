@@ -266,11 +266,36 @@ cli
     while (loop) {
       // Get Diff
       const s = spinner();
-      s.start(`Analyzing changes with ${MODEL}...`);
 
-      const branchName = (
-        await $`git rev-parse --abbrev-ref HEAD`.text()
-      ).trim();
+      let branchName = "";
+      try {
+        branchName = (await $`git rev-parse --abbrev-ref HEAD`.text()).trim();
+      } catch (error) {
+        // This likely means it's a new repo with no commits
+        if (options.yes) {
+          branchName = "main";
+        } else {
+          const newBranch = await text({
+            message: "No commits found. Set initial branch name?",
+            placeholder: "main",
+            initialValue: "main",
+            validate: (value) => {
+              if (!value) return "Please enter a branch name.";
+            },
+          });
+
+          if (isCancel(newBranch)) {
+            outro("Aborted.");
+            process.exit(1);
+          }
+          branchName = newBranch as string;
+        }
+
+        // Rename/Create the branch
+        await $`git branch -M ${branchName}`;
+      }
+
+      s.start(`Analyzing changes with ${MODEL}...`);
       // Using .join(' ') for LOCKFILES might not work as expected if spaces are in paths,
       // but git diff expects separate arguments.
       // Bun $ template literal with array works by joining with space? Or passing as args?
