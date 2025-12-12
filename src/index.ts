@@ -372,10 +372,10 @@ cli
 
       // Validation: Check Header Length
       const headerLine = cleanMsg.split("\n")[0] || "";
-      if (headerLine.length > 72) {
+      if (headerLine.length > 50) {
         if (autoRetries < 3) {
           autoRetries++;
-          const err = `Header too long (${headerLine.length} chars). Max 72.`;
+          const err = `Header too long (${headerLine.length} chars). Max 50.`;
           generationErrors.push(err);
           log.warn(
             pc.yellow(
@@ -386,7 +386,7 @@ cli
         } else {
           log.warn(
             pc.yellow(
-              `Warning: Header exceeds 72 chars (${headerLine.length}). Auto-fix retries exhausted.`
+              `Warning: Header exceeds 50 chars (${headerLine.length}). Auto-fix retries exhausted.`
             )
           );
         }
