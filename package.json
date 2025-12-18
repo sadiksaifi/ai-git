@@ -1,6 +1,6 @@
 {
   "name": "ai-git",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "A CLI tool that leverages AI to automatically generate semantically correct, Conventional Commits compliant git messages.",
   "author": "Sadik Saifi <mail@sadiksaifi.dev>",
   "license": "MIT",
