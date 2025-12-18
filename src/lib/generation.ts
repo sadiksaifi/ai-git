@@ -1,0 +1,260 @@
+import {
+  spinner,
+  select,
+  text,
+  isCancel,
+  note,
+  log,
+} from "@clack/prompts";
+import pc from "picocolors";
+import { encode } from "@toon-format/toon";
+import { SYSTEM_PROMPT_DATA } from "../prompt.ts";
+import type { ProviderAdapter } from "../providers/types.ts";
+import { getStagedDiff, getBranchName, setBranchName, commit } from "./git.ts";
+import { TEMP_MSG_FILE } from "./utils.ts";
+
+// ==============================================================================
+// AI GENERATION ENGINE
+// ==============================================================================
+
+export interface GenerationOptions {
+  commit: boolean;
+  yes: boolean;
+  hint?: string;
+  dryRun: boolean;
+}
+
+export interface GenerationContext {
+  adapter: ProviderAdapter;
+  model: string;
+  options: GenerationOptions;
+}
+
+export interface GenerationResult {
+  message: string;
+  committed: boolean;
+  aborted: boolean;
+}
+
+/**
+ * Run the AI generation loop.
+ * Generates commit messages, validates them, and handles user interactions.
+ */
+export async function runGenerationLoop(
+  ctx: GenerationContext
+): Promise<GenerationResult> {
+  const { adapter, model, options } = ctx;
+
+  let loop = true;
+  let autoRetries = 0;
+  let generationErrors: string[] = [];
+  let userRefinements: string[] = [];
+  let lastGeneratedMessage: string = "";
+
+  // Get branch name ONCE before the loop (fixes Issue #6)
+  let branchName = await getBranchName();
+
+  if (!branchName) {
+    // New repo with no commits
+    if (options.yes) {
+      branchName = "main";
+    } else {
+      const newBranch = await text({
+        message: "No commits found. Set initial branch name?",
+        placeholder: "main",
+        initialValue: "main",
+        validate: (value) => {
+          if (!value) return "Please enter a branch name.";
+        },
+      });
+
+      if (isCancel(newBranch)) {
+        return { message: "", committed: false, aborted: true };
+      }
+      branchName = newBranch as string;
+    }
+
+    await setBranchName(branchName);
+  }
+
+  // Flag to skip AI generation (used after manual edit)
+  let skipGeneration = false;
+
+  while (loop) {
+    let cleanMsg = lastGeneratedMessage;
+
+    // Only call AI if we need to generate/regenerate
+    if (!skipGeneration) {
+      const s = spinner();
+
+      s.start(`Analyzing changes with ${model}...`);
+
+      // Get staged diff
+      const diffOutput = await getStagedDiff();
+
+      // Build dynamic context
+      let dynamicContext = "";
+      if (branchName) {
+        dynamicContext += `# CURRENT BRANCH NAME\n${branchName}\n\n`;
+      }
+      if (options.hint) {
+        dynamicContext += `# USER HINT\n${options.hint}\n\n`;
+      }
+      if (generationErrors.length > 0) {
+        dynamicContext += `# PREVIOUS FAILED ATTEMPTS ERRORS\n${generationErrors.join(
+          "\n"
+        )}\nFIX THIS ERROR IN NEXT GENERATION.\n\n`;
+      }
+
+      // Inject refinements if available
+      if (lastGeneratedMessage && userRefinements.length > 0) {
+        dynamicContext += `# PREVIOUS GENERATED MESSAGE\n${lastGeneratedMessage}\n\n`;
+        dynamicContext += `# USER REFINEMENT INSTRUCTIONS\n${userRefinements.join(
+          "\n"
+        )}\n\nIMPORTANT: You must still strictly adhere to the Conventional Commits schema and the 72-character header limit. If the user asks for a longer header, ignore that part of the request and keep it under 72 characters.\n\n`;
+      }
+
+      const fullInput = `${encode(
+        SYSTEM_PROMPT_DATA
+      )}\n\n${dynamicContext}\n# GIT DIFF OUTPUT\n${diffOutput}`;
+
+      // Handle dry run
+      if (options.dryRun) {
+        s.stop("Dry run complete");
+        note(fullInput, "Dry Run: Full Prompt");
+        return { message: "", committed: false, aborted: false };
+      }
+
+      // Call AI
+      let rawMsg = "";
+      try {
+        rawMsg = await adapter.invoke({ model, input: fullInput });
+        s.stop("Message generated");
+      } catch (e) {
+        s.stop("Generation failed");
+        console.error(e);
+        process.exit(1);
+      }
+
+      // Cleanup message
+      cleanMsg = rawMsg
+        .replace(/^```.*/gm, "") // Remove code blocks
+        .replace(/```$/gm, "")
+        .trim();
+
+      if (!cleanMsg) {
+        console.error(pc.red("Error: AI returned empty message."));
+        process.exit(1);
+      }
+
+      // Validation: Check Header Length
+      const headerLine = cleanMsg.split("\n")[0] || "";
+      if (headerLine.length > 50) {
+        if (autoRetries < 3) {
+          autoRetries++;
+          const err = `Header too long (${headerLine.length} chars). Max 50.`;
+          generationErrors.push(err);
+          log.warn(
+            pc.yellow(
+              `Generated header too long (${headerLine.length} chars). Retrying (${autoRetries}/3)...`
+            )
+          );
+          continue;
+        } else {
+          log.warn(
+            pc.yellow(
+              `Warning: Header exceeds 50 chars (${headerLine.length}). Auto-fix retries exhausted.`
+            )
+          );
+        }
+      } else {
+        // Reset on success
+        autoRetries = 0;
+        generationErrors = [];
+      }
+
+      lastGeneratedMessage = cleanMsg;
+    }
+
+    // Reset skip flag for next iteration
+    skipGeneration = false;
+
+    // Commit logic
+    if (options.commit) {
+      await commit(cleanMsg);
+      return { message: cleanMsg, committed: true, aborted: false };
+    }
+
+    // Interactive flow
+    note(cleanMsg, "Generated Commit Message");
+
+    const action = await select({
+      message: "Action",
+      options: [
+        { value: "commit", label: "Commit" },
+        { value: "edit", label: "Edit Message" },
+        { value: "edit-ai", label: "Edit with AI" },
+        { value: "retry", label: "Regenerate" },
+        { value: "abort", label: "Abort" },
+      ],
+    });
+
+    if (isCancel(action) || action === "abort") {
+      return { message: "", committed: false, aborted: true };
+    }
+
+    if (action === "edit-ai") {
+      const instruction = await text({
+        message: "Enter instructions for AI refinement:",
+        placeholder: "e.g. 'Make it more enthusiastic' or 'Fix the typo'",
+        validate: (value) => {
+          if (!value) return "Please enter an instruction.";
+        },
+      });
+
+      if (isCancel(instruction)) {
+        return { message: "", committed: false, aborted: true };
+      }
+
+      userRefinements.push(instruction as string);
+      continue;
+    }
+
+    if (action === "retry") {
+      autoRetries = 0;
+      generationErrors = [];
+      userRefinements = [];
+      continue;
+    }
+
+    if (action === "commit") {
+      await commit(cleanMsg);
+      return { message: cleanMsg, committed: true, aborted: false };
+    }
+
+    if (action === "edit") {
+      // Edit Flow - opens editor and returns to menu (fixes Issue #5)
+      await Bun.write(TEMP_MSG_FILE, cleanMsg);
+      const editor = process.env.EDITOR || "vim";
+
+      const editProc = Bun.spawn([editor, TEMP_MSG_FILE], {
+        stdin: "inherit",
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+      await editProc.exited;
+
+      const finalMsg = await Bun.file(TEMP_MSG_FILE).text();
+      if (finalMsg.trim()) {
+        // Update the message and show menu again instead of auto-committing
+        lastGeneratedMessage = finalMsg.trim();
+        skipGeneration = true; // Don't regenerate, just show edited message
+        continue;
+      } else {
+        return { message: "", committed: false, aborted: true };
+      }
+    }
+  }
+
+  return { message: lastGeneratedMessage, committed: false, aborted: false };
+}
