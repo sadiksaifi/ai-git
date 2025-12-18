@@ -49,8 +49,8 @@ const CACHE_DIR = path.join(os.homedir(), ".cache", "ai-git");
 /** Cache file location */
 const UPDATE_CACHE_FILE = path.join(CACHE_DIR, "update-cache.json");
 
-/** Cache TTL: 24 hours in milliseconds */
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+/** Cache TTL: 30 minutes in milliseconds */
+const CACHE_TTL_MS = 30 * 60 * 1000;
 
 /** Fetch timeout: 3 seconds */
 const FETCH_TIMEOUT_MS = 3000;
