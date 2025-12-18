@@ -5,6 +5,9 @@
   "description": "Configuration schema for AI Git CLI tool",
   "type": "object",
   "properties": {
+    "$schema": {
+      "type": "string"
+    },
     "mode": {
       "type": "string",
       "enum": ["cli", "api"],
@@ -20,7 +23,7 @@
     "model": {
       "type": "string",
       "description": "Model ID to use for the selected provider.",
-      "examples": ["haiku", "sonnet", "opus", "gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"]
+      "examples": ["haiku", "sonnet", "opus", "gemini-3-flash-preview", "gemini-3-pro-preview", "gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-pro"]
     },
     "defaults": {
       "type": "object",
@@ -109,8 +112,8 @@
       "then": {
         "properties": {
           "model": {
-            "enum": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
-            "description": "Gemini model to use. 'gemini-2.5-flash' is recommended for speed."
+            "enum": ["gemini-3-flash-preview", "gemini-3-pro-preview", "gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-pro"],
+            "description": "Gemini model to use. 'gemini-3-flash-preview' is recommended for speed."
           }
         }
       }

@@ -140,10 +140,17 @@ export async function runGenerationLoop(
       } catch (e) {
         s.stop("Generation failed");
         console.error("");
+        let errorMessage = String(e);
         if (e instanceof Error) {
-          console.error(pc.red(e.message));
+          errorMessage = e.message;
+        }
+
+        if (errorMessage.includes("Requested entity was not found")) {
+          console.error(pc.red(`Error: The model '${model}' was not found.`));
+          console.error(pc.yellow("This usually means the model ID is incorrect or you don't have access to it."));
+          console.error(pc.dim(`Try running 'ai-git --setup' to select a different model.`));
         } else {
-          console.error(pc.red(String(e)));
+          console.error(pc.red(errorMessage));
         }
         process.exit(1);
       }
