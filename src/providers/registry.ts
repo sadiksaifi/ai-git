@@ -27,9 +27,11 @@ export const PROVIDERS: ProviderDefinition[] = [
     mode: "cli",
     binary: "gemini",
     models: [
-      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", isDefault: true },
+      { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview", isDefault: true },
+      { id: "gemini-3-pro-preview", name: "Gemini 3 Pro Preview" },
+      { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite" },
+      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
       { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
-      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" },
     ],
   },
   // Future CLI providers:

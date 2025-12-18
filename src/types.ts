@@ -13,7 +13,7 @@ export type Mode = "cli" | "api";
  * Model definition within a provider.
  */
 export interface ModelDefinition {
-  /** Unique model identifier (e.g., "haiku", "gemini-2.5-flash") */
+  /** Unique model identifier (e.g., "haiku", "gemini-3-flash-preview") */
   id: string;
   /** Human-readable model name (e.g., "Claude Haiku") */
   name: string;

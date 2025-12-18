@@ -103,7 +103,7 @@ ai-git --setup
 | :--- | :--- |
 | `--mode <mode>` | Connection mode: `cli` or `api` (auto-detected from provider) |
 | `-P, --provider <id>` | AI provider to use (e.g., `claude`, `gemini`) |
-| `-M, --model <id>` | Model to use (e.g., `haiku`, `sonnet`, `gemini-2.5-flash`) |
+| `-M, --model <id>` | Model to use (e.g., `haiku`, `sonnet`, `gemini-3-flash-preview`) |
 
 #### Workflow Options
 
@@ -124,10 +124,10 @@ ai-git --setup
 ai-git
 
 # Override provider and model for this run
-ai-git --provider gemini --model gemini-2.5-flash
+ai-git --provider gemini --model gemini-3-flash-preview
 
 # Short form
-ai-git -P gemini -M gemini-2.5-flash
+ai-git -P gemini -M gemini-3-flash-preview
 
 # Full auto mode with hint
 ai-git -y -H "Refactored authentication module"
@@ -193,7 +193,7 @@ The default prompt is designed to be **best-in-class** and works excellently for
   "$schema": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
   "mode": "cli",
   "provider": "gemini",
-  "model": "gemini-2.5-flash",
+  "model": "gemini-3-flash-preview",
   "prompt": {
     "context": "Monorepo with multiple packages. Valid scopes: web, mobile, shared, api, docs, infra.",
     "style": "Always use a scope from the valid list. Reference PR numbers in footer."
@@ -227,7 +227,7 @@ The default prompt is designed to be **best-in-class** and works excellently for
 | Provider | Binary | Recommended Model | Available Models |
 | :--- | :--- | :--- | :--- |
 | Claude Code | `claude` | `haiku` | `haiku`, `sonnet`, `opus` |
-| Gemini CLI | `gemini` | `gemini-2.5-flash` | `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash` |
+| Gemini CLI | `gemini` | `gemini-3-flash-preview` | `gemini-3-flash-preview`, `gemini-3-pro-preview`, `gemini-2.5-flash-lite`, `gemini-2.5-flash`, `gemini-2.5-pro` |
 
 ### API Mode (Coming Soon)
 

@@ -60,7 +60,7 @@ cli
   // AI configuration
   .option("--mode <mode>", "Connection mode: cli or api (auto-detected from provider)")
   .option("-P, --provider <id>", "AI provider (claude, gemini)")
-  .option("-M, --model <id>", "Model to use (haiku, sonnet, gemini-2.5-flash)")
+  .option("-M, --model <id>", "Model to use (haiku, sonnet, gemini-3-flash-preview)")
   // Workflow options
   .option("-a, --stage-all", "Automatically stage all changes")
   .option("-c, --commit", "Automatically commit (skip editor/confirmation)")
