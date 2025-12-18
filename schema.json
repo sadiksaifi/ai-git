@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
+  "title": "AI Git Configuration",
+  "description": "Configuration schema for AI Git CLI tool",
+  "type": "object",
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["cli", "api"],
+      "description": "Connection mode. 'cli' uses installed AI CLI tools, 'api' uses API keys (coming soon).",
+      "default": "cli"
+    },
+    "provider": {
+      "type": "string",
+      "enum": ["claude", "gemini"],
+      "description": "AI provider to use for generating commit messages.",
+      "examples": ["claude", "gemini"]
+    },
+    "model": {
+      "type": "string",
+      "description": "Model ID to use for the selected provider.",
+      "examples": ["haiku", "sonnet", "opus", "gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"]
+    },
+    "defaults": {
+      "type": "object",
+      "description": "Default workflow behavior options.",
+      "properties": {
+        "stageAll": {
+          "type": "boolean",
+          "description": "Automatically stage all changes (git add -A) before analysis.",
+          "default": false
+        },
+        "commit": {
+          "type": "boolean",
+          "description": "Automatically commit with the generated message (skip confirmation).",
+          "default": false
+        },
+        "push": {
+          "type": "boolean",
+          "description": "Automatically push after committing.",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "prompt": {
+      "type": "object",
+      "description": "Prompt customization options. These supplement (not replace) the base system prompt.",
+      "properties": {
+        "context": {
+          "type": "string",
+          "description": "Project-specific context to help the AI understand your codebase.",
+          "examples": [
+            "React Native app using Expo SDK 54. Jira tickets: PROJ-123",
+            "Monorepo with packages: web, mobile, shared, api"
+          ]
+        },
+        "style": {
+          "type": "string",
+          "description": "Style preferences for commit messages.",
+          "examples": [
+            "Always include scope when possible",
+            "Keep body under 5 bullet points",
+            "Reference ticket IDs from branch name in footer"
+          ]
+        },
+        "examples": {
+          "type": "array",
+          "description": "Custom commit message examples. If provided, these replace the default examples. Each string should be a complete commit message.",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            [
+              "feat(auth): add SSO integration\n\n- implement SAML 2.0 authentication\n- add identity provider configuration",
+              "fix(api): resolve rate limiting bypass\n\n- add per-user rate limit tracking"
+            ]
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["mode", "provider", "model"],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "provider": { "const": "claude" }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "enum": ["haiku", "sonnet", "opus"],
+            "description": "Claude model to use. 'haiku' is recommended for speed and cost."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": { "const": "gemini" }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "enum": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
+            "description": "Gemini model to use. 'gemini-2.5-flash' is recommended for speed."
+          }
+        }
+      }
+    }
+  ]
+}

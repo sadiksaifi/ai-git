@@ -103,14 +103,27 @@ export async function loadUserConfig(): Promise<UserConfig | undefined> {
 }
 
 /**
+ * JSON Schema URL for editor autocomplete and validation.
+ */
+const CONFIG_SCHEMA_URL =
+  "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json";
+
+/**
  * Save user configuration to the config file.
+ * Includes $schema for editor autocomplete/validation support.
  */
 export async function saveUserConfig(config: UserConfig): Promise<void> {
   // Ensure config directory exists
   const { mkdir } = await import("node:fs/promises");
   await mkdir(CONFIG_DIR, { recursive: true });
 
-  await Bun.write(CONFIG_FILE, JSON.stringify(config, null, 2));
+  // Add $schema at the top for editor support
+  const configWithSchema = {
+    $schema: CONFIG_SCHEMA_URL,
+    ...config,
+  };
+
+  await Bun.write(CONFIG_FILE, JSON.stringify(configWithSchema, null, 2));
 }
 
 /**

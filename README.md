@@ -135,10 +135,11 @@ ai-git -y -H "Refactored authentication module"
 
 ### Configuration File
 
-You can create a configuration file at `~/.config/ai-git/config.json` for persistent settings:
+Your configuration is stored at `~/.config/ai-git/config.json` (created by the setup wizard):
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
   "mode": "cli",
   "provider": "claude",
   "model": "haiku",
@@ -149,6 +150,8 @@ You can create a configuration file at `~/.config/ai-git/config.json` for persis
   }
 }
 ```
+
+> **Tip**: Add the `$schema` property to get autocomplete and validation in your editor (VS Code, Cursor, etc.).
 
 **Priority order:**
 1. CLI flags (highest priority)
@@ -172,6 +175,8 @@ The default prompt is designed to be **best-in-class** and works excellently for
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
+  "mode": "cli",
   "provider": "claude",
   "model": "sonnet",
   "prompt": {
@@ -185,6 +190,8 @@ The default prompt is designed to be **best-in-class** and works excellently for
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
+  "mode": "cli",
   "provider": "gemini",
   "model": "gemini-2.5-flash",
   "prompt": {
@@ -198,6 +205,10 @@ The default prompt is designed to be **best-in-class** and works excellently for
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
+  "mode": "cli",
+  "provider": "claude",
+  "model": "haiku",
   "prompt": {
     "examples": [
       "feat(auth): add SSO integration\n\n- implement SAML 2.0 authentication\n- add identity provider configuration\n- support multiple IdP connections\n\nRefs: PROJ-456",
@@ -208,14 +219,6 @@ The default prompt is designed to be **best-in-class** and works excellently for
 ```
 
 > **Tip**: Only provide `examples` if you have very specific formatting requirements. The default examples cover common scenarios well.
-
-### Environment Variables
-
-You can also configure the tool using environment variables:
-
-| Variable | Example | Description |
-| :--- | :--- | :--- |
-| `AI_GIT_OPTS` | `--provider gemini --model gemini-2.5-flash` | Default options to pass to the CLI. |
 
 ## Supported Providers
 

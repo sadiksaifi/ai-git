@@ -14,7 +14,6 @@ import {
   inferModeFromProvider,
 } from "./config.ts";
 import { getAdapter } from "./providers/index.ts";
-import { parseShellArgs } from "./lib/utils.ts";
 import { checkGitInstalled, checkInsideRepo } from "./lib/git.ts";
 import { handleStaging } from "./lib/staging.ts";
 import { runGenerationLoop } from "./lib/generation.ts";
@@ -234,18 +233,7 @@ cli.help();
 // ==============================================================================
 
 try {
-  // Parse AI_GIT_OPTS environment variable
-  const envOpts = process.env.AI_GIT_OPTS
-    ? parseShellArgs(process.env.AI_GIT_OPTS)
-    : [];
-
-  const args = [
-    ...process.argv.slice(0, 2),
-    ...envOpts,
-    ...process.argv.slice(2),
-  ];
-
-  const parsed = cli.parse(args, { run: false });
+  const parsed = cli.parse(process.argv, { run: false });
 
   if (parsed.options.version) {
     console.log(VERSION);
