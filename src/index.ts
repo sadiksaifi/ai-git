@@ -19,6 +19,10 @@ import { handleStaging } from "./lib/staging.ts";
 import { runGenerationLoop } from "./lib/generation.ts";
 import { handlePush } from "./lib/push.ts";
 import { runSetupWizard } from "./lib/setup.ts";
+import {
+  startUpdateCheck,
+  showUpdateNotification,
+} from "./lib/update-check.ts";
 
 // ==============================================================================
 // METADATA & CONFIG
@@ -58,9 +62,15 @@ export interface CLIOptions {
 cli
   .command("", "Generate a commit message using AI")
   // AI configuration
-  .option("--mode <mode>", "Connection mode: cli or api (auto-detected from provider)")
+  .option(
+    "--mode <mode>",
+    "Connection mode: cli or api (auto-detected from provider)",
+  )
   .option("-P, --provider <id>", "AI provider (claude, gemini)")
-  .option("-M, --model <id>", "Model to use (haiku, sonnet, gemini-3-flash-preview)")
+  .option(
+    "-M, --model <id>",
+    "Model to use (haiku, sonnet, gemini-3-flash-preview)",
+  )
   // Workflow options
   .option("-a, --stage-all", "Automatically stage all changes")
   .option("-c, --commit", "Automatically commit (skip editor/confirmation)")
@@ -71,6 +81,9 @@ cli
   .option("--setup", "Re-run the setup wizard to reconfigure AI provider")
   .option("-v, --version", "Display version number")
   .action(async (options: CLIOptions) => {
+    // Start update check immediately (non-blocking)
+    const updateCheckPromise = startUpdateCheck(VERSION);
+
     // Handle -y alias
     if (options.yes) {
       options.stageAll = true;
@@ -87,7 +100,7 @@ cli
         provider: options.provider,
         model: options.model,
       });
-      
+
       // If --setup was explicitly requested, exit after setup
       if (options.setup) {
         process.exit(0);
@@ -108,11 +121,9 @@ cli
     const providerDef = getProviderById(resolvedConfig.provider);
     if (!providerDef) {
       console.error(
-        pc.red(`Error: Unknown provider '${resolvedConfig.provider}'.`)
+        pc.red(`Error: Unknown provider '${resolvedConfig.provider}'.`),
       );
-      console.error(
-        pc.dim(`Available providers: claude, gemini`)
-      );
+      console.error(pc.dim(`Available providers: claude, gemini`));
       process.exit(1);
     }
 
@@ -120,7 +131,9 @@ cli
     const adapter = getAdapter(providerDef.id, mode);
     if (!adapter) {
       console.error(
-        pc.red(`Error: No adapter found for provider '${providerDef.id}' in mode '${mode}'.`)
+        pc.red(
+          `Error: No adapter found for provider '${providerDef.id}' in mode '${mode}'.`,
+        ),
       );
       process.exit(1);
     }
@@ -129,15 +142,28 @@ cli
     const modelId = options.model ?? resolvedConfig.model;
     const modelDef = getModelById(providerDef, modelId);
     if (!modelDef) {
-      console.error(pc.red(`Error: Unknown model '${modelId}' for provider '${providerDef.name}'.`));
-      console.error(pc.dim(`Available models: ${providerDef.models.map(m => m.id).join(", ")}`));
+      console.error(
+        pc.red(
+          `Error: Unknown model '${modelId}' for provider '${providerDef.name}'.`,
+        ),
+      );
+      console.error(
+        pc.dim(
+          `Available models: ${providerDef.models.map((m) => m.id).join(", ")}`,
+        ),
+      );
       process.exit(1);
     }
     const model = modelDef.id;
     const modelName = modelDef.name;
 
     console.clear();
+
     intro(pc.bgCyan(pc.black(` AI Git ${VERSION} `)));
+
+    // Show update notification if available (check should be done by now)
+    const updateResult = await updateCheckPromise;
+    showUpdateNotification(updateResult);
 
     // Check dependencies
     await checkGitInstalled();
@@ -145,14 +171,20 @@ cli
     const isAvailable = await adapter.checkAvailable();
     if (!isAvailable) {
       if (adapter.mode === "cli" && providerDef.binary) {
-        console.error(pc.red(`Error: '${providerDef.binary}' CLI is not installed.`));
+        console.error(
+          pc.red(`Error: '${providerDef.binary}' CLI is not installed.`),
+        );
         console.error("");
-        console.error(`The ${providerDef.name} CLI must be installed to use AI Git.`);
+        console.error(
+          `The ${providerDef.name} CLI must be installed to use AI Git.`,
+        );
         console.error("");
         console.error(pc.dim("To switch to a different provider, run:"));
         console.error(pc.dim(`  ai-git --setup`));
       } else {
-        console.error(pc.red(`Error: Provider '${providerDef.id}' is not available.`));
+        console.error(
+          pc.red(`Error: Provider '${providerDef.id}' is not available.`),
+        );
         console.error(pc.dim(`Check your API key configuration.`));
       }
       process.exit(1);
