@@ -4,7 +4,7 @@ import cac from "cac";
 import pc from "picocolors";
 import packageJson from "../package.json";
 
-import { getDefaultProvider, getDefaultModel, getProviderById } from "./config.ts";
+import { getDefaultProvider, getDefaultModel, getProviderById, getProviderByBinary } from "./config.ts";
 import { getAdapter, getAdapterByBinary } from "./providers/index.ts";
 import { parseShellArgs } from "./lib/utils.ts";
 import { checkGitInstalled, checkInsideRepo } from "./lib/git.ts";
@@ -74,15 +74,21 @@ cli
       ? getAdapter(options.aiProvider)
       : getAdapterByBinary(options.aiBinary);
 
+    // Also get the provider config for model name lookup
+    let providerConfig = options.aiProvider
+      ? getProviderById(options.aiProvider)
+      : getProviderByBinary(options.aiBinary);
+
     if (!adapter) {
       // Try to find adapter by provider ID if binary lookup failed
       const provider = getProviderById(options.aiBinary);
       if (provider) {
         adapter = getAdapter(provider.id);
+        providerConfig = provider;
       }
     }
 
-    if (!adapter) {
+    if (!adapter || !providerConfig) {
       console.error(
         pc.red(
           `Error: Unknown AI provider or binary '${options.aiProvider || options.aiBinary}'.`
@@ -91,8 +97,10 @@ cli
       process.exit(1);
     }
 
-    // Resolve model
+    // Resolve model and model name
     const model = options.aiModel;
+    const modelConfig = providerConfig.models.find((m) => m.id === model);
+    const modelName = modelConfig?.name ?? model;
 
     console.clear();
     intro(pc.bgCyan(pc.black(` AI Git ${VERSION} `)));
@@ -129,6 +137,7 @@ cli
     const genResult = await runGenerationLoop({
       adapter,
       model,
+      modelName,
       options: {
         commit: options.commit,
         yes: options.yes,

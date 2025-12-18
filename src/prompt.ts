@@ -67,4 +67,6 @@ Refs: bd-a1b2`,
   ],
   Instruction:
     "Analyze the diff deeply. Follow the Process_Steps. Generate a single, high-quality commit message strictly adhering to the Schema.",
+  CRITICAL_OUTPUT_RULE:
+    "OUTPUT ONLY THE COMMIT MESSAGE. No greetings, no explanations, no questions, no suggestions, no analysis text. Start directly with the commit type (feat/fix/etc). If you output anything other than the commit message itself, you have failed.",
 };

@@ -1,4 +1,5 @@
 import type { ProviderAdapter } from "./types.ts";
+import { claudeAdapter } from "./claude.ts";
 import { geminiAdapter } from "./gemini.ts";
 
 // ==============================================================================
@@ -10,9 +11,9 @@ import { geminiAdapter } from "./gemini.ts";
  * Add new adapters here when adding support for new providers.
  */
 const adapters: Map<string, ProviderAdapter> = new Map([
+  [claudeAdapter.providerId, claudeAdapter],
   [geminiAdapter.providerId, geminiAdapter],
   // Future adapters:
-  // [claudeAdapter.providerId, claudeAdapter],
   // [codexAdapter.providerId, codexAdapter],
 ]);
 

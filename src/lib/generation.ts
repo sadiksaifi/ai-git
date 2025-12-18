@@ -27,6 +27,7 @@ export interface GenerationOptions {
 export interface GenerationContext {
   adapter: ProviderAdapter;
   model: string;
+  modelName: string;
   options: GenerationOptions;
 }
 
@@ -43,7 +44,7 @@ export interface GenerationResult {
 export async function runGenerationLoop(
   ctx: GenerationContext
 ): Promise<GenerationResult> {
-  const { adapter, model, options } = ctx;
+  const { adapter, model, modelName, options } = ctx;
 
   let loop = true;
   let autoRetries = 0;
@@ -87,7 +88,7 @@ export async function runGenerationLoop(
     if (!skipGeneration) {
       const s = spinner();
 
-      s.start(`Analyzing changes with ${model}...`);
+      s.start(`Analyzing changes with ${modelName}...`);
 
       // Get staged diff
       const diffOutput = await getStagedDiff();

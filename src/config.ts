@@ -22,10 +22,20 @@ export interface ProviderConfig {
  */
 export const PROVIDERS: ProviderConfig[] = [
   {
+    id: "claude",
+    name: "Claude Code",
+    binary: "claude",
+    isDefault: true,
+    models: [
+      { id: "haiku", name: "Claude Haiku", isDefault: true },
+      { id: "sonnet", name: "Claude Sonnet" },
+      { id: "opus", name: "Claude Opus" },
+    ],
+  },
+  {
     id: "gemini",
     name: "Google Gemini",
     binary: "gemini",
-    isDefault: true,
     models: [
       { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", isDefault: true },
       { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
@@ -33,14 +43,6 @@ export const PROVIDERS: ProviderConfig[] = [
     ],
   },
   // Future providers:
-  // {
-  //   id: "claude",
-  //   name: "Claude Code",
-  //   binary: "claude",
-  //   models: [
-  //     { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", isDefault: true },
-  //   ],
-  // },
   // {
   //   id: "codex",
   //   name: "OpenAI Codex",
