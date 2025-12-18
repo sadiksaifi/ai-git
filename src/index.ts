@@ -1,107 +1,54 @@
 #!/usr/bin/env bun
-import {
-  intro,
-  outro,
-  spinner,
-  select,
-  confirm,
-  multiselect,
-  isCancel,
-  note,
-  log,
-  text,
-} from "@clack/prompts";
+import { intro, outro } from "@clack/prompts";
 import cac from "cac";
 import pc from "picocolors";
-import { $ } from "bun";
-import * as path from "node:path";
-import * as os from "node:os";
-import { encode } from "@toon-format/toon";
-import { SYSTEM_PROMPT_DATA } from "./prompt.ts";
 import packageJson from "../package.json";
+
+import type { Mode } from "./types.ts";
+import {
+  loadUserConfig,
+  isConfigComplete,
+  resolveConfigAsync,
+  getProviderById,
+  getModelById,
+  inferModeFromProvider,
+} from "./config.ts";
+import { getAdapter } from "./providers/index.ts";
+import { checkGitInstalled, checkInsideRepo } from "./lib/git.ts";
+import { handleStaging } from "./lib/staging.ts";
+import { runGenerationLoop } from "./lib/generation.ts";
+import { handlePush } from "./lib/push.ts";
+import { runSetupWizard } from "./lib/setup.ts";
 
 // ==============================================================================
 // METADATA & CONFIG
 // ==============================================================================
+
 const cli = cac("ai-git");
 const VERSION = packageJson.version;
 
-function parseShellArgs(input: string): string[] {
-  const regex = /[^\s"']+|"([^"]*)"|'([^']*)'/g;
-  const args = [];
-  let match;
-  while ((match = regex.exec(input)) !== null) {
-    if (match[1] !== undefined) {
-      args.push(match[1]);
-    } else if (match[2] !== undefined) {
-      args.push(match[2]);
-    } else {
-      args.push(match[0]);
-    }
-  }
-  return args;
-}
-
-// Temporary files
-const TEMP_MSG_FILE = path.join(os.tmpdir(), "ai-git-msg.txt");
-
-const LOCKFILES = [
-  ":(exclude)package-lock.json",
-  ":(exclude)yarn.lock",
-  ":(exclude)pnpm-lock.yaml",
-  ":(exclude)bun.lockb",
-  ":(exclude)bun.lock",
-  ":(exclude)Cargo.lock",
-  ":(exclude)Gemfile.lock",
-  ":(exclude)composer.lock",
-  ":(exclude)poetry.lock",
-  ":(exclude)deno.lock",
-  ":(exclude)go.sum",
-];
-
 // ==============================================================================
-// SYSTEM PROMPT
+// CLI OPTIONS INTERFACE
 // ==============================================================================
 
-// ==============================================================================
-// HELPER FUNCTIONS
-// ==============================================================================
+export interface CLIOptions {
+  // AI configuration
+  mode?: Mode;
+  provider?: string;
+  model?: string;
 
-async function checkDependencies(binaryCmd: string) {
-  try {
-    await $`git --version`.quiet();
-  } catch {
-    console.error(pc.red("Error: 'git' is not installed."));
-    process.exit(1);
-  }
+  // Workflow options
+  stageAll: boolean;
+  commit: boolean;
+  push: boolean;
+  yes: boolean;
+  hint?: string;
+  dryRun: boolean;
 
-  try {
-    await $`which ${binaryCmd}`.quiet();
-  } catch {
-    console.error(pc.red(`Error: '${binaryCmd}' cli tool not found in PATH.`));
-    process.exit(1);
-  }
-
-  try {
-    await $`git rev-parse --is-inside-work-tree`.quiet();
-  } catch {
-    console.error(pc.red("Error: Not a git repository."));
-    process.exit(1);
-  }
-}
-
-async function getStagedFiles(): Promise<string[]> {
-  const output = await $`git diff --cached --name-only`.text();
-  return output.trim().split("\n").filter(Boolean);
-}
-
-async function getUnstagedFiles(): Promise<string[]> {
-  const modified = await $`git ls-files -m --exclude-standard`.text();
-  const untracked = await $`git ls-files -o --exclude-standard`.text();
-  return [...modified.split("\n"), ...untracked.split("\n")]
-    .map((f) => f.trim())
-    .filter(Boolean)
-    .filter((v, i, a) => a.indexOf(v) === i); // unique
+  // Meta
+  setup: boolean;
+  version: boolean;
+  help: boolean;
 }
 
 // ==============================================================================
@@ -110,20 +57,20 @@ async function getUnstagedFiles(): Promise<string[]> {
 
 cli
   .command("", "Generate a commit message using AI")
+  // AI configuration
+  .option("--mode <mode>", "Connection mode: cli or api (auto-detected from provider)")
+  .option("-P, --provider <id>", "AI provider (claude, gemini)")
+  .option("-M, --model <id>", "Model to use (haiku, sonnet, gemini-2.5-flash)")
+  // Workflow options
   .option("-a, --stage-all", "Automatically stage all changes")
   .option("-c, --commit", "Automatically commit (skip editor/confirmation)")
   .option("-p, --push", "Automatically push after commit")
   .option("-y, --yes", "Run fully automated (Stage All + Commit + Push)")
   .option("-H, --hint <text>", "Provide a hint/context to the AI")
   .option("--dry-run", "Print the prompt and diff without calling AI")
-  .option("--ai-model <model>", "AI Model to use", {
-    default: "gemini-2.5-flash",
-  })
-  .option("--ai-binary <cmd>", "AI Binary to use", {
-    default: "gemini",
-  })
+  .option("--setup", "Re-run the setup wizard to reconfigure AI provider")
   .option("-v, --version", "Display version number")
-  .action(async (options) => {
+  .action(async (options: CLIOptions) => {
     // Handle -y alias
     if (options.yes) {
       options.stageAll = true;
@@ -131,446 +78,163 @@ cli
       options.push = true;
     }
 
-    // Resolve AI options
-    const MODEL = options.aiModel;
-    const AI_BINARY = options.aiBinary;
+    // Check if setup is needed (first-run or --setup flag)
+    const existingConfig = await loadUserConfig();
+    if (options.setup || !isConfigComplete(existingConfig)) {
+      // Run setup wizard with CLI flags as defaults
+      await runSetupWizard({
+        mode: options.mode,
+        provider: options.provider,
+        model: options.model,
+      });
+      
+      // If --setup was explicitly requested, exit after setup
+      if (options.setup) {
+        process.exit(0);
+      }
+    }
+
+    // Resolve configuration (CLI flags > config file > built-in defaults)
+    const resolvedConfig = await resolveConfigAsync({
+      mode: options.mode,
+      provider: options.provider,
+      model: options.model,
+    });
+
+    // Infer mode from provider if not explicitly set
+    const mode = options.mode ?? inferModeFromProvider(resolvedConfig.provider);
+
+    // Get provider definition
+    const providerDef = getProviderById(resolvedConfig.provider);
+    if (!providerDef) {
+      console.error(
+        pc.red(`Error: Unknown provider '${resolvedConfig.provider}'.`)
+      );
+      console.error(
+        pc.dim(`Available providers: claude, gemini`)
+      );
+      process.exit(1);
+    }
+
+    // Get adapter for the provider
+    const adapter = getAdapter(providerDef.id, mode);
+    if (!adapter) {
+      console.error(
+        pc.red(`Error: No adapter found for provider '${providerDef.id}' in mode '${mode}'.`)
+      );
+      process.exit(1);
+    }
+
+    // Resolve model (CLI flag overrides config file)
+    const modelId = options.model ?? resolvedConfig.model;
+    const modelDef = getModelById(providerDef, modelId);
+    if (!modelDef) {
+      console.error(pc.red(`Error: Unknown model '${modelId}' for provider '${providerDef.name}'.`));
+      console.error(pc.dim(`Available models: ${providerDef.models.map(m => m.id).join(", ")}`));
+      process.exit(1);
+    }
+    const model = modelDef.id;
+    const modelName = modelDef.name;
 
     console.clear();
     intro(pc.bgCyan(pc.black(` AI Git ${VERSION} `)));
 
-    await checkDependencies(AI_BINARY);
+    // Check dependencies
+    await checkGitInstalled();
+
+    const isAvailable = await adapter.checkAvailable();
+    if (!isAvailable) {
+      if (adapter.mode === "cli" && providerDef.binary) {
+        console.error(pc.red(`Error: '${providerDef.binary}' CLI is not installed.`));
+        console.error("");
+        console.error(`The ${providerDef.name} CLI must be installed to use AI Git.`);
+        console.error("");
+        console.error(pc.dim("To switch to a different provider, run:"));
+        console.error(pc.dim(`  ai-git --setup`));
+      } else {
+        console.error(pc.red(`Error: Provider '${providerDef.id}' is not available.`));
+        console.error(pc.dim(`Check your API key configuration.`));
+      }
+      process.exit(1);
+    }
+
+    await checkInsideRepo();
 
     // 1. STAGE MANAGEMENT
-    let stagedFiles = await getStagedFiles();
+    const stagingResult = await handleStaging({
+      stageAll: options.stageAll,
+      yes: options.yes,
+    });
 
-    if (stagedFiles.length > 0) {
-      note(
-        stagedFiles.map((f) => `+ ${f}`).join("\n"),
-        "Currently Staged Files"
-      );
+    if (stagingResult.aborted) {
+      outro("Cancelled.");
+      process.exit(1);
+    }
 
-      const unstagedFiles = await getUnstagedFiles();
-      if (unstagedFiles.length > 0 && !options.stageAll && !options.yes) {
-        const action = await select({
-          message:
-            "You have unstaged changes. Would you like to stage more files?",
-          options: [
-            { value: "continue", label: "No, proceed with generation" },
-            { value: "select", label: "Yes, select files to stage" },
-            { value: "all", label: "Stage All (git add -A)" },
-          ],
-        });
-
-        if (isCancel(action)) {
-          outro("Aborted.");
-          process.exit(1);
-        }
-
-        if (action === "all") {
-          const s = spinner();
-          s.start("Staging all changes...");
-          await $`git add -A`;
-          s.stop("Staged all changes");
-          stagedFiles = await getStagedFiles();
-          note(stagedFiles.map((f) => `+ ${f}`).join("\n"), "Staged Files");
-        } else if (action === "select") {
-          const selected = await multiselect({
-            message: "Select files to stage",
-            options: unstagedFiles.map((f) => ({ value: f, label: f })),
-            required: false,
-          });
-
-          if (isCancel(selected)) {
-            outro("Aborted.");
-            process.exit(1);
-          }
-
-          if (selected.length > 0) {
-            const s = spinner();
-            s.start("Staging selected files...");
-            for (const file of selected as string[]) {
-              await $`git add ${file}`;
-            }
-            s.stop("Staged selected files");
-            stagedFiles = await getStagedFiles();
-          }
-        }
-      }
-    } else {
-      const unstagedFiles = await getUnstagedFiles();
-
-      if (unstagedFiles.length === 0) {
-        outro(pc.yellow("Working directory is clean. Nothing to do."));
-        process.exit(0);
-      }
-
-      if (options.stageAll) {
-        const s = spinner();
-        s.start("Staging all changes...");
-        await $`git add -A`;
-        s.stop("Staged all changes");
-        stagedFiles = await getStagedFiles();
-        note(stagedFiles.map((f) => `+ ${f}`).join("\n"), "Staged Files");
-      } else {
-        // Interactive Staging
-        const action = await select({
-          message: "No staged changes detected. What would you like to do?",
-          options: [
-            { value: "all", label: "Stage All (git add -A)" },
-            { value: "select", label: "Select Files" },
-            { value: "quit", label: "Quit" },
-          ],
-        });
-
-        if (isCancel(action) || action === "quit") {
-          outro("Aborted.");
-          process.exit(1);
-        }
-
-        if (action === "all") {
-          const s = spinner();
-          s.start("Staging all changes...");
-          await $`git add -A`;
-          s.stop("Staged all changes");
-          stagedFiles = await getStagedFiles();
-          note(stagedFiles.map((f) => `+ ${f}`).join("\n"), "Staged Files");
-        } else if (action === "select") {
-          const selected = await multiselect({
-            message: "Select files to stage",
-            options: unstagedFiles.map((f) => ({ value: f, label: f })),
-            required: true,
-          });
-
-          if (isCancel(selected)) {
-            outro("Aborted.");
-            process.exit(1);
-          }
-
-          const s = spinner();
-          s.start("Staging selected files...");
-          for (const file of selected as string[]) {
-            await $`git add ${file}`;
-          }
-          s.stop("Staged selected files");
-        }
-      }
+    // Check for clean working directory
+    if (stagingResult.stagedFiles.length === 0 && !options.dryRun) {
+      outro(pc.yellow("Working directory is clean. Nothing to do."));
+      process.exit(0);
     }
 
     // 2. GENERATION ENGINE
-    let loop = true;
-    let autoRetries = 0;
-    let generationErrors: string[] = [];
-    let userRefinements: string[] = [];
-    let lastGeneratedMessage: string = "";
+    const genResult = await runGenerationLoop({
+      adapter,
+      model,
+      modelName,
+      options: {
+        commit: options.commit,
+        yes: options.yes,
+        hint: options.hint,
+        dryRun: options.dryRun,
+      },
+      // Pass prompt customization from config file (if any)
+      promptCustomization: resolvedConfig.prompt,
+    });
 
-    while (loop) {
-      // Get Diff
-      const s = spinner();
+    // Handle dry run (already processed in generation loop)
+    if (options.dryRun) {
+      process.exit(0);
+    }
 
-      let branchName = "";
-      try {
-        branchName = (await $`git rev-parse --abbrev-ref HEAD`.text()).trim();
-      } catch (error) {
-        // This likely means it's a new repo with no commits
-        if (options.yes) {
-          branchName = "main";
-        } else {
-          const newBranch = await text({
-            message: "No commits found. Set initial branch name?",
-            placeholder: "main",
-            initialValue: "main",
-            validate: (value) => {
-              if (!value) return "Please enter a branch name.";
-            },
-          });
-
-          if (isCancel(newBranch)) {
-            outro("Aborted.");
-            process.exit(1);
-          }
-          branchName = newBranch as string;
-        }
-
-        // Rename/Create the branch
-        await $`git branch -M ${branchName}`;
-      }
-
-      s.start(`Analyzing changes with ${MODEL}...`);
-      // Using .join(' ') for LOCKFILES might not work as expected if spaces are in paths,
-      // but git diff expects separate arguments.
-      // Bun $ template literal with array works by joining with space? Or passing as args?
-      // $`git diff --staged -- . ${LOCKFILES}` passes LOCKFILES elements as separate arguments.
-      // This is safer.
-      let diffOutput = await $`git diff --staged -- . ${LOCKFILES}`.text();
-
-      // Fallback for empty diffs
-      if (!diffOutput.trim()) {
-        diffOutput = await $`git diff --staged --stat`.text();
-      }
-
-      // Truncate if massive
-      const lines = diffOutput.split("\n");
-      if (lines.length > 2500) {
-        diffOutput =
-          lines.slice(0, 2500).join("\n") + "\n... [DIFF TRUNCATED] ...";
-      }
-
-      let dynamicContext = "";
-      if (branchName)
-        dynamicContext += `# CURRENT BRANCH NAME\n${branchName}\n\n`;
-      if (options.hint) dynamicContext += `# USER HINT\n${options.hint}\n\n`;
-      if (generationErrors.length > 0)
-        dynamicContext += `# PREVIOUS FAILED ATTEMPTS ERRORS\n${generationErrors.join(
-          "\n"
-        )}\nFIX THIS ERROR IN NEXT GENERATION.\n\n`;
-
-      // Inject refinements if available
-      if (lastGeneratedMessage && userRefinements.length > 0) {
-        dynamicContext += `# PREVIOUS GENERATED MESSAGE\n${lastGeneratedMessage}\n\n`;
-        dynamicContext += `# USER REFINEMENT INSTRUCTIONS\n${userRefinements.join(
-          "\n"
-        )}\n\nIMPORTANT: You must still strictly adhere to the Conventional Commits schema and the 72-character header limit. If the user asks for a longer header, ignore that part of the request and keep it under 72 characters.\n\n`;
-      }
-
-      const fullInput = `${encode(
-        SYSTEM_PROMPT_DATA
-      )}\n\n${dynamicContext}\n# GIT DIFF OUTPUT\n${diffOutput}`;
-
-      if (options.dryRun) {
-        s.stop("Dry run complete");
-        note(fullInput, "Dry Run: Full Prompt");
-        process.exit(0);
-      }
-
-      // Call AI
-      let rawMsg = "";
-      try {
-        // Passing arguments to AI_BINARY
-        // If AI_BINARY is "gemini", it runs `gemini --model ...`
-        // $`${AI_BINARY} ...` splits AI_BINARY if it has spaces? No, it treats it as command.
-        // If AI_BINARY="echo", it works.
-        const result =
-          await $`${AI_BINARY} --model ${MODEL} ${fullInput}`.text();
-        rawMsg = result;
-        s.stop("Message generated");
-      } catch (e) {
-        s.stop("Generation failed");
-        console.error(e);
-        process.exit(1);
-      }
-
-      // Cleanup message
-      let cleanMsg = rawMsg
-        .replace(/^```.*/gm, "") // Remove code blocks
-        .replace(/```$/gm, "")
-        .trim();
-
-      if (!cleanMsg) {
-        console.error(pc.red("Error: AI returned empty message."));
-        process.exit(1);
-      }
-
-      // Validation: Check Header Length
-      const headerLine = cleanMsg.split("\n")[0] || "";
-      if (headerLine.length > 50) {
-        if (autoRetries < 3) {
-          autoRetries++;
-          const err = `Header too long (${headerLine.length} chars). Max 50.`;
-          generationErrors.push(err);
-          log.warn(
-            pc.yellow(
-              `Generated header too long (${headerLine.length} chars). Retrying (${autoRetries}/3)...`
-            )
-          );
-          continue;
-        } else {
-          log.warn(
-            pc.yellow(
-              `Warning: Header exceeds 50 chars (${headerLine.length}). Auto-fix retries exhausted.`
-            )
-          );
-        }
+    if (genResult.aborted) {
+      if (genResult.message === "" && !genResult.committed) {
+        // Edit was cleared or user cancelled
+        outro(pc.yellow("No message provided. Cancelled."));
       } else {
-        // Reset on success
-        autoRetries = 0;
-        generationErrors = [];
+        outro("Cancelled.");
       }
+      process.exit(1);
+    }
 
-      lastGeneratedMessage = cleanMsg;
-
-      // 3. COMMIT LOGIC
+    // Show success message for commit
+    if (genResult.committed) {
+      const headerLine = genResult.message.split("\n")[0] || "";
       if (options.commit) {
-        await $`git commit -m ${cleanMsg}`;
-        outro(pc.green(`Commit created: ${cleanMsg.split("\n")[0]}`));
-        loop = false;
+        outro(pc.green(`Commit created: ${headerLine}`));
       } else {
-        note(cleanMsg, "Generated Commit Message");
-
-        const action = await select({
-          message: "Action",
-          options: [
-            { value: "commit", label: "Commit" },
-            { value: "edit", label: "Edit Message" },
-            { value: "edit-ai", label: "Edit with AI" },
-            { value: "retry", label: "Regenerate" },
-            { value: "abort", label: "Abort" },
-          ],
-        });
-
-        if (isCancel(action) || action === "abort") {
-          outro("Aborted.");
-          process.exit(1);
-        }
-
-        if (action === "edit-ai") {
-          const instruction = await text({
-            message: "Enter instructions for AI refinement:",
-            placeholder: "e.g. 'Make it more enthusiastic' or 'Fix the typo'",
-            validate: (value) => {
-              if (!value) return "Please enter an instruction.";
-            },
-          });
-
-          if (isCancel(instruction)) {
-            outro("Aborted.");
-            process.exit(1);
-          }
-
-          userRefinements.push(instruction as string);
-          continue;
-        }
-
-        if (action === "retry") {
-          autoRetries = 0;
-          generationErrors = [];
-          continue;
-        } else if (action === "commit") {
-          await $`git commit -m ${cleanMsg}`;
-          outro(pc.green("Commit created successfully."));
-          loop = false;
-        } else if (action === "edit") {
-          // Edit Flow
-          await Bun.write(TEMP_MSG_FILE, cleanMsg);
-          const editor = process.env.EDITOR || "vim";
-
-          const editProc = Bun.spawn([editor, TEMP_MSG_FILE], {
-            stdin: "inherit",
-            stdout: "inherit",
-            stderr: "inherit",
-          });
-          await editProc.exited;
-
-          const finalMsg = await Bun.file(TEMP_MSG_FILE).text();
-          if (finalMsg.trim()) {
-            await $`git commit -m ${finalMsg.trim()}`;
-            outro(pc.green("Commit created successfully (edited)."));
-            loop = false;
-          } else {
-            outro(pc.yellow("Message cleared. Aborting."));
-            process.exit(1);
-          }
-        }
+        outro(pc.green("Commit created successfully."));
       }
     }
 
-    // 4. PUSH LOGIC
-    async function safePush() {
-      const s = spinner();
-      s.start("Pushing changes...");
-      try {
-        await $`git push`;
-        s.stop("Pushed successfully");
-      } catch (error: any) {
-        s.stop("Push failed");
+    // 3. PUSH LOGIC
+    await handlePush({
+      push: options.push,
+      yes: options.yes,
+    });
 
-        // Check for missing remote error
-        // git usually says "fatal: No configured push destination."
-        const stderr = error.stderr?.toString() || "";
-        if (
-          stderr.includes("No configured push destination") ||
-          stderr.includes("no remote repository specified")
-        ) {
-          if (options.yes) {
-            console.error(
-              pc.red("Error: No remote repository configured. Cannot push.")
-            );
-            return; // Don't exit 1, just fail the push part? Or exit 1? User said "just inform them whatever we should".
-            // Since it's automated -y, we probably can't prompt.
-          }
-
-          log.warn("No remote repository configured.");
-
-          const addRemote = await confirm({
-            message: "Do you want to add a remote repository?",
-            initialValue: true,
-          });
-
-          if (isCancel(addRemote) || !addRemote) {
-            log.info("Skipping push.");
-            return;
-          }
-
-          const remoteUrl = await text({
-            message: "Enter the remote repository URL:",
-            placeholder: "git@github.com:user/repo.git",
-            validate: (value) => {
-              if (!value) return "URL is required";
-            },
-          });
-
-          if (isCancel(remoteUrl)) {
-            outro("Aborted.");
-            process.exit(1);
-          }
-
-          const s2 = spinner();
-          s2.start("Adding remote and pushing...");
-          try {
-            await $`git remote add origin ${remoteUrl}`;
-            await $`git push -u origin HEAD`;
-            s2.stop("Remote added and pushed successfully");
-          } catch (e) {
-            s2.stop("Failed to push to new remote");
-            console.error(e);
-          }
-        } else {
-          // Some other error
-          console.error(pc.red("Error pushing changes:"));
-          console.error(error); // Bun's ShellError prints nicely
-        }
-      }
-    }
-
-    if (options.push) {
-      await safePush();
-    } else if (!options.yes) {
-      const shouldPush = await confirm({
-        message: "Do you want to git push?",
-        initialValue: false,
-      });
-
-      if (shouldPush && !isCancel(shouldPush)) {
-        await safePush();
-      }
-    }
-
-    outro("All done!");
+    outro("Done!");
   });
 
 cli.help();
 
-try {
-  // Parse AI_GIT_OPTS
-  const envOpts = process.env.AI_GIT_OPTS
-    ? parseShellArgs(process.env.AI_GIT_OPTS)
-    : [];
-  const args = [
-    ...process.argv.slice(0, 2),
-    ...envOpts,
-    ...process.argv.slice(2),
-  ];
+// ==============================================================================
+// CLI ENTRY POINT
+// ==============================================================================
 
-  const parsed = cli.parse(args, { run: false });
+try {
+  const parsed = cli.parse(process.argv, { run: false });
+
   if (parsed.options.version) {
     console.log(VERSION);
     process.exit(0);

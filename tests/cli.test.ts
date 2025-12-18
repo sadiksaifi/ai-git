@@ -5,8 +5,47 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 
 const CLI_PATH = path.resolve(__dirname, "../src/index.ts");
+const CONFIG_DIR = path.join(os.homedir(), ".config", "ai-git");
+const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
+
+// Test configuration to bypass setup wizard
+const TEST_CONFIG = {
+  mode: "cli",
+  provider: "claude",
+  model: "haiku",
+};
 
 describe("ai-git CLI", () => {
+  let originalConfig: string | null = null;
+
+  // Save original config and set up test config
+  beforeAll(async () => {
+    // Save original config if it exists
+    try {
+      originalConfig = fs.readFileSync(CONFIG_FILE, "utf-8");
+    } catch {
+      originalConfig = null;
+    }
+
+    // Create test config to bypass setup wizard
+    fs.mkdirSync(CONFIG_DIR, { recursive: true });
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(TEST_CONFIG, null, 2));
+  });
+
+  // Restore original config after tests
+  afterAll(() => {
+    if (originalConfig !== null) {
+      fs.writeFileSync(CONFIG_FILE, originalConfig);
+    } else {
+      // Remove test config if there was no original
+      try {
+        fs.unlinkSync(CONFIG_FILE);
+      } catch {
+        // Ignore if file doesn't exist
+      }
+    }
+  });
+
   it("should print help with --help flag", async () => {
     const proc = spawn(["bun", "run", CLI_PATH, "--help"], {
       stdout: "pipe",
@@ -67,7 +106,7 @@ describe("ai-git CLI", () => {
 
     expect(stdout).toContain("Dry Run: Full Prompt");
     expect(stdout).toContain(
-      'Role: Expert Developer (Conventional Commits v1.0.0)'
+      'Role: Expert Developer & Git Commit Specialist (Conventional Commits v1.0.0)'
     );
     expect(proc.exitCode).toBe(0);
   });
