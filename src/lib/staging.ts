@@ -110,11 +110,11 @@ export async function handleStaging(
         options: [
           { value: "all", label: "Stage All (git add -A)" },
           { value: "select", label: "Select Files" },
-          { value: "quit", label: "Quit" },
+          { value: "cancel", label: "Cancel" },
         ],
       });
 
-      if (isCancel(action) || action === "quit") {
+      if (isCancel(action) || action === "cancel") {
         return { stagedFiles: [], aborted: true };
       }
 

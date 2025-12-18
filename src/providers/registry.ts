@@ -1,0 +1,107 @@
+import type { ProviderDefinition, ModelDefinition, Mode } from "../types.ts";
+
+// ==============================================================================
+// PROVIDER REGISTRY
+// ==============================================================================
+
+/**
+ * Supported AI providers and their available models.
+ * Add new providers here to extend support.
+ */
+export const PROVIDERS: ProviderDefinition[] = [
+  {
+    id: "claude",
+    name: "Claude Code",
+    mode: "cli",
+    binary: "claude",
+    isDefault: true,
+    models: [
+      { id: "haiku", name: "Claude Haiku", isDefault: true },
+      { id: "sonnet", name: "Claude Sonnet" },
+      { id: "opus", name: "Claude Opus" },
+    ],
+  },
+  {
+    id: "gemini",
+    name: "Gemini CLI",
+    mode: "cli",
+    binary: "gemini",
+    models: [
+      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", isDefault: true },
+      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
+      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" },
+    ],
+  },
+  // Future CLI providers:
+  // {
+  //   id: "codex",
+  //   name: "OpenAI Codex",
+  //   mode: "cli",
+  //   binary: "codex",
+  //   models: [
+  //     { id: "codex-mini", name: "Codex Mini", isDefault: true },
+  //   ],
+  // },
+  //
+  // Future API providers:
+  // {
+  //   id: "openrouter",
+  //   name: "OpenRouter",
+  //   mode: "api",
+  //   models: [
+  //     { id: "anthropic/claude-3-opus", name: "Claude 3 Opus", isDefault: true },
+  //     { id: "openai/gpt-4o", name: "GPT-4o" },
+  //   ],
+  // },
+];
+
+// ==============================================================================
+// HELPER FUNCTIONS
+// ==============================================================================
+
+/**
+ * Find a provider by its ID (e.g., "gemini", "claude").
+ */
+export function getProviderById(id: string): ProviderDefinition | undefined {
+  return PROVIDERS.find((p) => p.id === id);
+}
+
+/**
+ * Find a provider by its binary name (e.g., "gemini", "claude").
+ * Only applicable for CLI mode providers.
+ */
+export function getProviderByBinary(binary: string): ProviderDefinition | undefined {
+  return PROVIDERS.find((p) => p.mode === "cli" && p.binary === binary);
+}
+
+/**
+ * Get all providers for a specific mode.
+ */
+export function getProvidersByMode(mode: Mode): ProviderDefinition[] {
+  return PROVIDERS.filter((p) => p.mode === mode);
+}
+
+/**
+ * Get all available provider IDs.
+ */
+export function getProviderIds(): string[] {
+  return PROVIDERS.map((p) => p.id);
+}
+
+/**
+ * Get all model IDs for a specific provider.
+ */
+export function getModelIds(providerId: string): string[] {
+  const provider = getProviderById(providerId);
+  return provider ? provider.models.map((m) => m.id) : [];
+}
+
+/**
+ * Find a model by ID within a provider.
+ */
+export function getModelById(
+  provider: ProviderDefinition,
+  modelId: string
+): ModelDefinition | undefined {
+  return provider.models.find((m) => m.id === modelId);
+}

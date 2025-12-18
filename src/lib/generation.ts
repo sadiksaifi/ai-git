@@ -8,7 +8,8 @@ import {
 } from "@clack/prompts";
 import pc from "picocolors";
 import { encode } from "@toon-format/toon";
-import { SYSTEM_PROMPT_DATA } from "../prompt.ts";
+import { buildSystemPrompt } from "../prompt.ts";
+import type { PromptCustomization } from "../config.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
 import { getStagedDiff, getBranchName, setBranchName, commit } from "./git.ts";
 import { TEMP_MSG_FILE } from "./utils.ts";
@@ -29,6 +30,8 @@ export interface GenerationContext {
   model: string;
   modelName: string;
   options: GenerationOptions;
+  /** Optional prompt customization from user config */
+  promptCustomization?: PromptCustomization;
 }
 
 export interface GenerationResult {
@@ -44,7 +47,10 @@ export interface GenerationResult {
 export async function runGenerationLoop(
   ctx: GenerationContext
 ): Promise<GenerationResult> {
-  const { adapter, model, modelName, options } = ctx;
+  const { adapter, model, modelName, options, promptCustomization } = ctx;
+
+  // Build the system prompt with any user customizations
+  const systemPrompt = buildSystemPrompt(promptCustomization);
 
   let loop = true;
   let autoRetries = 0;
@@ -116,7 +122,7 @@ export async function runGenerationLoop(
       }
 
       const fullInput = `${encode(
-        SYSTEM_PROMPT_DATA
+        systemPrompt
       )}\n\n${dynamicContext}\n# GIT DIFF OUTPUT\n${diffOutput}`;
 
       // Handle dry run
@@ -129,11 +135,16 @@ export async function runGenerationLoop(
       // Call AI
       let rawMsg = "";
       try {
-        rawMsg = await adapter.invoke({ model, input: fullInput });
+        rawMsg = await adapter.invoke({ model, prompt: fullInput });
         s.stop("Message generated");
       } catch (e) {
         s.stop("Generation failed");
-        console.error(e);
+        console.error("");
+        if (e instanceof Error) {
+          console.error(pc.red(e.message));
+        } else {
+          console.error(pc.red(String(e)));
+        }
         process.exit(1);
       }
 
@@ -193,14 +204,14 @@ export async function runGenerationLoop(
       message: "Action",
       options: [
         { value: "commit", label: "Commit" },
-        { value: "edit", label: "Edit Message" },
-        { value: "edit-ai", label: "Edit with AI" },
-        { value: "retry", label: "Regenerate" },
-        { value: "abort", label: "Abort" },
+        { value: "edit", label: "Edit" },
+        { value: "edit-ai", label: "Refine with AI" },
+        { value: "regenerate", label: "Regenerate" },
+        { value: "cancel", label: "Cancel" },
       ],
     });
 
-    if (isCancel(action) || action === "abort") {
+    if (isCancel(action) || action === "cancel") {
       return { message: "", committed: false, aborted: true };
     }
 
@@ -221,7 +232,7 @@ export async function runGenerationLoop(
       continue;
     }
 
-    if (action === "retry") {
+    if (action === "regenerate") {
       autoRetries = 0;
       generationErrors = [];
       userRefinements = [];

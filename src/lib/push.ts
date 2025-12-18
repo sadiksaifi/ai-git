@@ -48,7 +48,7 @@ export async function safePush(isAutomated: boolean): Promise<void> {
       });
 
       if (isCancel(addRemote) || !addRemote) {
-        log.info("Skipping push.");
+        log.info("Push skipped.");
         return;
       }
 

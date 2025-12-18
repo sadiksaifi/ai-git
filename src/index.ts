@@ -4,13 +4,22 @@ import cac from "cac";
 import pc from "picocolors";
 import packageJson from "../package.json";
 
-import { getDefaultProvider, getDefaultModel, getProviderById, getProviderByBinary } from "./config.ts";
-import { getAdapter, getAdapterByBinary } from "./providers/index.ts";
+import type { Mode } from "./types.ts";
+import {
+  loadUserConfig,
+  isConfigComplete,
+  resolveConfigAsync,
+  getProviderById,
+  getModelById,
+  inferModeFromProvider,
+} from "./config.ts";
+import { getAdapter } from "./providers/index.ts";
 import { parseShellArgs } from "./lib/utils.ts";
 import { checkGitInstalled, checkInsideRepo } from "./lib/git.ts";
 import { handleStaging } from "./lib/staging.ts";
 import { runGenerationLoop } from "./lib/generation.ts";
 import { handlePush } from "./lib/push.ts";
+import { runSetupWizard } from "./lib/setup.ts";
 
 // ==============================================================================
 // METADATA & CONFIG
@@ -19,24 +28,26 @@ import { handlePush } from "./lib/push.ts";
 const cli = cac("ai-git");
 const VERSION = packageJson.version;
 
-// Get defaults from config
-const defaultProvider = getDefaultProvider();
-const defaultModel = getDefaultModel(defaultProvider);
-
 // ==============================================================================
 // CLI OPTIONS INTERFACE
 // ==============================================================================
 
 export interface CLIOptions {
+  // AI configuration
+  mode?: Mode;
+  provider?: string;
+  model?: string;
+
+  // Workflow options
   stageAll: boolean;
   commit: boolean;
   push: boolean;
   yes: boolean;
   hint?: string;
   dryRun: boolean;
-  aiModel: string;
-  aiBinary: string;
-  aiProvider?: string;
+
+  // Meta
+  setup: boolean;
   version: boolean;
   help: boolean;
 }
@@ -47,19 +58,18 @@ export interface CLIOptions {
 
 cli
   .command("", "Generate a commit message using AI")
+  // AI configuration
+  .option("--mode <mode>", "Connection mode: cli or api (auto-detected from provider)")
+  .option("-P, --provider <id>", "AI provider (claude, gemini)")
+  .option("-M, --model <id>", "Model to use (haiku, sonnet, gemini-2.5-flash)")
+  // Workflow options
   .option("-a, --stage-all", "Automatically stage all changes")
   .option("-c, --commit", "Automatically commit (skip editor/confirmation)")
   .option("-p, --push", "Automatically push after commit")
   .option("-y, --yes", "Run fully automated (Stage All + Commit + Push)")
   .option("-H, --hint <text>", "Provide a hint/context to the AI")
   .option("--dry-run", "Print the prompt and diff without calling AI")
-  .option("--ai-model <model>", "AI Model to use", {
-    default: defaultModel.id,
-  })
-  .option("--ai-binary <cmd>", "AI Binary to use", {
-    default: defaultProvider.binary,
-  })
-  .option("--ai-provider <provider>", "AI Provider (gemini, claude, codex)")
+  .option("--setup", "Re-run the setup wizard to reconfigure AI provider")
   .option("-v, --version", "Display version number")
   .action(async (options: CLIOptions) => {
     // Handle -y alias
@@ -69,38 +79,63 @@ cli
       options.push = true;
     }
 
-    // Resolve provider and adapter
-    let adapter = options.aiProvider
-      ? getAdapter(options.aiProvider)
-      : getAdapterByBinary(options.aiBinary);
-
-    // Also get the provider config for model name lookup
-    let providerConfig = options.aiProvider
-      ? getProviderById(options.aiProvider)
-      : getProviderByBinary(options.aiBinary);
-
-    if (!adapter) {
-      // Try to find adapter by provider ID if binary lookup failed
-      const provider = getProviderById(options.aiBinary);
-      if (provider) {
-        adapter = getAdapter(provider.id);
-        providerConfig = provider;
+    // Check if setup is needed (first-run or --setup flag)
+    const existingConfig = await loadUserConfig();
+    if (options.setup || !isConfigComplete(existingConfig)) {
+      // Run setup wizard with CLI flags as defaults
+      await runSetupWizard({
+        mode: options.mode,
+        provider: options.provider,
+        model: options.model,
+      });
+      
+      // If --setup was explicitly requested, exit after setup
+      if (options.setup) {
+        process.exit(0);
       }
     }
 
-    if (!adapter || !providerConfig) {
+    // Resolve configuration (CLI flags > config file > built-in defaults)
+    const resolvedConfig = await resolveConfigAsync({
+      mode: options.mode,
+      provider: options.provider,
+      model: options.model,
+    });
+
+    // Infer mode from provider if not explicitly set
+    const mode = options.mode ?? inferModeFromProvider(resolvedConfig.provider);
+
+    // Get provider definition
+    const providerDef = getProviderById(resolvedConfig.provider);
+    if (!providerDef) {
       console.error(
-        pc.red(
-          `Error: Unknown AI provider or binary '${options.aiProvider || options.aiBinary}'.`
-        )
+        pc.red(`Error: Unknown provider '${resolvedConfig.provider}'.`)
+      );
+      console.error(
+        pc.dim(`Available providers: claude, gemini`)
       );
       process.exit(1);
     }
 
-    // Resolve model and model name
-    const model = options.aiModel;
-    const modelConfig = providerConfig.models.find((m) => m.id === model);
-    const modelName = modelConfig?.name ?? model;
+    // Get adapter for the provider
+    const adapter = getAdapter(providerDef.id, mode);
+    if (!adapter) {
+      console.error(
+        pc.red(`Error: No adapter found for provider '${providerDef.id}' in mode '${mode}'.`)
+      );
+      process.exit(1);
+    }
+
+    // Resolve model (CLI flag overrides config file)
+    const modelId = options.model ?? resolvedConfig.model;
+    const modelDef = getModelById(providerDef, modelId);
+    if (!modelDef) {
+      console.error(pc.red(`Error: Unknown model '${modelId}' for provider '${providerDef.name}'.`));
+      console.error(pc.dim(`Available models: ${providerDef.models.map(m => m.id).join(", ")}`));
+      process.exit(1);
+    }
+    const model = modelDef.id;
+    const modelName = modelDef.name;
 
     console.clear();
     intro(pc.bgCyan(pc.black(` AI Git ${VERSION} `)));
@@ -110,7 +145,17 @@ cli
 
     const isAvailable = await adapter.checkAvailable();
     if (!isAvailable) {
-      console.error(pc.red(`Error: '${adapter.binary}' cli tool not found in PATH.`));
+      if (adapter.mode === "cli" && providerDef.binary) {
+        console.error(pc.red(`Error: '${providerDef.binary}' CLI is not installed.`));
+        console.error("");
+        console.error(`The ${providerDef.name} CLI must be installed to use AI Git.`);
+        console.error("");
+        console.error(pc.dim("To switch to a different provider, run:"));
+        console.error(pc.dim(`  ai-git --setup`));
+      } else {
+        console.error(pc.red(`Error: Provider '${providerDef.id}' is not available.`));
+        console.error(pc.dim(`Check your API key configuration.`));
+      }
       process.exit(1);
     }
 
@@ -123,7 +168,7 @@ cli
     });
 
     if (stagingResult.aborted) {
-      outro("Aborted.");
+      outro("Cancelled.");
       process.exit(1);
     }
 
@@ -144,6 +189,8 @@ cli
         hint: options.hint,
         dryRun: options.dryRun,
       },
+      // Pass prompt customization from config file (if any)
+      promptCustomization: resolvedConfig.prompt,
     });
 
     // Handle dry run (already processed in generation loop)
@@ -153,10 +200,10 @@ cli
 
     if (genResult.aborted) {
       if (genResult.message === "" && !genResult.committed) {
-        // Edit was cleared or user aborted
-        outro(pc.yellow("Message cleared. Aborting."));
+        // Edit was cleared or user cancelled
+        outro(pc.yellow("No message provided. Cancelled."));
       } else {
-        outro("Aborted.");
+        outro("Cancelled.");
       }
       process.exit(1);
     }
@@ -177,7 +224,7 @@ cli
       yes: options.yes,
     });
 
-    outro("All done!");
+    outro("Done!");
   });
 
 cli.help();
