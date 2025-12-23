@@ -60,9 +60,7 @@ export async function runSetupWizard(
     note(
       "API mode is coming soon! We're working on support for:\n" +
         "• OpenRouter\n" +
-        "• OpenAI API\n" +
-        "• Google Vertex AI\n" +
-        "• Anthropic API\n\n" +
+        "• OpenAI API\n\n" +
         "For now, please use CLI mode with an installed AI CLI tool.",
       "Coming Soon"
     );

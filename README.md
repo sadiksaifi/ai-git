@@ -234,8 +234,6 @@ The default prompt is designed to be **best-in-class** and works excellently for
 Future support for API-based providers via Vercel AI SDK:
 - OpenRouter
 - OpenAI
-- Google Vertex AI
-- Anthropic API
 
 ## Contributing
 

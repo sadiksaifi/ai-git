@@ -11,8 +11,6 @@ import type { APIProviderAdapter } from "../types.ts";
  * Future providers will include:
  * - OpenRouter (openrouter.ai)
  * - OpenAI API
- * - Google Vertex AI
- * - Anthropic API
  *
  * Implementation will use Vercel AI SDK for consistent interface.
  */

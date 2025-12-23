@@ -5,7 +5,7 @@
 /**
  * Connection mode - how we communicate with the AI provider.
  * - "cli": Uses installed CLI tools (claude, gemini, codex)
- * - "api": Uses API calls via SDK (OpenAI, OpenRouter, Vertex) - future
+ * - "api": Uses API calls via SDK (OpenAI, OpenRouter) - future
  */
 export type Mode = "cli" | "api";
 

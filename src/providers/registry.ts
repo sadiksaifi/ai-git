@@ -51,8 +51,8 @@ export const PROVIDERS: ProviderDefinition[] = [
   //   name: "OpenRouter",
   //   mode: "api",
   //   models: [
-  //     { id: "anthropic/claude-3-opus", name: "Claude 3 Opus", isDefault: true },
-  //     { id: "openai/gpt-4o", name: "GPT-4o" },
+  //     { id: "openai/gpt-4o", name: "GPT-4o", isDefault: true },
+  //     { id: "google/gemini-pro", name: "Gemini Pro" },
   //   ],
   // },
 ];
