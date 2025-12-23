@@ -33,7 +33,17 @@ export interface ProviderDefinition {
   mode: Mode;
   /** CLI binary name (only for mode: "cli") */
   binary?: string;
-  /** Available models for this provider */
+  /** Environment variable name for API key (only for mode: "api") */
+  envVar?: string;
+  /** Default base URL for the API (only for mode: "api") */
+  defaultBaseUrl?: string;
+  /** Whether this provider supports custom base URLs (only for mode: "api") */
+  supportsCustomBaseUrl?: boolean;
+  /** Whether models are fetched dynamically from an API (e.g., OpenRouter) */
+  dynamicModels?: boolean;
+  /** URL to fetch models from (only if dynamicModels is true) */
+  modelsApiUrl?: string;
+  /** Available models for this provider (empty if dynamicModels is true) */
   models: ModelDefinition[];
   /** Whether this is the default provider */
   isDefault?: boolean;

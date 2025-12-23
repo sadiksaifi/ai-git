@@ -11,19 +11,19 @@
     "mode": {
       "type": "string",
       "enum": ["cli", "api"],
-      "description": "Connection mode. 'cli' uses installed AI CLI tools, 'api' uses API keys (coming soon).",
+      "description": "Connection mode. 'cli' uses installed AI CLI tools (claude, gemini), 'api' uses API keys (OpenRouter, OpenAI, Anthropic, Google).",
       "default": "cli"
     },
     "provider": {
       "type": "string",
-      "enum": ["claude", "gemini"],
+      "enum": ["claude", "gemini", "openrouter", "anthropic", "openai", "google"],
       "description": "AI provider to use for generating commit messages.",
-      "examples": ["claude", "gemini"]
+      "examples": ["claude", "gemini", "openrouter", "anthropic", "openai", "google"]
     },
     "model": {
       "type": "string",
       "description": "Model ID to use for the selected provider.",
-      "examples": ["haiku", "sonnet", "opus", "gemini-3-flash-preview", "gemini-3-pro-preview", "gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-pro"]
+      "examples": ["haiku", "sonnet", "opus", "gpt-4o", "claude-3-5-sonnet-latest", "anthropic/claude-sonnet-4"]
     },
     "defaults": {
       "type": "object",
@@ -83,6 +83,28 @@
         }
       },
       "additionalProperties": false
+    },
+    "api": {
+      "type": "object",
+      "description": "API provider configurations. Note: API keys are stored in OS keychain, NOT in this file.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "baseUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Custom base URL for enterprise/self-hosted endpoints."
+          }
+        },
+        "additionalProperties": false
+      },
+      "examples": [
+        {
+          "openai": {
+            "baseUrl": "https://my-azure-openai.openai.azure.com"
+          }
+        }
+      ]
     }
   },
   "required": ["mode", "provider", "model"],
@@ -114,6 +136,66 @@
           "model": {
             "enum": ["gemini-3-flash-preview", "gemini-3-pro-preview", "gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-pro"],
             "description": "Gemini model to use. 'gemini-3-flash-preview' is recommended for speed."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": { "const": "openrouter" }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "enum": ["anthropic/claude-sonnet-4", "anthropic/claude-3.5-sonnet", "anthropic/claude-3-haiku", "openai/gpt-4o", "openai/gpt-4o-mini", "google/gemini-2.0-flash-001", "google/gemini-2.5-pro-preview", "meta-llama/llama-3.3-70b-instruct", "deepseek/deepseek-chat"],
+            "description": "OpenRouter model to use. Uses provider/model format."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": { "const": "anthropic" }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "enum": ["claude-sonnet-4-20250514", "claude-3-5-sonnet-latest", "claude-3-5-haiku-latest", "claude-3-opus-latest"],
+            "description": "Anthropic Claude model to use."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": { "const": "openai" }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "enum": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "o1", "o1-mini"],
+            "description": "OpenAI model to use."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": { "const": "google" }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "enum": ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-pro", "gemini-1.5-flash"],
+            "description": "Google AI model to use."
           }
         }
       }

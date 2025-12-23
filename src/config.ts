@@ -39,6 +39,15 @@ export interface PromptCustomization {
 }
 
 /**
+ * API provider configuration (for custom endpoints).
+ * Note: API keys are stored in OS keychain, NOT in config file.
+ */
+export interface ApiProviderConfig {
+  /** Custom base URL for enterprise/self-hosted endpoints */
+  baseUrl?: string;
+}
+
+/**
  * User configuration schema for ~/.config/ai-git/config.json
  */
 export interface UserConfig {
@@ -56,6 +65,13 @@ export interface UserConfig {
   };
   /** Prompt customization options */
   prompt?: PromptCustomization;
+  /**
+   * API provider configurations (custom base URLs, etc.)
+   * Note: API keys are NOT stored here - they are in OS keychain.
+   */
+  api?: {
+    [providerId: string]: ApiProviderConfig;
+  };
 }
 
 /**
@@ -71,6 +87,10 @@ export interface ResolvedConfig {
     push: boolean;
   };
   prompt?: PromptCustomization;
+  /** API provider configurations */
+  api?: {
+    [providerId: string]: ApiProviderConfig;
+  };
 }
 
 /**
@@ -82,6 +102,11 @@ export const CONFIG_DIR = path.join(os.homedir(), ".config", "ai-git");
  * Path to the config file.
  */
 export const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
+
+/**
+ * Path to the cache directory.
+ */
+export const CACHE_DIR = path.join(os.homedir(), ".cache", "ai-git");
 
 /**
  * Load user configuration from the config file.
@@ -154,6 +179,12 @@ export function isConfigComplete(config: UserConfig | undefined): boolean {
     return false;
   }
 
+  // Skip model validation for dynamic providers (e.g., OpenRouter)
+  // These providers fetch models at runtime, so any model ID is valid
+  if (provider.dynamicModels) {
+    return true;
+  }
+
   // Validate model exists for this provider
   const modelExists = provider.models.some((m) => m.id === config.model);
   if (!modelExists) {
@@ -185,7 +216,12 @@ export async function resolveConfigAsync(
   const userConfig = await loadUserConfig();
 
   // Config file must exist and be valid (setup wizard ensures this)
-  if (!userConfig || !userConfig.mode || !userConfig.provider || !userConfig.model) {
+  if (
+    !userConfig ||
+    !userConfig.mode ||
+    !userConfig.provider ||
+    !userConfig.model
+  ) {
     throw new Error("Configuration is incomplete. Please run: ai-git --setup");
   }
 
@@ -196,6 +232,7 @@ export async function resolveConfigAsync(
     model: userConfig.model,
     defaults: { ...DEFAULT_WORKFLOW_OPTIONS, ...userConfig.defaults },
     prompt: userConfig.prompt,
+    api: userConfig.api,
   };
 
   // Apply CLI options (highest priority - overrides config file)

@@ -64,12 +64,12 @@ cli
   // AI configuration
   .option(
     "--mode <mode>",
-    "Connection mode: cli or api (auto-detected from provider)",
+    "Connection mode: cli or api (auto-detected from provider)"
   )
   .option("-P, --provider <id>", "AI provider (claude, gemini)")
   .option(
     "-M, --model <id>",
-    "Model to use (haiku, sonnet, gemini-3-flash-preview)",
+    "Model to use (haiku, sonnet, gemini-3-flash-preview)"
   )
   // Workflow options
   .option("-a, --stage-all", "Automatically stage all changes")
@@ -121,7 +121,7 @@ cli
     const providerDef = getProviderById(resolvedConfig.provider);
     if (!providerDef) {
       console.error(
-        pc.red(`Error: Unknown provider '${resolvedConfig.provider}'.`),
+        pc.red(`Error: Unknown provider '${resolvedConfig.provider}'.`)
       );
       console.error(pc.dim(`Available providers: claude, gemini`));
       process.exit(1);
@@ -132,25 +132,33 @@ cli
     if (!adapter) {
       console.error(
         pc.red(
-          `Error: No adapter found for provider '${providerDef.id}' in mode '${mode}'.`,
-        ),
+          `Error: No adapter found for provider '${providerDef.id}' in mode '${mode}'.`
+        )
       );
       process.exit(1);
     }
 
     // Resolve model (CLI flag overrides config file)
     const modelId = options.model ?? resolvedConfig.model;
-    const modelDef = getModelById(providerDef, modelId);
+
+    let modelDef;
+    if (providerDef.dynamicModels) {
+      // Dynamic models (OpenRouter) don't have static definitions
+      modelDef = { id: modelId, name: modelId };
+    } else {
+      modelDef = getModelById(providerDef, modelId);
+    }
+
     if (!modelDef) {
       console.error(
         pc.red(
-          `Error: Unknown model '${modelId}' for provider '${providerDef.name}'.`,
-        ),
+          `Error: Unknown model '${modelId}' for provider '${providerDef.name}'.`
+        )
       );
       console.error(
         pc.dim(
-          `Available models: ${providerDef.models.map((m) => m.id).join(", ")}`,
-        ),
+          `Available models: ${providerDef.models.map((m) => m.id).join(", ")}`
+        )
       );
       process.exit(1);
     }
@@ -172,18 +180,18 @@ cli
     if (!isAvailable) {
       if (adapter.mode === "cli" && providerDef.binary) {
         console.error(
-          pc.red(`Error: '${providerDef.binary}' CLI is not installed.`),
+          pc.red(`Error: '${providerDef.binary}' CLI is not installed.`)
         );
         console.error("");
         console.error(
-          `The ${providerDef.name} CLI must be installed to use AI Git.`,
+          `The ${providerDef.name} CLI must be installed to use AI Git.`
         );
         console.error("");
         console.error(pc.dim("To switch to a different provider, run:"));
         console.error(pc.dim(`  ai-git --setup`));
       } else {
         console.error(
-          pc.red(`Error: Provider '${providerDef.id}' is not available.`),
+          pc.red(`Error: Provider '${providerDef.id}' is not available.`)
         );
         console.error(pc.dim(`Check your API key configuration.`));
       }

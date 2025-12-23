@@ -1,23 +1,29 @@
 import type { APIProviderAdapter } from "../types.ts";
+import { openRouterAdapter } from "./openrouter.ts";
+import { anthropicAdapter } from "./anthropic.ts";
+import { openAIAdapter } from "./openai.ts";
+import { googleAdapter } from "./google.ts";
 
 // ==============================================================================
-// API MODE ADAPTER REGISTRY (FUTURE)
+// API MODE ADAPTER REGISTRY
 // ==============================================================================
 
 /**
  * Registry of all API mode provider adapters.
- * This is a placeholder for future API-based providers.
  *
- * Future providers will include:
- * - OpenRouter (openrouter.ai)
- * - OpenAI API
+ * Supported providers:
+ * - OpenRouter (openrouter.ai) - Access 100+ models via single API key
+ * - Anthropic - Direct access to Claude models
+ * - OpenAI - Direct access to GPT models
+ * - Google AI - Direct access to Gemini models
  *
- * Implementation will use Vercel AI SDK for consistent interface.
+ * All adapters use the Vercel AI SDK for consistent interface.
  */
 const apiAdapters: Map<string, APIProviderAdapter> = new Map([
-  // Future API adapters:
-  // [openRouterAdapter.providerId, openRouterAdapter],
-  // [openAIAdapter.providerId, openAIAdapter],
+  [openRouterAdapter.providerId, openRouterAdapter],
+  [anthropicAdapter.providerId, anthropicAdapter],
+  [openAIAdapter.providerId, openAIAdapter],
+  [googleAdapter.providerId, googleAdapter],
 ]);
 
 /**
@@ -25,7 +31,9 @@ const apiAdapters: Map<string, APIProviderAdapter> = new Map([
  * @param providerId - The provider ID (e.g., "openrouter", "openai")
  * @returns The API adapter or undefined if not found
  */
-export function getAPIAdapter(providerId: string): APIProviderAdapter | undefined {
+export function getAPIAdapter(
+  providerId: string
+): APIProviderAdapter | undefined {
   return apiAdapters.get(providerId);
 }
 
@@ -42,30 +50,3 @@ export function getAPIProviderIds(): string[] {
 export function isAPIModeAvailable(): boolean {
   return apiAdapters.size > 0;
 }
-
-// Future example adapter structure:
-//
-// import { generateText } from "ai";
-// import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-//
-// export const openRouterAdapter: APIProviderAdapter = {
-//   providerId: "openrouter",
-//   mode: "api",
-//
-//   async invoke({ model, prompt }): Promise<string> {
-//     const openrouter = createOpenRouter({
-//       apiKey: process.env.OPENROUTER_API_KEY,
-//     });
-//
-//     const { text } = await generateText({
-//       model: openrouter(model),
-//       prompt,
-//     });
-//
-//     return text;
-//   },
-//
-//   async checkAvailable(): Promise<boolean> {
-//     return !!process.env.OPENROUTER_API_KEY;
-//   },
-// };
