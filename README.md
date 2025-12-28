@@ -85,6 +85,18 @@ To re-run setup at any time (e.g., to switch providers), use the `--setup` flag:
 ai-git --setup
 ```
 
+### Project Setup
+
+To configure AI Git for a specific project (e.g., to enforce a specific model or prompt style for your team), run:
+
+```bash
+ai-git --init
+```
+
+This command will guide you through creating a `.ai-git.json` file in your project root. You can:
+- Copy your existing global settings.
+- Run the wizard to configure fresh settings for this project.
+
 ## Features
 
 - 🤖 **AI-Powered**: Uses AI to analyze diffs and understand the *intent* of your changes.
@@ -116,6 +128,7 @@ ai-git --setup
 | `-H`, `--hint <text>` | Provide a hint or extra context to the AI (e.g., "Fixed the login bug"). |
 | `--dry-run` | Print the full system prompt and diff to stdout without calling the AI. |
 | `--setup` | Re-run the setup wizard to reconfigure your AI provider. |
+| `--init` | Initialize a project-level configuration file (`.ai-git.json`). |
 
 ### Examples
 
@@ -133,9 +146,26 @@ ai-git -P gemini -M gemini-3-flash-preview
 ai-git -y -H "Refactored authentication module"
 ```
 
-### Configuration File
+### Configuration
 
-Your configuration is stored at `~/.config/ai-git/config.json` (created by the setup wizard):
+AI Git supports both **global** and **project-level** configuration.
+
+#### Global Config
+Stored at `~/.config/ai-git/config.json`. This is your default configuration across all projects.
+- Created automatically during the first-run setup.
+- Reconfigure anytime with `ai-git --setup`.
+
+#### Project Config
+Stored at `.ai-git.json` in your project root. This overrides global settings for specific repositories.
+- Ideal for sharing team standards (e.g., custom prompts, models).
+- Initialize with `ai-git --init`.
+
+**Priority Order:**
+1.  CLI flags (highest priority)
+2.  Project config (`.ai-git.json`)
+3.  Global config (`~/.config/ai-git/config.json`)
+
+#### Example Config Structure
 
 ```json
 {
@@ -152,10 +182,6 @@ Your configuration is stored at `~/.config/ai-git/config.json` (created by the s
 ```
 
 > **Tip**: Add the `$schema` property to get autocomplete and validation in your editor (VS Code, Cursor, etc.).
-
-**Priority order:**
-1. CLI flags (highest priority)
-2. Config file (set via setup wizard)
 
 ### Prompt Customization (Optional)
 
