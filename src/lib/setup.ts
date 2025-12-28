@@ -2,7 +2,13 @@ import { intro, outro, select, note, isCancel, log } from "@clack/prompts";
 import pc from "picocolors";
 import { PROVIDERS, getProviderById } from "../providers/registry.ts";
 import { getAdapter } from "../providers/index.ts";
-import { saveUserConfig, CONFIG_FILE, type UserConfig } from "../config.ts";
+import {
+  saveUserConfig,
+  saveProjectConfig,
+  CONFIG_FILE,
+  getProjectConfigPath,
+  type UserConfig,
+} from "../config.ts";
 import type { Mode } from "../types.ts";
 
 // ==============================================================================
@@ -15,19 +21,24 @@ import type { Mode } from "../types.ts";
  * Will not save config if the selected provider's CLI is not installed.
  *
  * @param defaults - Optional default values (e.g., from CLI flags)
+ * @param target - Where to save the configuration ("global" or "project")
  * @returns The saved configuration
  */
 export async function runSetupWizard(
-  defaults?: Partial<UserConfig>
+  defaults?: Partial<UserConfig>,
+  target: "global" | "project" = "global"
 ): Promise<UserConfig> {
   console.clear();
   // intro(pc.bgCyan(pc.black(" AI Git Setup ")));
 
+  const configFile = target === "global" ? CONFIG_FILE : await getProjectConfigPath();
+  const configType = target === "global" ? "Global" : "Project";
+
   note(
-    "Let's configure your AI Git.\n" +
+    `Let's configure your ${configType} AI Git settings.\n` +
       "This setup will only run once. Your settings will be saved to:\n" +
-      pc.dim(CONFIG_FILE),
-    pc.bgCyan(pc.black(" Welcome to AI Git! ")),
+      pc.dim(configFile),
+    pc.bgCyan(pc.black(` Welcome to AI Git (${configType} Setup) `)),
   );
 
   // Step 1: Select Mode
@@ -142,7 +153,11 @@ export async function runSetupWizard(
     model,
   };
 
-  await saveUserConfig(config);
+  if (target === "global") {
+    await saveUserConfig(config);
+  } else {
+    await saveProjectConfig(config);
+  }
 
   note(
     `Mode: ${pc.cyan("cli")}\n` +
@@ -150,7 +165,7 @@ export async function runSetupWizard(
       `Model: ${pc.cyan(
         providerDef.models.find((m) => m.id === model)?.name ?? model
       )}`,
-    "Configuration Saved"
+    `${configType} Configuration Saved`
   );
 
   outro(pc.green("Setup complete! Run ai-git to generate your first commit."));

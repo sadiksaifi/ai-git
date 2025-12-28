@@ -2,6 +2,7 @@ import * as path from "node:path";
 import * as os from "node:os";
 import type { Mode } from "./types.ts";
 import { getProviderById } from "./providers/registry.ts";
+import { getRepoRoot } from "./lib/git.ts";
 
 // ==============================================================================
 // CONFIG FILE MANAGEMENT
@@ -84,12 +85,41 @@ export const CONFIG_DIR = path.join(os.homedir(), ".config", "ai-git");
 export const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
 
 /**
+ * Get the path to the project config file (.ai-git.json).
+ * Looks for it in the git repo root, or current directory if not in a repo.
+ */
+export async function getProjectConfigPath(): Promise<string> {
+  const repoRoot = await getRepoRoot();
+  return path.join(repoRoot || process.cwd(), ".ai-git.json");
+}
+
+/**
  * Load user configuration from the config file.
  * Returns undefined if the file doesn't exist or is invalid.
  */
 export async function loadUserConfig(): Promise<UserConfig | undefined> {
   try {
     const file = Bun.file(CONFIG_FILE);
+    const exists = await file.exists();
+    if (!exists) {
+      return undefined;
+    }
+    const content = await file.text();
+    return JSON.parse(content) as UserConfig;
+  } catch {
+    // Config file doesn't exist or is invalid JSON
+    return undefined;
+  }
+}
+
+/**
+ * Load project configuration from the project config file.
+ * Returns undefined if the file doesn't exist or is invalid.
+ */
+export async function loadProjectConfig(): Promise<UserConfig | undefined> {
+  try {
+    const configPath = await getProjectConfigPath();
+    const file = Bun.file(configPath);
     const exists = await file.exists();
     if (!exists) {
       return undefined;
@@ -124,6 +154,21 @@ export async function saveUserConfig(config: UserConfig): Promise<void> {
   };
 
   await Bun.write(CONFIG_FILE, JSON.stringify(configWithSchema, null, 2));
+}
+
+/**
+ * Save project configuration to the project config file.
+ * Includes $schema for editor autocomplete/validation support.
+ */
+export async function saveProjectConfig(config: UserConfig): Promise<void> {
+  // Add $schema at the top for editor support
+  const configWithSchema = {
+    $schema: CONFIG_SCHEMA_URL,
+    ...config,
+  };
+
+  const configPath = await getProjectConfigPath();
+  await Bun.write(configPath, JSON.stringify(configWithSchema, null, 2));
 }
 
 /**
@@ -174,7 +219,7 @@ const DEFAULT_WORKFLOW_OPTIONS = {
 
 /**
  * Resolve configuration by merging CLI options with user config.
- * Priority: CLI flags > User config file
+ * Priority: CLI flags > Project config file > User config file
  *
  * Note: This function assumes the setup wizard has already run,
  * so the config file contains valid mode, provider, and model values.
@@ -183,19 +228,38 @@ export async function resolveConfigAsync(
   cliOptions: Partial<ResolvedConfig>
 ): Promise<ResolvedConfig> {
   const userConfig = await loadUserConfig();
+  const projectConfig = await loadProjectConfig();
 
   // Config file must exist and be valid (setup wizard ensures this)
-  if (!userConfig || !userConfig.mode || !userConfig.provider || !userConfig.model) {
+  // We check userConfig primarily, but if projectConfig exists and is complete, that's fine too.
+  // However, usually we expect at least a user config to exist after setup.
+  if ((!userConfig || !isConfigComplete(userConfig)) && (!projectConfig || !isConfigComplete(projectConfig))) {
     throw new Error("Configuration is incomplete. Please run: ai-git --setup");
   }
 
-  // Start with config file values (required)
+  // Base config is user config, or empty if not present (but one of them must be present per above check)
+  const baseConfig = userConfig || {} as UserConfig;
+  
+  // Merge project config on top of user config
+  const mergedConfig = {
+    ...baseConfig,
+    ...projectConfig,
+    defaults: { ...baseConfig.defaults, ...projectConfig?.defaults },
+    prompt: { ...baseConfig.prompt, ...projectConfig?.prompt },
+  };
+
+  // Ensure we have the required fields from either config
+  // (We validated at least one is complete above, but we need to ensure the merged result has values)
+  // If userConfig was incomplete but projectConfig was complete, this works.
+  // If userConfig was complete, we have values.
+  
+  // Fallbacks are just for safety, the check above ensures we should have them.
   const resolved: ResolvedConfig = {
-    mode: userConfig.mode,
-    provider: userConfig.provider,
-    model: userConfig.model,
-    defaults: { ...DEFAULT_WORKFLOW_OPTIONS, ...userConfig.defaults },
-    prompt: userConfig.prompt,
+    mode: mergedConfig.mode ?? baseConfig.mode!,
+    provider: mergedConfig.provider ?? baseConfig.provider!,
+    model: mergedConfig.model ?? baseConfig.model!,
+    defaults: { ...DEFAULT_WORKFLOW_OPTIONS, ...mergedConfig.defaults },
+    prompt: mergedConfig.prompt,
   };
 
   // Apply CLI options (highest priority - overrides config file)

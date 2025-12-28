@@ -33,6 +33,19 @@ export async function checkInsideRepo(): Promise<void> {
 }
 
 /**
+ * Get the root directory of the git repository.
+ * Returns null if not in a git repository.
+ */
+export async function getRepoRoot(): Promise<string | null> {
+  try {
+    const root = await $`git rev-parse --show-toplevel`.text();
+    return root.trim();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Get the list of currently staged files.
  */
 export async function getStagedFiles(): Promise<string[]> {
