@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { intro, outro } from "@clack/prompts";
+import { intro, outro, confirm, select, isCancel } from "@clack/prompts";
 import cac from "cac";
 import pc from "picocolors";
 import packageJson from "../package.json";
@@ -7,6 +7,8 @@ import packageJson from "../package.json";
 import type { Mode } from "./types.ts";
 import {
   loadUserConfig,
+  loadProjectConfig,
+  saveProjectConfig,
   isConfigComplete,
   resolveConfigAsync,
   getProviderById,
@@ -51,6 +53,7 @@ export interface CLIOptions {
 
   // Meta
   setup: boolean;
+  init: boolean;
   version: boolean;
   help: boolean;
 }
@@ -79,10 +82,76 @@ cli
   .option("-H, --hint <text>", "Provide a hint/context to the AI")
   .option("--dry-run", "Print the prompt and diff without calling AI")
   .option("--setup", "Re-run the setup wizard to reconfigure AI provider")
+  .option("--init", "Initialize project-level configuration")
   .option("-v, --version", "Display version number")
   .action(async (options: CLIOptions) => {
     // Start update check immediately (non-blocking)
     const updateCheckPromise = startUpdateCheck(VERSION);
+
+    // Handle --init
+    if (options.init) {
+      console.clear();
+      intro(pc.bgCyan(pc.black(` AI Git ${VERSION} - Project Init `)));
+
+      const existingProjectConfig = await loadProjectConfig();
+      if (existingProjectConfig) {
+        const overwrite = await confirm({
+          message: "Project configuration already exists. Overwrite?",
+        });
+        if (isCancel(overwrite) || !overwrite) {
+          outro("Cancelled.");
+          process.exit(0);
+        }
+      }
+
+      const existingGlobalConfig = await loadUserConfig();
+
+      if (existingGlobalConfig && isConfigComplete(existingGlobalConfig)) {
+        const initAction = await select({
+          message: "How would you like to initialize the project config?",
+          options: [
+            {
+              value: "dump",
+              label: "Copy from global config",
+              hint: "Use your existing global settings",
+            },
+            {
+              value: "wizard",
+              label: "Run setup wizard",
+              hint: "Configure specifically for this project",
+            },
+          ],
+        });
+
+        if (isCancel(initAction)) {
+          outro("Cancelled.");
+          process.exit(1);
+        }
+
+        if (initAction === "dump") {
+          await saveProjectConfig(existingGlobalConfig);
+          outro(
+            pc.green("Project configuration created from global settings."),
+          );
+        } else {
+          await runSetupWizard(undefined, "project");
+        }
+      } else {
+        // No global config, force wizard
+        const proceed = await confirm({
+          message:
+            "No global configuration found. Proceed to setup project configuration?",
+        });
+
+        if (isCancel(proceed) || !proceed) {
+          outro("Cancelled.");
+          process.exit(0);
+        }
+
+        await runSetupWizard(undefined, "project");
+      }
+      process.exit(0);
+    }
 
     // Handle -y alias
     if (options.yes) {
@@ -93,8 +162,20 @@ cli
 
     // Check if setup is needed (first-run or --setup flag)
     const existingConfig = await loadUserConfig();
-    if (options.setup || !isConfigComplete(existingConfig)) {
+    const existingProjectConfig = await loadProjectConfig();
+    
+    // We only force setup if NEITHER config exists/is complete
+    const isGlobalComplete = isConfigComplete(existingConfig);
+    const isProjectComplete = isConfigComplete(existingProjectConfig);
+
+    if (options.setup || (!isGlobalComplete && !isProjectComplete)) {
       // Run setup wizard with CLI flags as defaults
+      // If running setup because no config exists, default to global unless specified?
+      // Actually, --setup usually implies global setup in this context unless we want to change that.
+      // But since we just added --init, --setup should probably remain global or we prompt?
+      // The original behavior was global. Let's keep it global for --setup to avoid confusion.
+      // If the user wants project setup, they should use --init.
+      
       await runSetupWizard({
         mode: options.mode,
         provider: options.provider,
