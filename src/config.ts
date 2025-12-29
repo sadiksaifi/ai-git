@@ -57,6 +57,8 @@ export interface UserConfig {
   };
   /** Prompt customization options */
   prompt?: PromptCustomization;
+  /** Preferred editor command */
+  editor?: string;
 }
 
 /**
@@ -72,6 +74,7 @@ export interface ResolvedConfig {
     push: boolean;
   };
   prompt?: PromptCustomization;
+  editor?: string;
 }
 
 /**
@@ -260,6 +263,7 @@ export async function resolveConfigAsync(
     model: mergedConfig.model ?? baseConfig.model!,
     defaults: { ...DEFAULT_WORKFLOW_OPTIONS, ...mergedConfig.defaults },
     prompt: mergedConfig.prompt,
+    editor: mergedConfig.editor,
   };
 
   // Apply CLI options (highest priority - overrides config file)

@@ -32,6 +32,8 @@ export interface GenerationContext {
   options: GenerationOptions;
   /** Optional prompt customization from user config */
   promptCustomization?: PromptCustomization;
+  /** Preferred editor from config */
+  editor?: string;
 }
 
 export interface GenerationResult {
@@ -254,7 +256,21 @@ export async function runGenerationLoop(
     if (action === "edit") {
       // Edit Flow - opens editor and returns to menu (fixes Issue #5)
       await Bun.write(TEMP_MSG_FILE, cleanMsg);
-      const editor = process.env.EDITOR || "vim";
+      
+      const candidates = [ctx.editor, process.env.EDITOR, "nvim", "vim", "nano", "vi"].filter((e): e is string => !!e);
+      let editor: string | null = null;
+
+      for (const candidate of candidates) {
+        if (await Bun.which(candidate)) {
+          editor = candidate;
+          break;
+        }
+      }
+
+      if (!editor) {
+        console.error(pc.red("Error: No suitable editor found. Please set $EDITOR or install nvim/vim/nano/vi."));
+        continue;
+      }
 
       const editProc = Bun.spawn([editor, TEMP_MSG_FILE], {
         stdin: "inherit",

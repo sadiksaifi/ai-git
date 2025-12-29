@@ -30,7 +30,7 @@ Tests are written using **Bun's native test runner** (`bun:test`).
 We test the CLI by spawning it as a subprocess.
 
 - **Command:** `bun test`
-- **File:** `tests/integration.test.ts`
+- **File:** `tests/cli.test.ts`
 
 ### The "Fake AI" Mechanism
 To test the AI logic deterministically without network calls or API costs, we use a mock script:
