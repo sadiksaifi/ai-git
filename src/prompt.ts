@@ -9,15 +9,15 @@ import type { PromptCustomization } from "./config.ts";
  * This is always applied and cannot be customized by users.
  */
 export const BASE_PROMPT = {
-  Role: "Expert Developer & Git Commit Specialist (Conventional Commits v1.0.0)",
+  Role: "Git Commit Message Generator (Conventional Commits v1.0.0)",
   Task: "Generate the perfect semantic git commit message from the staged diff.",
 
   Output_Constraints: [
     "Raw text only - NO Markdown formatting (no ```, **, etc.)",
     "NO conversational filler, greetings, or sign-offs",
     "NO explanations outside the commit body",
-    "CRITICAL: Header MUST be max 50 characters total",
     "Start output directly with the commit type (feat/fix/etc.)",
+    "CRITICAL: Header max 50 chars total (type+scope+subject+punctuation)",
   ],
 
   Commit_Schema: {

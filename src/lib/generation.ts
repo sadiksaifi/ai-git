@@ -120,7 +120,7 @@ export async function runGenerationLoop(
         dynamicContext += `# PREVIOUS GENERATED MESSAGE\n${lastGeneratedMessage}\n\n`;
         dynamicContext += `# USER REFINEMENT INSTRUCTIONS\n${userRefinements.join(
           "\n"
-        )}\n\nIMPORTANT: You must still strictly adhere to the Conventional Commits schema and the 72-character header limit. If the user asks for a longer header, ignore that part of the request and keep it under 72 characters.\n\n`;
+        )}\n\nIMPORTANT: You must still strictly adhere to the Conventional Commits schema and the 50-character header limit. If the user asks for a longer header, ignore that part of the request and keep it under 50 characters.\n\n`;
       }
 
       const fullInput = `${encode(
