@@ -112,7 +112,7 @@ export async function runGenerationLoop(
       if (generationErrors.length > 0) {
         dynamicContext += `# PREVIOUS FAILED ATTEMPTS ERRORS\n${generationErrors.join(
           "\n"
-        )}\nFIX THIS ERROR IN NEXT GENERATION.\n\n`;
+        )}\n\nYOU MUST FIX THIS. Shorten the header by:\n- Use shorter scope (auth not authentication)\n- Use shorter verbs (add not implement)\n- Move details to body\n- Drop unnecessary words\n\n`;
       }
 
       // Inject refinements if available
