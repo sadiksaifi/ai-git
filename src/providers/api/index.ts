@@ -1,25 +1,29 @@
 import type { APIProviderAdapter } from "../types.ts";
+import { openRouterAdapter } from "./openrouter.ts";
+import { openAIAdapter } from "./openai.ts";
+import { anthropicAdapter } from "./anthropic.ts";
+import { geminiApiAdapter } from "./gemini-api.ts";
 
 // ==============================================================================
-// API MODE ADAPTER REGISTRY (FUTURE)
+// API MODE ADAPTER REGISTRY
 // ==============================================================================
 
 /**
  * Registry of all API mode provider adapters.
- * This is a placeholder for future API-based providers.
  *
- * Future providers will include:
- * - OpenRouter (openrouter.ai)
- * - OpenAI API
- * - Google Vertex AI
- * - Anthropic API
+ * Supported providers:
+ * - OpenRouter (openrouter.ai) - Access to multiple AI providers
+ * - OpenAI API - GPT-4o, GPT-4, etc.
+ * - Anthropic API - Claude models
+ * - Google Gemini API - Gemini models
  *
- * Implementation will use Vercel AI SDK for consistent interface.
+ * All adapters use Vercel AI SDK for consistent interface.
  */
 const apiAdapters: Map<string, APIProviderAdapter> = new Map([
-  // Future API adapters:
-  // [openRouterAdapter.providerId, openRouterAdapter],
-  // [openAIAdapter.providerId, openAIAdapter],
+  [openRouterAdapter.providerId, openRouterAdapter],
+  [openAIAdapter.providerId, openAIAdapter],
+  [anthropicAdapter.providerId, anthropicAdapter],
+  [geminiApiAdapter.providerId, geminiApiAdapter],
 ]);
 
 /**
@@ -39,35 +43,21 @@ export function getAPIProviderIds(): string[] {
 }
 
 /**
- * Check if API mode is available (has at least one configured provider).
+ * Check if API mode is available (has at least one registered adapter).
  */
 export function isAPIModeAvailable(): boolean {
   return apiAdapters.size > 0;
 }
 
-// Future example adapter structure:
-//
-// import { generateText } from "ai";
-// import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-//
-// export const openRouterAdapter: APIProviderAdapter = {
-//   providerId: "openrouter",
-//   mode: "api",
-//
-//   async invoke({ model, prompt }): Promise<string> {
-//     const openrouter = createOpenRouter({
-//       apiKey: process.env.OPENROUTER_API_KEY,
-//     });
-//
-//     const { text } = await generateText({
-//       model: openrouter(model),
-//       prompt,
-//     });
-//
-//     return text;
-//   },
-//
-//   async checkAvailable(): Promise<boolean> {
-//     return !!process.env.OPENROUTER_API_KEY;
-//   },
-// };
+/**
+ * Get all registered API adapters.
+ */
+export function getAllAPIAdapters(): APIProviderAdapter[] {
+  return Array.from(apiAdapters.values());
+}
+
+// Re-export adapters for direct access
+export { openRouterAdapter } from "./openrouter.ts";
+export { openAIAdapter } from "./openai.ts";
+export { anthropicAdapter } from "./anthropic.ts";
+export { geminiApiAdapter } from "./gemini-api.ts";

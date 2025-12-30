@@ -52,10 +52,29 @@ export interface CLIProviderAdapter extends ProviderAdapter {
 }
 
 /**
- * API-specific adapter interface (for future use).
+ * Model definition returned from API providers.
+ */
+export interface APIModelDefinition {
+  /** Full model ID */
+  id: string;
+  /** Human-readable display name */
+  name: string;
+  /** For OpenRouter: the original provider (anthropic, openai, google) */
+  provider?: string;
+}
+
+/**
+ * API-specific adapter interface.
  */
 export interface APIProviderAdapter extends ProviderAdapter {
   mode: "api";
   /** Base URL for the API (optional, uses default if not specified) */
   baseUrl?: string;
+
+  /**
+   * Fetch available models from the API.
+   * @param apiKey - Optional API key to use (for validation during setup)
+   * @returns List of available models
+   */
+  fetchModels(apiKey?: string): Promise<APIModelDefinition[]>;
 }

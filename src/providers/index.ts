@@ -1,7 +1,7 @@
 import type { Mode } from "../types.ts";
 import type { ProviderAdapter } from "./types.ts";
 import { getCLIAdapter, getCLIAdapterByBinary } from "./cli/index.ts";
-// Future: import { getAPIAdapter } from "./api/index.ts";
+import { getAPIAdapter } from "./api/index.ts";
 
 // ==============================================================================
 // UNIFIED PROVIDER ADAPTER REGISTRY
@@ -11,7 +11,7 @@ import { getCLIAdapter, getCLIAdapterByBinary } from "./cli/index.ts";
  * Get a provider adapter by provider ID.
  * Automatically routes to the correct mode-specific registry.
  *
- * @param providerId - The provider ID (e.g., "gemini", "claude")
+ * @param providerId - The provider ID (e.g., "gemini", "claude", "openrouter")
  * @param mode - Optional mode hint (if not provided, searches all modes)
  * @returns The provider adapter or undefined if not found
  */
@@ -24,21 +24,20 @@ export function getAdapter(
     return getCLIAdapter(providerId);
   }
   if (mode === "api") {
-    // Future: return getAPIAdapter(providerId);
-    return undefined;
+    return getAPIAdapter(providerId);
   }
 
-  // No mode specified - search CLI first (current default)
+  // No mode specified - search CLI first, then API
   const cliAdapter = getCLIAdapter(providerId);
   if (cliAdapter) {
     return cliAdapter;
   }
 
-  // Future: search API adapters
-  // const apiAdapter = getAPIAdapter(providerId);
-  // if (apiAdapter) {
-  //   return apiAdapter;
-  // }
+  // Search API adapters
+  const apiAdapter = getAPIAdapter(providerId);
+  if (apiAdapter) {
+    return apiAdapter;
+  }
 
   return undefined;
 }
@@ -64,9 +63,9 @@ export function getRegisteredProviderIds(): string[] {
   const { getCLIProviderIds } = require("./cli/index.ts");
   ids.push(...getCLIProviderIds());
 
-  // Future: Add API provider IDs
-  // const { getAPIProviderIds } = require("./api/index.ts");
-  // ids.push(...getAPIProviderIds());
+  // Add API provider IDs
+  const { getAPIProviderIds } = require("./api/index.ts");
+  ids.push(...getAPIProviderIds());
 
   return ids;
 }

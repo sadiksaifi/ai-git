@@ -184,7 +184,9 @@ export async function saveProjectConfig(config: UserConfig): Promise<void> {
  * - model set to a valid model ID for that provider
  */
 export function isConfigComplete(config: UserConfig | undefined): boolean {
-  if (!config) return false;
+  if (!config) {
+    return false;
+  }
 
   // Check required fields exist
   if (!config.mode || !config.provider || !config.model) {
@@ -202,7 +204,13 @@ export function isConfigComplete(config: UserConfig | undefined): boolean {
     return false;
   }
 
-  // Validate model exists for this provider
+  // For API providers with dynamic models, skip model validation
+  // (models are fetched at runtime, not stored in the registry)
+  if (provider.dynamicModels) {
+    return true;
+  }
+
+  // Validate model exists for this provider (CLI providers only)
   const modelExists = provider.models.some((m) => m.id === config.model);
   if (!modelExists) {
     return false;
