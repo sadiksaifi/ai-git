@@ -18,7 +18,7 @@ import {
 
 export interface StagingOptions {
   stageAll: boolean;
-  yes: boolean;
+  dangerouslyAutoApprove: boolean;
 }
 
 export interface StagingResult {
@@ -44,7 +44,7 @@ export async function handleStaging(
 
     const unstagedFiles = await getUnstagedFiles();
 
-    if (unstagedFiles.length > 0 && !options.stageAll && !options.yes) {
+    if (unstagedFiles.length > 0 && !options.stageAll && !options.dangerouslyAutoApprove) {
       const action = await select({
         message:
           "You have unstaged changes. Would you like to stage more files?",

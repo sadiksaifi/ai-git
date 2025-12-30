@@ -69,12 +69,12 @@ Options:
   --mode <mode>        Connection mode: cli or api (auto-detected from provider)
   -P, --provider <id>  AI provider (claude, gemini, openrouter, openai, anthropic, gemini-api)
   -M, --model <id>     Model ID (e.g., haiku, gpt-4o-mini, anthropic/claude-3.5-haiku)
-  -a, --stage-all      Automatically stage all changes
-  -c, --commit         Automatically commit (skip editor/confirmation)
-  -p, --push           Automatically push after commit
-  -y, --yes            Run fully automated (Stage All + Commit + Push)
-  -H, --hint <text>    Provide a hint/context to the AI
-  --dry-run            Print the prompt and diff without calling AI
+-a, --stage-all      Automatically stage all changes
+-c, --commit         Automatically commit (skip editor/confirmation)
+-p, --push           Automatically push after commit
+--dangerously-auto-approve  Run fully automated (Stage All + Commit + Push)
+-H, --hint           Provide a hint/context to the AI
+--dry-run            Print the prompt and diff without calling AI
   --setup              Re-run the setup wizard to reconfigure AI provider
   --init               Initialize project-level configuration
   -v, --version        Display version number
@@ -93,8 +93,8 @@ ai-git --provider gemini --model gemini-3-flash-preview
 # API mode with OpenRouter
 ai-git --provider openrouter --model anthropic/claude-3.5-haiku
 
-# Full auto with context hint
-ai-git --yes --hint "Refactored authentication module"
+# Automated (Be careful!)
+ai-git --dangerously-auto-approve --hint "Refactored authentication module"
 
 # Dry run to test prompt generation
 ai-git --dry-run --stage-all

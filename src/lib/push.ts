@@ -8,7 +8,7 @@ import { push, addRemoteAndPush } from "./git.ts";
 
 export interface PushOptions {
   push: boolean;
-  yes: boolean;
+  dangerouslyAutoApprove: boolean;
 }
 
 /**
@@ -88,8 +88,8 @@ export async function safePush(isAutomated: boolean): Promise<void> {
  */
 export async function handlePush(options: PushOptions): Promise<void> {
   if (options.push) {
-    await safePush(options.yes);
-  } else if (!options.yes) {
+    await safePush(options.dangerouslyAutoApprove);
+  } else if (!options.dangerouslyAutoApprove) {
     const shouldPush = await confirm({
       message: "Do you want to git push?",
       initialValue: false,
