@@ -119,6 +119,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "release: update ai-git version ${VERSION}"
+            git commit -m "release: ai-git version ${VERSION}" -m "Release: https://github.com/${{ github.repository }}/releases/tag/${VERSION}"
             git push origin main
           fi
