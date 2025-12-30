@@ -20,7 +20,7 @@ import { TEMP_MSG_FILE } from "./utils.ts";
 
 export interface GenerationOptions {
   commit: boolean;
-  yes: boolean;
+  dangerouslyAutoApprove: boolean;
   hint?: string;
   dryRun: boolean;
 }
@@ -65,7 +65,7 @@ export async function runGenerationLoop(
 
   if (!branchName) {
     // New repo with no commits
-    if (options.yes) {
+    if (options.dangerouslyAutoApprove) {
       branchName = "main";
     } else {
       const newBranch = await text({

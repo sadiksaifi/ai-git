@@ -1,5 +1,14 @@
 #!/usr/bin/env bun
-import { intro, outro, confirm, select, isCancel } from "@clack/prompts";
+import {
+  intro,
+  outro,
+  confirm,
+  select,
+  isCancel,
+  log,
+  spinner,
+} from "@clack/prompts";
+import { setTimeout } from "node:timers/promises";
 import cac from "cac";
 import pc from "picocolors";
 import packageJson from "../package.json";
@@ -55,7 +64,7 @@ export interface CLIOptions {
   stageAll: boolean;
   commit: boolean;
   push: boolean;
-  yes: boolean;
+  dangerouslyAutoApprove: boolean;
   hint?: string;
   dryRun: boolean;
 
@@ -77,7 +86,10 @@ cli
     "--mode <mode>",
     "Connection mode: cli or api (auto-detected from provider)",
   )
-  .option("-P, --provider <id>", "AI provider (claude, gemini, openrouter, openai, anthropic, gemini-api)")
+  .option(
+    "-P, --provider <id>",
+    "AI provider (claude, gemini, openrouter, openai, anthropic, gemini-api)",
+  )
   .option(
     "-M, --model <id>",
     "Model ID (e.g., haiku, gpt-4o-mini, anthropic/claude-3.5-haiku)",
@@ -86,8 +98,11 @@ cli
   .option("-a, --stage-all", "Automatically stage all changes")
   .option("-c, --commit", "Automatically commit (skip editor/confirmation)")
   .option("-p, --push", "Automatically push after commit")
-  .option("-y, --yes", "Run fully automated (Stage All + Commit + Push)")
   .option("-H, --hint <text>", "Provide a hint/context to the AI")
+  .option(
+    "--dangerously-auto-approve",
+    "Run fully automated (Stage All + Commit + Push)",
+  )
   .option("--dry-run", "Print the prompt and diff without calling AI")
   .option("--setup", "Re-run the setup wizard to reconfigure AI provider")
   .option("--init", "Initialize project-level configuration")
@@ -161,8 +176,8 @@ cli
       process.exit(0);
     }
 
-    // Handle -y alias
-    if (options.yes) {
+    // Handle --dangerously-auto-approve
+    if (options.dangerouslyAutoApprove) {
       options.stageAll = true;
       options.commit = true;
       options.push = true;
@@ -171,14 +186,15 @@ cli
     // Check if setup is needed (first-run or --setup flag)
     const existingConfig = await loadUserConfig();
     const existingProjectConfig = await loadProjectConfig();
-    
+
     // We only force setup if NEITHER config exists/is complete
     const isGlobalComplete = isConfigComplete(existingConfig);
     const isProjectComplete = isConfigComplete(existingProjectConfig);
 
     if (options.setup || (!isGlobalComplete && !isProjectComplete)) {
       // Determine if this is first-run (full onboarding) or explicit --setup (wizard only)
-      const isFirstRun = !isGlobalComplete && !isProjectComplete && !options.setup;
+      const isFirstRun =
+        !isGlobalComplete && !isProjectComplete && !options.setup;
 
       const onboardingResult = await runOnboarding({
         version: VERSION,
@@ -218,7 +234,9 @@ cli
         pc.red(`Error: Unknown provider '${resolvedConfig.provider}'.`),
       );
       console.error(pc.dim(`CLI providers: claude, gemini`));
-      console.error(pc.dim(`API providers: openrouter, openai, anthropic, gemini-api`));
+      console.error(
+        pc.dim(`API providers: openrouter, openai, anthropic, gemini-api`),
+      );
       process.exit(1);
     }
 
@@ -268,6 +286,60 @@ cli
 
     intro(pc.bgCyan(pc.black(` AI Git ${VERSION} `)));
 
+    if (options.dangerouslyAutoApprove) {
+      log.error(pc.red("You are running in auto-approve mode."));
+
+      const s = spinner();
+      s.start("Proceeding in 5s... (Enter to skip, Ctrl+C to cancel)");
+
+      // Set up keypress detection to allow skipping the countdown
+      let skipped = false;
+      const stdin = process.stdin;
+      const wasRaw = stdin.isRaw;
+
+      // Promise that resolves when Enter is pressed (for immediate response)
+      let onSkip: () => void;
+      const skipPromise = new Promise<void>((resolve) => {
+        onSkip = resolve;
+      });
+
+      const onData = (data: Buffer) => {
+        // Ctrl+C (raw mode doesn't trigger SIGINT)
+        if (data[0] === 3) {
+          cleanup();
+          s.stop("Cancelled.");
+          process.exit(130);
+        }
+        // Enter key (carriage return or newline)
+        if (data[0] === 13 || data[0] === 10) {
+          skipped = true;
+          onSkip();
+        }
+      };
+
+      const cleanup = () => {
+        if (stdin.isTTY) {
+          stdin.off("data", onData);
+          stdin.setRawMode(wasRaw ?? false);
+        }
+      };
+
+      if (stdin.isTTY) {
+        stdin.setRawMode(true);
+        stdin.resume();
+        stdin.on("data", onData);
+      }
+
+      for (let i = 5; i > 0 && !skipped; i--) {
+        s.message(`Proceeding in ${i}s... (Enter to skip, Ctrl+C to cancel)`);
+        // Race between 1s delay and skip - allows immediate response to Enter
+        await Promise.race([setTimeout(1000), skipPromise]);
+      }
+
+      cleanup();
+      s.stop(skipped ? "Skipped. Proceeding now." : "Proceeding now.");
+    }
+
     // Show update notification if available (check should be done by now)
     const updateResult = await updateCheckPromise;
     showUpdateNotification(updateResult);
@@ -302,7 +374,7 @@ cli
     // 1. STAGE MANAGEMENT
     const stagingResult = await handleStaging({
       stageAll: options.stageAll,
-      yes: options.yes,
+      dangerouslyAutoApprove: options.dangerouslyAutoApprove,
     });
 
     if (stagingResult.aborted) {
@@ -323,7 +395,7 @@ cli
       modelName,
       options: {
         commit: options.commit,
-        yes: options.yes,
+        dangerouslyAutoApprove: options.dangerouslyAutoApprove,
         hint: options.hint,
         dryRun: options.dryRun,
       },
@@ -360,7 +432,7 @@ cli
     // 3. PUSH LOGIC
     await handlePush({
       push: options.push,
-      yes: options.yes,
+      dangerouslyAutoApprove: options.dangerouslyAutoApprove,
     });
 
     outro("Done!");

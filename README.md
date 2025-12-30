@@ -72,13 +72,13 @@ Options:
   -a, --stage-all      Automatically stage all changes
   -c, --commit         Automatically commit (skip editor/confirmation)
   -p, --push           Automatically push after commit
-  -y, --yes            Run fully automated (Stage All + Commit + Push)
-  -H, --hint <text>    Provide a hint/context to the AI
+  -H, --hint           Provide a hint/context to the AI
+  -v, --version        Display version number
+  -h, --help           Display this message
+  --dangerously-auto-approve  Run fully automated (Stage All + Commit + Push)
   --dry-run            Print the prompt and diff without calling AI
   --setup              Re-run the setup wizard to reconfigure AI provider
   --init               Initialize project-level configuration
-  -v, --version        Display version number
-  -h, --help           Display this message
 ```
 
 ### Examples
@@ -93,8 +93,8 @@ ai-git --provider gemini --model gemini-3-flash-preview
 # API mode with OpenRouter
 ai-git --provider openrouter --model anthropic/claude-3.5-haiku
 
-# Full auto with context hint
-ai-git --yes --hint "Refactored authentication module"
+# Automated (Be careful!)
+ai-git --dangerously-auto-approve --hint "Refactored authentication module"
 
 # Dry run to test prompt generation
 ai-git --dry-run --stage-all

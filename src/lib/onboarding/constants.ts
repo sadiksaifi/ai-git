@@ -105,7 +105,7 @@ export const QUICK_REFERENCE = {
   commands: [
     { cmd: "ai-git", desc: "Generate a commit message" },
     { cmd: "ai-git -a", desc: "Stage all changes first" },
-    { cmd: "ai-git -y", desc: "Full auto mode (stage, commit, push)" },
+    { cmd: "ai-git --dangerously-auto-approve", desc: "Full auto mode (stage, commit, push)" },
     { cmd: "ai-git --help", desc: "See all options" },
   ],
 } as const;
