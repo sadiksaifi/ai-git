@@ -7,8 +7,9 @@ A CLI tool that leverages AI to automatically generate semantically correct, Con
 ## Prerequisites
 
 1.  **Git**: Must be installed and running inside a git repository.
-2.  **AI CLI**: You need a command-line tool that interfaces with an LLM.
-    *   Supported CLI tools: `claude` (Claude Code CLI), `gemini` (Gemini CLI)
+2.  **AI Provider**: Choose one of the following:
+    *   **CLI Mode**: Install an AI CLI tool (`claude` or `gemini`)
+    *   **API Mode** (macOS only): Use API keys from OpenRouter, OpenAI, Anthropic, or Google Gemini
     *   On first run, you'll be guided through a setup wizard to choose your provider.
 
 ## Installation
@@ -105,7 +106,8 @@ This command will guide you through creating a `.ai-git.json` file in your proje
 - 🎨 **Interactive TUI**: Beautiful prompts for staging files, editing messages, and confirming actions.
 - 🪙 **Token Efficient**: Uses [TOON](https://toonformat.dev/) (Token-Oriented Object Notation) to minimize prompt size and cost.
 - 🛠️ **Flexible**: Supports fully automated workflows (`-y`) or granular control.
-- 🔌 **Multiple Providers**: Support for Claude, Gemini, and more.
+- 🔌 **Multiple Providers**: CLI mode (Claude, Gemini) or API mode (OpenRouter, OpenAI, Anthropic, Gemini).
+- 🔐 **Secure**: API keys stored in macOS Keychain, never in config files.
 
 ### Options & Flags
 
@@ -136,14 +138,20 @@ This command will guide you through creating a `.ai-git.json` file in your proje
 # Use your configured provider and model
 ai-git
 
-# Override provider and model for this run
+# Override provider and model for this run (CLI mode)
 ai-git --provider gemini --model gemini-3-flash-preview
+
+# Use API mode with OpenRouter
+ai-git --provider openrouter --model anthropic/claude-3.5-haiku
 
 # Short form
 ai-git -P gemini -M gemini-3-flash-preview
 
 # Full auto mode with hint
 ai-git -y -H "Refactored authentication module"
+
+# Re-run setup to switch providers or update API key
+ai-git --setup
 ```
 
 ### Configuration
@@ -165,7 +173,7 @@ Stored at `.ai-git.json` in your project root. This overrides global settings fo
 2.  Project config (`.ai-git.json`)
 3.  Global config (`~/.config/ai-git/config.json`)
 
-#### Example Config Structure
+#### Example Config Structure (CLI Mode)
 
 ```json
 {
@@ -181,7 +189,20 @@ Stored at `.ai-git.json` in your project root. This overrides global settings fo
 }
 ```
 
+#### Example Config Structure (API Mode)
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
+  "mode": "api",
+  "provider": "openrouter",
+  "model": "anthropic/claude-3.5-haiku"
+}
+```
+
 > **Tip**: Add the `$schema` property to get autocomplete and validation in your editor (VS Code, Cursor, etc.).
+>
+> **Note**: API keys are stored securely in the macOS Keychain, not in config files.
 
 ### Prompt Customization (Optional)
 
