@@ -147,10 +147,24 @@ export async function runGenerationLoop(
           errorMessage = e.message;
         }
 
+        // Determine if this is an API provider error
+        const isApiMode = adapter.mode === "api";
+        const providerName = isApiMode ? adapter.providerId.charAt(0).toUpperCase() + adapter.providerId.slice(1) : "AI";
+
         if (errorMessage.includes("Requested entity was not found")) {
           console.error(pc.red(`Error: The model '${model}' was not found.`));
           console.error(pc.yellow("This usually means the model ID is incorrect or you don't have access to it."));
           console.error(pc.dim(`Try running 'ai-git --setup' to select a different model.`));
+        } else if (isApiMode) {
+          // For API providers, clearly indicate the error is from the provider
+          console.error(pc.red(`${providerName} API Error:`));
+          console.error(pc.yellow(errorMessage));
+          console.error("");
+          console.error(pc.dim("This error is from the API provider, not ai-git."));
+          console.error(pc.dim("You may need to:"));
+          console.error(pc.dim("  - Check your API key and account settings"));
+          console.error(pc.dim("  - Try a different model (run: ai-git --setup)"));
+          console.error(pc.dim("  - Check the provider's status page or documentation"));
         } else {
           console.error(pc.red(errorMessage));
         }

@@ -27,6 +27,13 @@ import {
 } from "./lib/update-check.ts";
 
 // ==============================================================================
+// GLOBAL SETTINGS
+// ==============================================================================
+
+// Suppress AI SDK warning logs (we handle errors ourselves)
+(globalThis as Record<string, unknown>).AI_SDK_LOG_WARNINGS = false;
+
+// ==============================================================================
 // METADATA & CONFIG
 // ==============================================================================
 
@@ -221,22 +228,34 @@ cli
 
     // Resolve model (CLI flag overrides config file)
     const modelId = options.model ?? resolvedConfig.model;
-    const modelDef = getModelById(providerDef, modelId);
-    if (!modelDef) {
-      console.error(
-        pc.red(
-          `Error: Unknown model '${modelId}' for provider '${providerDef.name}'.`,
-        ),
-      );
-      console.error(
-        pc.dim(
-          `Available models: ${providerDef.models.map((m) => m.id).join(", ")}`,
-        ),
-      );
-      process.exit(1);
+
+    let model: string;
+    let modelName: string;
+
+    // For API providers with dynamic models, skip model validation
+    // (models are fetched at runtime, not stored in the registry)
+    if (providerDef.dynamicModels) {
+      model = modelId;
+      modelName = modelId; // Use ID as name for display (or could fetch from cache)
+    } else {
+      // For CLI providers, validate model exists in registry
+      const modelDef = getModelById(providerDef, modelId);
+      if (!modelDef) {
+        console.error(
+          pc.red(
+            `Error: Unknown model '${modelId}' for provider '${providerDef.name}'.`,
+          ),
+        );
+        console.error(
+          pc.dim(
+            `Available models: ${providerDef.models.map((m) => m.id).join(", ")}`,
+          ),
+        );
+        process.exit(1);
+      }
+      model = modelDef.id;
+      modelName = modelDef.name;
     }
-    const model = modelDef.id;
-    const modelName = modelDef.name;
 
     console.clear();
 
