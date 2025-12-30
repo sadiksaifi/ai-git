@@ -76,10 +76,10 @@ cli
     "--mode <mode>",
     "Connection mode: cli or api (auto-detected from provider)",
   )
-  .option("-P, --provider <id>", "AI provider (claude, gemini)")
+  .option("-P, --provider <id>", "AI provider (claude, gemini, openrouter, openai, anthropic, gemini-api)")
   .option(
     "-M, --model <id>",
-    "Model to use (haiku, sonnet, gemini-3-flash-preview)",
+    "Model ID (e.g., haiku, gpt-4o-mini, anthropic/claude-3.5-haiku)",
   )
   // Workflow options
   .option("-a, --stage-all", "Automatically stage all changes")
@@ -211,7 +211,8 @@ cli
       console.error(
         pc.red(`Error: Unknown provider '${resolvedConfig.provider}'.`),
       );
-      console.error(pc.dim(`Available providers: claude, gemini`));
+      console.error(pc.dim(`CLI providers: claude, gemini`));
+      console.error(pc.dim(`API providers: openrouter, openai, anthropic, gemini-api`));
       process.exit(1);
     }
 
