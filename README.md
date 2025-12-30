@@ -302,10 +302,10 @@ This project is built with Bun.
 bun install
 
 # Run in development
-bun run src/index.ts
+bun start
 
 # Run a dry run to test prompt generation
-bun run src/index.ts --dry-run -a
+bun start --dry-run -a
 
 # Typecheck
 bun run typecheck

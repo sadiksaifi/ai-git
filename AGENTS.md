@@ -1,79 +1,99 @@
-# Agent Guide: ai-git
+# AGENTS.md
 
-This document provides context, conventions, and workflows for AI agents working on this codebase.
+This file defines project-specific rules and constraints for AI agents like you working in this repository.
 
-## 1. Tech Stack & Runtime
-- **Runtime:** **Bun** (v1.0+). Do not use Node.js or npm/yarn/pnpm commands.
-- **Language:** TypeScript (Native execution via Bun).
-- **Dependencies:** Managed via `bun install`.
-- **Shell Operations:** Use Bun's Shell (`import { $ } from "bun"`) for all subprocesses (Git commands, etc.).
+## Project Overview
 
-## 2. Project Architecture
+AI Git is a CLI tool that uses AI to generate Conventional Commits-compliant git commit messages. It analyzes staged diffs and produces semantically correct messages following the v1.0.0 specification.
 
-### Core Components
-- **`src/index.ts`**: The CLI entry point. Handles argument parsing (`cac`), interactive prompts (`@clack/prompts`), and the main logic loop.
-- **`src/prompt.ts`**: Contains the `SYSTEM_PROMPT_DATA`. This is the "brain" defining the Conventional Commit schema and strict output rules.
+## Commands
 
-### The Generation Loop (Generator-Discriminator Pattern)
-The core feature involves a self-correcting loop:
-1.  **Analyze:** `git diff` is captured.
-2.  **Generate:** AI model is invoked to create a message.
-3.  **Validate (Lint):** The message is checked against **Conventional Commits** rules using `@commitlint/lint`.
-    *   *Note:* Config is imported directly from `@commitlint/config-conventional` to ensure portability without external config files.
-4.  **Self-Correct:** If linting fails, the errors are injected back into the next AI prompt ("Regenerating with corrections...").
-5.  **Approve:** Only valid messages are presented to the user.
-
-## 3. Testing Strategy
-Tests are written using **Bun's native test runner** (`bun:test`).
-
-### Unit & Integration Testing
-We test the CLI by spawning it as a subprocess.
-
-- **Command:** `bun test`
-- **File:** `tests/cli.test.ts`
-
-### The "Fake AI" Mechanism
-To test the AI logic deterministically without network calls or API costs, we use a mock script:
-- **`tests/fake-ai.ts`**: A script that pretends to be the AI.
-    - It reads a counter file to change behavior (1st call returns invalid message, 2nd call returns valid message).
-    - It writes the received prompt to `ai-prompt.log` for assertion.
-- **`tests/fake-ai.sh`**: A shell wrapper ensuring `fake-ai.ts` runs correctly via Bun in the test subprocess.
-
-**When writing new tests:**
-1.  Do NOT mock internal functions if you can verify behavior via CLI output/exit codes.
-2.  Use the `fake-ai` pattern if you need to test the *interaction* with the LLM.
-3.  Ensure `stderr` is captured, as CLI tools often write errors there.
-
-## 4. Coding Conventions
-
-### Git Operations
-- Always use the `$` shell template literal.
-- **Security:** When passing variable file paths, use arrays to prevent shell injection:
-  ```typescript
-  // BAD
-  await $`git add ${files.join(" ")}`; 
-  
-  // GOOD
-  for (const file of files) { await $`git add ${file}`; }
-  // OR
-  await $`git add ${files}`; // Bun handles array expansion safely
-  ```
-
-### UI/UX
-- Use `@clack/prompts` for all user interactions.
-- Use `picocolors` for coloring text.
-- Be concise. This is a CLI tool; avoid wall-of-text outputs.
-
-### Imports
-- Use ESM imports.
-- Prefer `node:` prefix for built-ins (e.g., `import * as path from "node:path"`).
-
-## 5. Common Tasks
-
-**Running the CLI locally:**
 ```bash
-bun run src/index.ts
+bun install          # Install dependencies
+bun start            # Run CLI in development
+bun run build        # Compile to single binary (dist/ai-git)
+bun run typecheck    # Type check without emitting
+bun test             # Run tests
+bun start --dry-run -a  # Test prompt generation without AI call
 ```
 
-**Building/Release:**
-(Refer to `package.json` scripts or GitHub Actions workflows).
+## Architecture
+
+### Core Flow
+```
+CLI Entry (src/index.ts)
+    → Parse args (cac) → Load config → Validate provider
+    → Stage files → Generation loop → Commit → Push
+```
+
+### Key Components
+
+- **`src/index.ts`** - CLI entry point with argument parsing and main workflow orchestration
+- **`src/config.ts`** - Two-tier config system: project (`.ai-git.json`) > global (`~/.config/ai-git/config.json`)
+- **`src/prompt.ts`** - System prompt definitions for Conventional Commits schema
+- **`src/types.ts`** - Core TypeScript interfaces (`Mode`, `Provider`, `Model` definitions)
+
+### Provider System (`src/providers/`)
+Two modes with unified adapter interface:
+- **CLI Mode** (`cli/`): Spawns installed binaries (`claude`, `gemini`)
+- **API Mode** (`api/`): HTTP APIs via Vercel AI SDK (OpenRouter, OpenAI, Anthropic, Gemini)
+
+Provider registry in `registry.ts` defines available providers and models.
+
+### Generation Loop (`src/lib/generation.ts`)
+Self-correcting generator-discriminator pattern:
+1. Capture staged diff
+2. Generate message via AI adapter
+3. Validate against Conventional Commits
+4. If invalid, inject errors into next prompt (auto-retry up to 3x)
+5. Present valid message to user
+
+### Git Operations (`src/lib/git.ts`)
+Wrapper using Bun Shell (`$`). Lock files are excluded from diffs. Diffs truncated at 2500 lines.
+
+### Secrets (`src/lib/secrets/`)
+API keys stored in macOS Keychain (API mode is macOS-only).
+
+## Coding Conventions
+
+### Bun-Specific
+- Use `$` shell template for subprocesses: `` await $`git add ${file}` ``
+- Use `Bun.spawn()` for provider invocations
+- Use `Bun.file()` and `Bun.write()` for filesystem operations
+- ESM imports with `import type` for TypeScript types
+- Prefer `node:` prefix for built-ins (e.g., `import * as path from "node:path"`)
+
+### Shell Safety
+```typescript
+// Safe array expansion (Bun handles it)
+await $`git add ${files}`;
+
+// Also safe - iterate for complex cases
+for (const file of files) { await $`git add ${file}`; }
+```
+
+### UI/UX
+- Use `@clack/prompts` for interactive prompts
+- Use `picocolors` for terminal colors
+- Keep CLI output concise
+
+## Testing
+
+Tests use Bun's native test runner (`bun:test`). Located in `tests/`.
+
+### Fake AI Pattern
+For deterministic AI testing without API calls:
+- `tests/fake-ai.ts` - Mock script that varies behavior based on counter file
+- Writes received prompts to `ai-prompt.log` for assertions
+- Test CLI via subprocess spawning, verifying stdout/stderr/exit codes
+
+## Adding New Providers
+
+1. Add entry to `PROVIDERS` array in `src/providers/registry.ts`
+2. Create adapter in `src/providers/cli/` or `src/providers/api/`
+3. Register in the respective `index.ts`
+4. Update `schema.json` for config validation
+
+## Config Priority
+
+CLI flags > Project config (`.ai-git.json`) > Global config (`~/.config/ai-git/config.json`) > Built-in defaults
