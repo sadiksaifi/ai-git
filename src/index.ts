@@ -20,6 +20,7 @@ import { checkGitInstalled, checkInsideRepo } from "./lib/git.ts";
 import { handleStaging } from "./lib/staging.ts";
 import { runGenerationLoop } from "./lib/generation.ts";
 import { handlePush } from "./lib/push.ts";
+import { runOnboarding } from "./lib/onboarding/index.ts";
 import { runSetupWizard } from "./lib/setup.ts";
 import {
   startUpdateCheck,
@@ -176,21 +177,26 @@ cli
     const isProjectComplete = isConfigComplete(existingProjectConfig);
 
     if (options.setup || (!isGlobalComplete && !isProjectComplete)) {
-      // Run setup wizard with CLI flags as defaults
-      // If running setup because no config exists, default to global unless specified?
-      // Actually, --setup usually implies global setup in this context unless we want to change that.
-      // But since we just added --init, --setup should probably remain global or we prompt?
-      // The original behavior was global. Let's keep it global for --setup to avoid confusion.
-      // If the user wants project setup, they should use --init.
-      
-      await runSetupWizard({
-        mode: options.mode,
-        provider: options.provider,
-        model: options.model,
+      // Determine if this is first-run (full onboarding) or explicit --setup (wizard only)
+      const isFirstRun = !isGlobalComplete && !isProjectComplete && !options.setup;
+
+      const onboardingResult = await runOnboarding({
+        version: VERSION,
+        defaults: {
+          mode: options.mode,
+          provider: options.provider,
+          model: options.model,
+        },
+        target: "global",
+        skipWelcome: !isFirstRun, // Skip welcome for explicit --setup
       });
 
-      // If --setup was explicitly requested, exit after setup
-      if (options.setup) {
+      if (!onboardingResult.completed) {
+        process.exit(1);
+      }
+
+      // If --setup was explicitly requested, or user doesn't want to continue, exit
+      if (options.setup || !onboardingResult.continueToRun) {
         process.exit(0);
       }
     }

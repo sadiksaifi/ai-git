@@ -9,7 +9,7 @@ A CLI tool that leverages AI to automatically generate semantically correct, Con
 1.  **Git**: Must be installed and running inside a git repository.
 2.  **AI Provider**: Choose one of the following:
     *   **CLI Mode**: Install an AI CLI tool (`claude` or `gemini`)
-    *   **API Mode** (macOS only): Use API keys from OpenRouter, OpenAI, Anthropic, or Google Gemini
+    *   **API Mode**: Use API keys from OpenRouter, OpenAI, Anthropic, or Google Gemini
     *   On first run, you'll be guided through a setup wizard to choose your provider.
 
 ## Installation
@@ -52,26 +52,59 @@ ai-git
 On your first run, AI Git will guide you through a quick setup wizard:
 
 ```
-┌  AI Git Setup
+┌  AI Git
 │
-│  Welcome to AI Git! Let's configure your AI provider.
-│  This setup only runs once. Your settings will be saved to:
-│  ~/.config/ai-git/config.json
+◇  Welcome to AI Git ──────────────────────────────────────╮
+│                                                          │
+│  AI-powered git commit messages                          │
+│                                                          │
+│  AI Git analyzes your staged changes and generates       │
+│  Conventional Commits-compliant messages automatically.  │
+│                                                          │
+│  Features:                                               │
+│    - Semantic commit types (feat, fix, chore, etc.)      │
+│    - Smart scope detection from file paths               │
+│    - Interactive refinement with AI feedback             │
+│                                                          │
+├──────────────────────────────────────────────────────────╯
 │
-◆  Select connection mode:
-│  ● CLI - Use installed AI CLI tools (claude, gemini)
-│  ○ API - Use API keys (OpenRouter, OpenAI, Anthropic, Gemini)
+◇  Setup Overview ───────────────────────────────────────────────────╮
+│                                                                    │
+│  This quick setup will configure your AI provider.                 │
+│  You'll choose between:                                            │
+│                                                                    │
+│    CLI Mode - Use installed AI tools (claude, gemini)              │
+│    API Mode - Use API keys                                         │
+│                                                                    │
+│  Settings will be saved to: ~/.config/ai-git/config.json           │
+│                                                                    │
+├────────────────────────────────────────────────────────────────────╯
 │
-◆  Select AI provider:
-│  ● Claude Code (recommended)
-│  ○ Gemini CLI
+◇  Ready to begin setup?
+│  Yes
 │
-◆  Select model:
-│  ● Claude Haiku (recommended)
-│  ○ Claude Sonnet
-│  ○ Claude Opus
+◇  Select connection mode:
+│  CLI Mode
 │
-└  Setup complete! You're ready to use AI Git.
+◇  Select AI provider:
+│  Claude Code
+│
+◇  Select model:
+│  Claude Haiku
+│
+◇  Global Configuration Saved ──────────────────────╮
+│                                                   │
+│  Mode: CLI                                        │
+│  Provider: Claude Code                            │
+│  Model: Claude Haiku                              │
+│                                                   │
+│  Saved to: ~/.config/ai-git/config.json           │
+│                                                   │
+├───────────────────────────────────────────────────╯
+│
+◆  Would you like to try AI Git now?
+│  ● Yes / ○ No
+└
 ```
 
 The setup wizard will:
@@ -107,7 +140,7 @@ This command will guide you through creating a `.ai-git.json` file in your proje
 - 🪙 **Token Efficient**: Uses [TOON](https://toonformat.dev/) (Token-Oriented Object Notation) to minimize prompt size and cost.
 - 🛠️ **Flexible**: Supports fully automated workflows (`-y`) or granular control.
 - 🔌 **Multiple Providers**: CLI mode (Claude, Gemini) or API mode (OpenRouter, OpenAI, Anthropic, Gemini).
-- 🔐 **Secure**: API keys stored in macOS Keychain, never in config files.
+- 🔐 **Secure**: API keys stored in secure keychain, never in config files.
 
 ### Options & Flags
 
@@ -202,7 +235,7 @@ Stored at `.ai-git.json` in your project root. This overrides global settings fo
 
 > **Tip**: Add the `$schema` property to get autocomplete and validation in your editor (VS Code, Cursor, etc.).
 >
-> **Note**: API keys are stored securely in the macOS Keychain, not in config files.
+> **Note**: API keys are stored securely in secure keychain, not in config files.
 
 ### Prompt Customization (Optional)
 
@@ -278,7 +311,7 @@ The default prompt is designed to be **best-in-class** and works excellently for
 
 ### API Mode
 
-API-based providers using Vercel AI SDK (macOS only for now):
+API-based providers using Vercel AI SDK:
 
 | Provider | Provider ID | Default Model | Description |
 |----------|-------------|---------------|-------------|
@@ -287,7 +320,7 @@ API-based providers using Vercel AI SDK (macOS only for now):
 | Google Gemini | `gemini-api` | `gemini-2.0-flash` | Gemini models via REST API |
 | Anthropic | `anthropic` | `claude-3-5-haiku-latest` | Claude models directly |
 
-API keys are stored securely in the macOS Keychain. Run `ai-git --setup` to configure.
+API keys are stored securely in the secure keychain. Run `ai-git --setup` to configure.
 
 ## Contributing
 
