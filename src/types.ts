@@ -4,8 +4,8 @@
 
 /**
  * Connection mode - how we communicate with the AI provider.
- * - "cli": Uses installed CLI tools (claude, gemini, codex)
- * - "api": Uses API calls via SDK (OpenAI, OpenRouter, Vertex) - future
+ * - "cli": Uses installed CLI tools (claude, gemini)
+ * - "api": Uses API calls via Vercel AI SDK (OpenRouter, OpenAI, Anthropic, Gemini)
  */
 export type Mode = "cli" | "api";
 
@@ -33,8 +33,10 @@ export interface ProviderDefinition {
   mode: Mode;
   /** CLI binary name (only for mode: "cli") */
   binary?: string;
-  /** Available models for this provider */
+  /** Available models for this provider (empty for dynamicModels providers) */
   models: ModelDefinition[];
   /** Whether this is the default provider */
   isDefault?: boolean;
+  /** Whether models should be fetched dynamically via API (for API mode providers) */
+  dynamicModels?: boolean;
 }

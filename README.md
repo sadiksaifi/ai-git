@@ -59,7 +59,7 @@ On your first run, AI Git will guide you through a quick setup wizard:
 │
 ◆  Select connection mode:
 │  ● CLI - Use installed AI CLI tools (claude, gemini)
-│  ○ API - Use API keys (coming soon)
+│  ○ API - Use API keys (OpenRouter, OpenAI, Anthropic, Gemini)
 │
 ◆  Select AI provider:
 │  ● Claude Code (recommended)
@@ -255,13 +255,18 @@ The default prompt is designed to be **best-in-class** and works excellently for
 | Claude Code | `claude` | `haiku` | `haiku`, `sonnet`, `opus` |
 | Gemini CLI | `gemini` | `gemini-3-flash-preview` | `gemini-3-flash-preview`, `gemini-3-pro-preview`, `gemini-2.5-flash-lite`, `gemini-2.5-flash`, `gemini-2.5-pro` |
 
-### API Mode (Coming Soon)
+### API Mode
 
-Future support for API-based providers via Vercel AI SDK:
-- OpenRouter
-- OpenAI
-- Google Vertex AI
-- Anthropic API
+API-based providers using Vercel AI SDK (macOS only for now):
+
+| Provider | Provider ID | Default Model | Description |
+|----------|-------------|---------------|-------------|
+| OpenRouter | `openrouter` | `anthropic/claude-3.5-haiku` | Access to multiple AI providers (recommended) |
+| OpenAI | `openai` | `gpt-4o-mini` | GPT-4o, GPT-4, o1 models |
+| Google Gemini | `gemini-api` | `gemini-2.0-flash` | Gemini models via REST API |
+| Anthropic | `anthropic` | `claude-3-5-haiku-latest` | Claude models directly |
+
+API keys are stored securely in the macOS Keychain. Run `ai-git --setup` to configure.
 
 ## Contributing
 

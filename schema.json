@@ -11,7 +11,7 @@
     "mode": {
       "type": "string",
       "enum": ["cli", "api"],
-      "description": "Connection mode. 'cli' uses installed AI CLI tools, 'api' uses API keys (coming soon).",
+      "description": "Connection mode. 'cli' uses installed AI CLI tools (claude, gemini), 'api' uses API keys (OpenRouter, OpenAI, Anthropic, Gemini).",
       "default": "cli"
     },
     "editor": {
@@ -21,14 +21,23 @@
     },
     "provider": {
       "type": "string",
-      "enum": ["claude", "gemini"],
+      "enum": ["claude", "gemini", "openrouter", "openai", "gemini-api", "anthropic"],
       "description": "AI provider to use for generating commit messages.",
-      "examples": ["claude", "gemini"]
+      "examples": ["claude", "gemini", "openrouter", "openai", "gemini-api", "anthropic"]
     },
     "model": {
       "type": "string",
       "description": "Model ID to use for the selected provider.",
-      "examples": ["haiku", "sonnet", "opus", "gemini-3-flash-preview", "gemini-3-pro-preview", "gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-pro"]
+      "examples": [
+        "haiku",
+        "sonnet",
+        "opus",
+        "gemini-3-flash-preview",
+        "anthropic/claude-3.5-haiku",
+        "gpt-4o-mini",
+        "gemini-2.0-flash",
+        "claude-3-5-haiku-latest"
+      ]
     },
     "defaults": {
       "type": "object",
@@ -88,6 +97,20 @@
         }
       },
       "additionalProperties": false
+    },
+    "api": {
+      "type": "object",
+      "description": "API-specific configuration options (only used when mode is 'api').",
+      "properties": {
+        "modelCacheTTL": {
+          "type": "number",
+          "description": "Hours to cache the model list from API providers. Default: 48 hours.",
+          "default": 48,
+          "minimum": 1,
+          "maximum": 168
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": ["mode", "provider", "model"],
@@ -103,7 +126,7 @@
         "properties": {
           "model": {
             "enum": ["haiku", "sonnet", "opus"],
-            "description": "Claude model to use. 'haiku' is recommended for speed and cost."
+            "description": "Claude CLI model to use. 'haiku' is recommended for speed and cost."
           }
         }
       }
@@ -117,8 +140,74 @@
       "then": {
         "properties": {
           "model": {
-            "enum": ["gemini-3-flash-preview", "gemini-3-pro-preview", "gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-pro"],
-            "description": "Gemini model to use. 'gemini-3-flash-preview' is recommended for speed."
+            "enum": [
+              "gemini-3-flash-preview",
+              "gemini-3-pro-preview",
+              "gemini-2.5-flash-lite",
+              "gemini-2.5-flash",
+              "gemini-2.5-pro"
+            ],
+            "description": "Gemini CLI model to use. 'gemini-3-flash-preview' is recommended for speed."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": { "const": "openrouter" }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "OpenRouter model ID (e.g., 'anthropic/claude-3.5-haiku'). Models are fetched dynamically."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": { "const": "openai" }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "OpenAI model ID (e.g., 'gpt-4o-mini'). Models are fetched dynamically."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": { "const": "gemini-api" }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "Google Gemini API model ID (e.g., 'gemini-2.0-flash'). Models are fetched dynamically."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": { "const": "anthropic" }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "Anthropic API model ID (e.g., 'claude-3-5-haiku-latest'). Models are fetched dynamically."
           }
         }
       }

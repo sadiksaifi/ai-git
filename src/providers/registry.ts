@@ -34,27 +34,40 @@ export const PROVIDERS: ProviderDefinition[] = [
       { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
     ],
   },
-  // Future CLI providers:
-  // {
-  //   id: "codex",
-  //   name: "OpenAI Codex",
-  //   mode: "cli",
-  //   binary: "codex",
-  //   models: [
-  //     { id: "codex-mini", name: "Codex Mini", isDefault: true },
-  //   ],
-  // },
-  //
-  // Future API providers:
-  // {
-  //   id: "openrouter",
-  //   name: "OpenRouter",
-  //   mode: "api",
-  //   models: [
-  //     { id: "anthropic/claude-3-opus", name: "Claude 3 Opus", isDefault: true },
-  //     { id: "openai/gpt-4o", name: "GPT-4o" },
-  //   ],
-  // },
+
+  // ==============================================================================
+  // API PROVIDERS
+  // ==============================================================================
+
+  {
+    id: "openrouter",
+    name: "OpenRouter",
+    mode: "api",
+    isDefault: true, // Recommended API provider
+    dynamicModels: true,
+    models: [], // Populated dynamically via fetchModels()
+  },
+  {
+    id: "openai",
+    name: "OpenAI",
+    mode: "api",
+    dynamicModels: true,
+    models: [], // Populated dynamically via fetchModels()
+  },
+  {
+    id: "gemini-api",
+    name: "Google Gemini",
+    mode: "api",
+    dynamicModels: true,
+    models: [], // Populated dynamically via fetchModels()
+  },
+  {
+    id: "anthropic",
+    name: "Anthropic",
+    mode: "api",
+    dynamicModels: true,
+    models: [], // Populated dynamically via fetchModels()
+  },
 ];
 
 // ==============================================================================
