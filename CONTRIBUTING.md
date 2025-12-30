@@ -36,7 +36,7 @@ Please follow these guidelines when writing commit messages:
 
 - Use imperative mood in the commit message (e.g. "Add feature" instead of "Added feature").
 - Start the commit message with a verb in lowercase, such as "add", "fix", "update", "remove", "refactor", "docs", etc.
-- Limit the first line to 72 characters or less.
+- Limit the first line to 50 characters or less.
 - Add a brief summary of the changes in the blank line after the first line, if necessary.
 - Be specific and descriptive about the changes made in the commit.
 - Reference any issues that the commit fixes in the commit message using the syntax `fixes #<issue-number>`. For example, `fixes #42`.

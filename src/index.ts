@@ -303,6 +303,7 @@ cli
       },
       // Pass prompt customization from config file (if any)
       promptCustomization: resolvedConfig.prompt,
+      editor: resolvedConfig.editor,
     });
 
     // Handle dry run (already processed in generation loop)
