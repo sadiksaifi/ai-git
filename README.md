@@ -18,7 +18,7 @@ A CLI tool that leverages AI to automatically generate semantically correct, con
 ### Homebrew (Recommended)
 
 ```bash
-brew tap sadiksaifi/ai-git https://github.com/sadiksaifi/ai-git
+brew tap sadiksaifi/tap
 brew install ai-git
 ```
 
