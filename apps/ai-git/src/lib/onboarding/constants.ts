@@ -22,27 +22,22 @@ export const INSTALL_INFO = {
 } as const;
 
 /**
- * Welcome screen copy.
+ * Box drawing characters for the welcome screen.
  */
-export const WELCOME_COPY = {
-  tagline: "AI-powered git commit messages",
-  description: [
-    "AI Git analyzes your staged changes and generates",
-    "Conventional Commits-compliant messages automatically.",
-  ],
-  features: [
-    "Semantic commit types (feat, fix, chore, etc.)",
-    "Smart scope detection from file paths",
-    "Interactive refinement with AI feedback",
-  ],
-  setupOverview: [
-    "This quick setup will configure your AI provider.",
-    "You'll choose between:",
-    "",
-    "  CLI Mode - Use installed AI tools (claude-code, gemini-cli)",
-    "  API Mode - Use API keys (macOS only)",
-  ],
+export const BOX = {
+  topLeft: "╭",
+  topRight: "╮",
+  bottomLeft: "╰",
+  bottomRight: "╯",
+  horizontal: "─",
+  vertical: "│",
+  verticalRight: "├",
+  verticalLeft: "┤",
+  horizontalDown: "┬",
+  horizontalUp: "┴",
+  cross: "┼",
 } as const;
+
 
 /**
  * Error message templates with actionable suggestions.
@@ -52,14 +47,6 @@ export const ERROR_MESSAGES = {
     message: "No configuration found.",
     suggestion: "Run: ai-git --setup",
   },
-  missingMode: {
-    message: "No connection mode configured.",
-    suggestion: "Run: ai-git --setup to select CLI or API mode.",
-  },
-  invalidMode: (mode: string) => ({
-    message: `Invalid mode '${mode}'. Must be 'cli' or 'api'.`,
-    suggestion: "Run: ai-git --setup",
-  }),
   missingProvider: {
     message: "No AI provider configured.",
     suggestion: "Run: ai-git --setup to select a provider.",
@@ -98,14 +85,3 @@ export const ERROR_MESSAGES = {
   },
 } as const;
 
-/**
- * Quick reference commands shown after setup.
- */
-export const QUICK_REFERENCE = {
-  commands: [
-    { cmd: "ai-git", desc: "Generate a commit message" },
-    { cmd: "ai-git -a", desc: "Stage all changes first" },
-    { cmd: "ai-git --dangerously-auto-approve", desc: "Full auto mode (stage, commit, push)" },
-    { cmd: "ai-git --help", desc: "See all options" },
-  ],
-} as const;

@@ -13,7 +13,6 @@ import cac from "cac";
 import pc from "picocolors";
 import packageJson from "../package.json";
 
-import type { Mode } from "./types.ts";
 import {
   loadUserConfig,
   loadProjectConfig,
@@ -22,7 +21,6 @@ import {
   resolveConfigAsync,
   getProviderById,
   getModelById,
-  inferModeFromProvider,
 } from "./config.ts";
 import { getAdapter } from "./providers/index.ts";
 import { checkGitInstalled, checkInsideRepo } from "./lib/git.ts";
@@ -35,6 +33,7 @@ import {
   startUpdateCheck,
   showUpdateNotification,
 } from "./lib/update-check.ts";
+import { FLAGS } from "./lib/flags.ts";
 
 // ==============================================================================
 // GLOBAL SETTINGS
@@ -56,7 +55,6 @@ const VERSION = packageJson.version;
 
 export interface CLIOptions {
   // AI configuration
-  mode?: Mode;
   provider?: string;
   model?: string;
 
@@ -80,33 +78,44 @@ export interface CLIOptions {
 // ==============================================================================
 
 cli
-  .command("", "Generate a commit message using AI")
+  .command("")
   // AI configuration
   .option(
-    "--mode <mode>",
-    "Connection mode: cli or api (auto-detected from provider)",
+    `${FLAGS.provider.short}, ${FLAGS.provider.long} ${FLAGS.provider.arg}`,
+    FLAGS.provider.description,
   )
   .option(
-    "-P, --provider <id>",
-    "AI provider (claude-code, gemini-cli, openrouter, openai, anthropic, google-ai-studio)",
-  )
-  .option(
-    "-M, --model <id>",
-    "Model ID (e.g., haiku, gpt-4o-mini, anthropic/claude-3.5-haiku)",
+    `${FLAGS.model.short}, ${FLAGS.model.long} ${FLAGS.model.arg}`,
+    FLAGS.model.description,
   )
   // Workflow options
-  .option("-a, --stage-all", "Automatically stage all changes")
-  .option("-c, --commit", "Automatically commit (skip editor/confirmation)")
-  .option("-p, --push", "Automatically push after commit")
-  .option("-H, --hint <text>", "Provide a hint/context to the AI")
   .option(
-    "--dangerously-auto-approve",
-    "Run fully automated (Stage All + Commit + Push)",
+    `${FLAGS.stageAll.short}, ${FLAGS.stageAll.long}`,
+    FLAGS.stageAll.description,
   )
-  .option("--dry-run", "Print the prompt and diff without calling AI")
-  .option("--setup", "Re-run the setup wizard to reconfigure AI provider")
-  .option("--init", "Initialize project-level configuration")
-  .option("-v, --version", "Display version number")
+  .option(
+    `${FLAGS.commit.short}, ${FLAGS.commit.long}`,
+    FLAGS.commit.description,
+  )
+  .option(
+    `${FLAGS.push.short}, ${FLAGS.push.long}`,
+    FLAGS.push.description,
+  )
+  .option(
+    `${FLAGS.hint.short}, ${FLAGS.hint.long} ${FLAGS.hint.arg}`,
+    FLAGS.hint.description,
+  )
+  .option(
+    FLAGS.dangerouslyAutoApprove.long,
+    FLAGS.dangerouslyAutoApprove.description,
+  )
+  .option(FLAGS.dryRun.long, FLAGS.dryRun.description)
+  .option(FLAGS.setup.long, FLAGS.setup.description)
+  .option(FLAGS.init.long, FLAGS.init.description)
+  .option(
+    `${FLAGS.version.short}, ${FLAGS.version.long}`,
+    FLAGS.version.description,
+  )
   .action(async (options: CLIOptions) => {
     // Start update check immediately (non-blocking)
     const updateCheckPromise = startUpdateCheck(VERSION);
@@ -199,7 +208,6 @@ cli
       const onboardingResult = await runOnboarding({
         version: VERSION,
         defaults: {
-          mode: options.mode,
           provider: options.provider,
           model: options.model,
         },
@@ -219,13 +227,9 @@ cli
 
     // Resolve configuration (CLI flags > config file > built-in defaults)
     const resolvedConfig = await resolveConfigAsync({
-      mode: options.mode,
       provider: options.provider,
       model: options.model,
     });
-
-    // Infer mode from provider if not explicitly set
-    const mode = options.mode ?? inferModeFromProvider(resolvedConfig.provider);
 
     // Get provider definition
     const providerDef = getProviderById(resolvedConfig.provider);
@@ -241,12 +245,10 @@ cli
     }
 
     // Get adapter for the provider
-    const adapter = getAdapter(providerDef.id, mode);
+    const adapter = getAdapter(providerDef.id);
     if (!adapter) {
       console.error(
-        pc.red(
-          `Error: No adapter found for provider '${providerDef.id}' in mode '${mode}'.`,
-        ),
+        pc.red(`Error: No adapter found for provider '${providerDef.id}'.`),
       );
       process.exit(1);
     }
@@ -438,7 +440,29 @@ cli
     outro("Done!");
   });
 
-cli.help();
+cli.help((sections) => {
+  const newSections = sections.filter(
+    (section) =>
+      section.title !== "Commands" &&
+      section.body.trim() !== "ai-git" &&
+      !section.title?.startsWith("For more info"),
+  );
+
+  const usageSection = newSections.find((section) => section.title === "Usage");
+  if (usageSection) {
+    usageSection.body = "  $ ai-git [options]";
+  }
+
+  // Insert description after Usage
+  const usageIndex = newSections.findIndex((section) => section.title === "Usage");
+  if (usageIndex !== -1) {
+    newSections.splice(usageIndex + 1, 0, {
+      body: "Generate a commit message using AI",
+    });
+  }
+
+  return newSections;
+});
 
 // ==============================================================================
 // CLI ENTRY POINT
@@ -451,12 +475,16 @@ try {
     console.log(VERSION);
     process.exit(0);
   } else if (parsed.options.help) {
-    cli.outputHelp();
     process.exit(0);
   } else {
     cli.runMatchedCommand();
   }
 } catch (error) {
+  if (error instanceof Error && error.message.startsWith("Unknown option")) {
+    console.error(pc.red(`Error: ${error.message}`));
+    console.error(pc.dim("Use --help to see available options."));
+    process.exit(1);
+  }
   console.error(error);
   process.exit(1);
 }

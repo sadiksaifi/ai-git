@@ -8,12 +8,6 @@
     "$schema": {
       "type": "string"
     },
-    "mode": {
-      "type": "string",
-      "enum": ["cli", "api"],
-      "description": "Connection mode. 'cli' uses installed AI CLI tools (claude-code, gemini-cli), 'api' uses API keys (OpenRouter, OpenAI, Anthropic, Google AI Studio).",
-      "default": "cli"
-    },
     "editor": {
       "type": "string",
       "description": "Preferred editor command (e.g. 'vim', 'nvim', 'nano'). Overrides $EDITOR environment variable.",
@@ -100,7 +94,7 @@
     },
     "api": {
       "type": "object",
-      "description": "API-specific configuration options (only used when mode is 'api').",
+      "description": "API-specific configuration options (only used with API providers).",
       "properties": {
         "modelCacheTTL": {
           "type": "number",
@@ -113,7 +107,7 @@
       "additionalProperties": false
     }
   },
-  "required": ["mode", "provider", "model"],
+  "required": ["provider", "model"],
   "additionalProperties": false,
   "allOf": [
     {

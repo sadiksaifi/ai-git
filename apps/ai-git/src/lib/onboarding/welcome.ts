@@ -1,65 +1,175 @@
 // ==============================================================================
 // WELCOME SCREEN
-// First-time user introduction explaining what AI Git does.
+// Two-column layout inspired by Claude Code's UI.
 // ==============================================================================
 
-import { intro, note, confirm, isCancel } from "@clack/prompts";
 import pc from "picocolors";
-import { WELCOME_COPY } from "./constants.ts";
-import { CONFIG_FILE } from "../../config.ts";
+import { BOX } from "./constants.ts";
+import { getRandomTip } from "../flags.ts";
+import { getRepoRoot } from "../git.ts";
 
 export interface WelcomeResult {
   proceed: boolean;
 }
 
 /**
- * Display the welcome screen for first-time users.
- * Explains what AI Git does and what the setup will configure.
+ * Strip ANSI escape codes from a string.
+ */
+function stripAnsi(str: string): string {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: needed for ANSI
+  return str.replace(/\x1b\[[0-9;]*m/g, "");
+}
+
+/**
+ * Pad string to exact width (handles ANSI codes).
+ */
+function padTo(text: string, width: number): string {
+  const stripped = stripAnsi(text);
+  const padding = width - stripped.length;
+  if (padding <= 0) {
+    return text;
+  }
+  return text + " ".repeat(padding);
+}
+
+/**
+ * Center text within a given width.
+ */
+function center(text: string, width: number): string {
+  const stripped = stripAnsi(text);
+  const padding = Math.max(0, Math.floor((width - stripped.length) / 2));
+  const rightPad = width - stripped.length - padding;
+  return " ".repeat(padding) + text + " ".repeat(rightPad);
+}
+
+/**
+ * Truncate path to fit width.
+ */
+function truncatePath(path: string, maxWidth: number): string {
+  if (path.length <= maxWidth) return path;
+  return "..." + path.slice(-(maxWidth - 3));
+}
+
+/**
+ * Wrap text to fit within a specific width.
+ */
+function wrapText(text: string, maxWidth: number): string[] {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let currentLine = words[0];
+
+  for (let i = 1; i < words.length; i++) {
+    if (stripAnsi(currentLine + " " + words[i]).length <= maxWidth) {
+      currentLine += " " + words[i];
+    } else {
+      lines.push(currentLine);
+      currentLine = words[i];
+    }
+  }
+  lines.push(currentLine);
+  return lines;
+}
+
+/**
+ * Display a two-column welcome screen inspired by Claude Code.
  */
 export async function showWelcomeScreen(version: string): Promise<WelcomeResult> {
   console.clear();
 
-  // Branded intro banner
-  intro(pc.bgCyan(pc.black(` AI Git ${version} `)));
+  // Layout dimensions
+  const leftWidth = 30;
+  const rightWidth = 42;
+  const totalWidth = leftWidth + rightWidth + 3; // +3 for borders
 
-  // Welcome message with value proposition
-  const welcomeText = [
-    pc.bold(WELCOME_COPY.tagline),
+  // Get context info
+  const repoRoot = await getRepoRoot();
+  const cwd = repoRoot || process.cwd();
+  const shortCwd = cwd.replace(process.env.HOME || "", "~");
+  const displayCwd = truncatePath(shortCwd, leftWidth - 4);
+
+  // Get random tip
+  const tip = getRandomTip();
+
+  // Build left column content (without borders)
+  const leftContent: string[] = [
     "",
-    ...WELCOME_COPY.description,
     "",
-    pc.dim("Features:"),
-    ...WELCOME_COPY.features.map((f) => pc.dim(`  - ${f}`)),
-  ].join("\n");
-
-  note(welcomeText, "Welcome to AI Git");
-
-  // Explain what setup will do
-  const setupExplanation = [
-    ...WELCOME_COPY.setupOverview.map((line) => {
-      // Highlight the mode names
-      if (line.includes("CLI Mode")) {
-        return line.replace("CLI Mode", pc.cyan("CLI Mode"));
-      }
-      if (line.includes("API Mode")) {
-        return line.replace("API Mode", pc.cyan("API Mode"));
-      }
-      return line;
-    }),
+    center(pc.cyan("▄▀█ █   ▄▄ █▀▀ █ ▀█▀"), leftWidth),
+    center(pc.cyan("█▀█ █   ░░ █▄█ █ ░█░"), leftWidth),
     "",
-    pc.dim(`Settings will be saved to: ${CONFIG_FILE}`),
-  ].join("\n");
+    center(pc.dim("Welcome to AI Git!"), leftWidth),
+    "",
+    // "",
+    center(pc.dim(displayCwd), leftWidth),
+    "",
+  ];
 
-  note(setupExplanation, "Setup Overview");
+  // Build right column content (without borders)
+  const rightContent: string[] = [
+    "",
+    ` ${pc.bold("Features:")}`,
+    ` ${pc.dim("•")} Conventional Commits format`,
+    ` ${pc.dim("•")} Smart scope detection`,
+    ` ${pc.dim("•")} Interactive refinement`,
+    "",
+    " " + pc.dim("─".repeat(rightWidth - 2)),
+    ` ${pc.bold("Tip:")} ${pc.cyan(`ai-git ${tip.flag}`)}`,
+  ];
 
-  const proceed = await confirm({
-    message: "Ready to begin setup?",
-    initialValue: true,
-  });
-
-  if (isCancel(proceed)) {
-    return { proceed: false };
+  // Wrap tip description
+  const wrappedTip = wrapText(tip.desc, rightWidth - 2); // -2 for left padding
+  for (const line of wrappedTip) {
+    rightContent.push(` ${pc.dim(line)}`);
   }
 
-  return { proceed: proceed as boolean };
+  // Ensure both columns have same height
+  const maxRows = Math.max(leftContent.length, rightContent.length);
+  while (leftContent.length < maxRows) leftContent.push("");
+  while (rightContent.length < maxRows) rightContent.push("");
+
+  // Build the box
+  const lines: string[] = [];
+
+  // Top border with title
+  const title = ` AI Git v${version} `;
+  const titlePadLeft = 3;
+  const titlePadRight = totalWidth - titlePadLeft - title.length - 2;
+  lines.push(
+    pc.dim(BOX.topLeft) +
+      pc.dim(BOX.horizontal.repeat(titlePadLeft)) +
+      title +
+      pc.dim(BOX.horizontal.repeat(Math.max(0, titlePadRight))) +
+      pc.dim(BOX.topRight)
+  );
+
+  // Content rows with middle divider
+  for (let i = 0; i < maxRows; i++) {
+    const leftCell = padTo(leftContent[i] || "", leftWidth);
+    const rightCell = padTo(rightContent[i] || "", rightWidth);
+    lines.push(
+      pc.dim(BOX.vertical) +
+        leftCell +
+        pc.dim(BOX.vertical) +
+        rightCell +
+        pc.dim(BOX.vertical)
+    );
+  }
+
+  // Bottom border
+  lines.push(
+    pc.dim(BOX.bottomLeft) +
+      pc.dim(BOX.horizontal.repeat(leftWidth)) +
+      pc.dim(BOX.horizontalUp) +
+      pc.dim(BOX.horizontal.repeat(rightWidth)) +
+      pc.dim(BOX.bottomRight)
+  );
+
+  // Render
+  for (const line of lines) {
+    console.log(line);
+  }
+  console.log();
+
+  // No confirmation needed - jump straight into setup
+  return { proceed: true };
 }

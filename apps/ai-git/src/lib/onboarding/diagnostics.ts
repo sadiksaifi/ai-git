@@ -54,22 +54,6 @@ export async function diagnoseConfig(
     return { valid: false, errors, warnings };
   }
 
-  // Check mode
-  if (!config.mode) {
-    errors.push({
-      code: "MISSING_MODE",
-      message: ERROR_MESSAGES.missingMode.message,
-      suggestion: ERROR_MESSAGES.missingMode.suggestion,
-    });
-  } else if (config.mode !== "cli" && config.mode !== "api") {
-    const err = ERROR_MESSAGES.invalidMode(config.mode);
-    errors.push({
-      code: "INVALID_MODE",
-      message: err.message,
-      suggestion: err.suggestion,
-    });
-  }
-
   // Check provider
   if (!config.provider) {
     errors.push({
@@ -87,9 +71,9 @@ export async function diagnoseConfig(
         suggestion: err.suggestion,
       });
     } else {
-      // Provider exists, check availability based on mode
-      if (config.mode === "cli") {
-        const adapter = getAdapter(config.provider, "cli");
+      // Provider exists, check availability based on provider's mode
+      if (provider.mode === "cli") {
+        const adapter = getAdapter(config.provider);
         if (adapter) {
           const available = await adapter.checkAvailable();
           if (!available && provider.binary) {
@@ -104,7 +88,7 @@ export async function diagnoseConfig(
             });
           }
         }
-      } else if (config.mode === "api") {
+      } else if (provider.mode === "api") {
         // Check platform support
         if (!isSecretsAvailable()) {
           errors.push({
@@ -182,8 +166,6 @@ export function formatDiagnostics(diagnostic: ConfigDiagnostic): string {
  */
 export function isConfigValid(config: UserConfig | undefined): boolean {
   if (!config) return false;
-  if (!config.mode || (config.mode !== "cli" && config.mode !== "api"))
-    return false;
   if (!config.provider) return false;
   if (!config.model) return false;
 

@@ -55,7 +55,7 @@ export async function runOnboarding(
   if (!skipWelcome) {
     const welcomeResult = await showWelcomeScreen(version);
     if (!welcomeResult.proceed) {
-      outro(pc.yellow("Setup cancelled. Run ai-git anytime to start again."));
+      outro(pc.dim("Cancelled"));
       return { config: null, completed: false, continueToRun: false };
     }
   }
@@ -64,7 +64,7 @@ export async function runOnboarding(
   const wizardResult = await runWizard({ defaults, target });
 
   if (!wizardResult.completed || !wizardResult.config) {
-    outro(pc.yellow("Setup incomplete. Run ai-git --setup to try again."));
+    outro(pc.dim("Run ai-git --setup to try again"));
     return { config: null, completed: false, continueToRun: false };
   }
 
@@ -73,10 +73,10 @@ export async function runOnboarding(
   if (target === "global" && !skipWelcome) {
     continueToRun = await askTryNow();
     if (!continueToRun) {
-      outro(pc.green("Setup complete! Run ai-git when you're ready."));
+      outro(pc.green("You're all set! ✨"));
     }
   } else {
-    outro(pc.green("Setup complete! Run ai-git to generate your first commit."));
+    outro(pc.green("You're all set! ✨"));
   }
 
   return { config: wizardResult.config, completed: true, continueToRun };
