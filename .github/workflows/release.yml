@@ -30,23 +30,21 @@ jobs:
           VERSION=${{ github.ref_name }}
           CLEAN_VERSION="${VERSION#v}"
           echo "Syncing package.json version to $CLEAN_VERSION"
-          sed -i "s/\"version\": \".*\"/\"version\": \"$CLEAN_VERSION\"/" package.json
+          sed -i "s/\"version\": \".*\"/\"version\": \"$CLEAN_VERSION\"/" apps/ai-git/package.json
 
       - name: Build for macOS ARM64
+        working-directory: apps/ai-git
         run: |
-          bun build --compile --minify --sourcemap src/index.ts --outfile dist/ai-git-arm64 --target bun-darwin-arm64
+          bun compile --target bun-darwin-arm64
           cd dist
-          mv ai-git-arm64 ai-git
           tar -czf ai-git-darwin-arm64.tar.gz ai-git
-          rm ai-git
 
       - name: Build for macOS x64
+        working-directory: apps/ai-git
         run: |
-          bun build --compile --minify --sourcemap src/index.ts --outfile dist/ai-git-x64 --target bun-darwin-x64
+          bun compile --target bun-darwin-x64
           cd dist
-          mv ai-git-x64 ai-git
           tar -czf ai-git-darwin-x64.tar.gz ai-git
-          rm ai-git
 
       - name: Generate Changelog
         id: changelog
@@ -75,8 +73,8 @@ jobs:
           body: ${{ steps.changelog.outputs.body }}
           generate_release_notes: false
           files: |
-            dist/ai-git-darwin-arm64.tar.gz
-            dist/ai-git-darwin-x64.tar.gz
+            apps/ai-git/dist/ai-git-darwin-arm64.tar.gz
+            apps/ai-git/dist/ai-git-darwin-x64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -92,10 +90,10 @@ jobs:
           VERSION=${{ github.ref_name }}
           
           URL_ARM64="https://github.com/${{ github.repository }}/releases/download/${VERSION}/ai-git-darwin-arm64.tar.gz"
-          SHA256_ARM64=$(shasum -a 256 dist/ai-git-darwin-arm64.tar.gz | awk '{print $1}')
+          SHA256_ARM64=$(shasum -a 256 apps/ai-git/dist/ai-git-darwin-arm64.tar.gz | awk '{print $1}')
 
           URL_X64="https://github.com/${{ github.repository }}/releases/download/${VERSION}/ai-git-darwin-x64.tar.gz"
-          SHA256_X64=$(shasum -a 256 dist/ai-git-darwin-x64.tar.gz | awk '{print $1}')
+          SHA256_X64=$(shasum -a 256 apps/ai-git/dist/ai-git-darwin-x64.tar.gz | awk '{print $1}')
 
           echo "Updating Formula for version $VERSION..."
           
