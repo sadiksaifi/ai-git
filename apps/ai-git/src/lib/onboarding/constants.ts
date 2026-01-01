@@ -22,24 +22,6 @@ export const INSTALL_INFO = {
 } as const;
 
 /**
- * Box drawing characters for the welcome screen.
- */
-export const BOX = {
-  topLeft: "╭",
-  topRight: "╮",
-  bottomLeft: "╰",
-  bottomRight: "╯",
-  horizontal: "─",
-  vertical: "│",
-  verticalRight: "├",
-  verticalLeft: "┤",
-  horizontalDown: "┬",
-  horizontalUp: "┴",
-  cross: "┼",
-} as const;
-
-
-/**
  * Error message templates with actionable suggestions.
  */
 export const ERROR_MESSAGES = {

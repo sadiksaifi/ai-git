@@ -5,7 +5,6 @@
 
 import { outro } from "@clack/prompts";
 import pc from "picocolors";
-import { showWelcomeScreen } from "./welcome.ts";
 import { runWizard } from "./wizard.ts";
 import { askTryNow } from "./demo.ts";
 import type { UserConfig } from "../../config.ts";
@@ -15,14 +14,10 @@ import type { UserConfig } from "../../config.ts";
 // ==============================================================================
 
 export interface OnboardingOptions {
-  /** Version string to display in the header. */
-  version: string;
   /** Default values from CLI flags. */
   defaults?: Partial<UserConfig>;
   /** Where to save the configuration. */
   target?: "global" | "project";
-  /** Skip the welcome screen (for --setup flag). */
-  skipWelcome?: boolean;
 }
 
 export interface OnboardingResult {
@@ -42,25 +37,15 @@ export interface OnboardingResult {
  * Run the complete onboarding flow for first-time users.
  *
  * Flow:
- * 1. Welcome screen (unless skipWelcome)
- * 2. Setup wizard
- * 3. Ask if user wants to try now (for first-time global setup)
+ * 1. Setup wizard
+ * 2. Ask if user wants to try now (for first-time global setup)
  */
 export async function runOnboarding(
   options: OnboardingOptions
 ): Promise<OnboardingResult> {
-  const { version, defaults, target = "global", skipWelcome = false } = options;
+  const { defaults, target = "global" } = options;
 
-  // Step 1: Welcome screen (skip if --setup flag used)
-  if (!skipWelcome) {
-    const welcomeResult = await showWelcomeScreen(version);
-    if (!welcomeResult.proceed) {
-      outro(pc.dim("Cancelled"));
-      return { config: null, completed: false, continueToRun: false };
-    }
-  }
-
-  // Step 2: Setup wizard
+  // Step 1: Setup wizard
   const wizardResult = await runWizard({ defaults, target });
 
   if (!wizardResult.completed || !wizardResult.config) {
@@ -68,15 +53,15 @@ export async function runOnboarding(
     return { config: null, completed: false, continueToRun: false };
   }
 
-  // Step 3: Ask if user wants to try now (only for first-time global setup)
+  // Step 2: Ask if user wants to try now (only for first-time global setup)
   let continueToRun = false;
-  if (target === "global" && !skipWelcome) {
+  if (target === "global") {
     continueToRun = await askTryNow();
     if (!continueToRun) {
-      outro(pc.green("You're all set! ✨"));
+      outro(pc.green("You're all set!"));
     }
   } else {
-    outro(pc.green("You're all set! ✨"));
+    outro(pc.green("You're all set!"));
   }
 
   return { config: wizardResult.config, completed: true, continueToRun };
@@ -86,7 +71,7 @@ export async function runOnboarding(
 // RE-EXPORTS
 // ==============================================================================
 
-export { showWelcomeScreen } from "./welcome.ts";
+export { showWelcomeScreen } from "../ui/welcome.ts";
 export { runWizard } from "./wizard.ts";
 export { askTryNow } from "./demo.ts";
 export {

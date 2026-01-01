@@ -28,6 +28,7 @@ import { handleStaging } from "./lib/staging.ts";
 import { runGenerationLoop } from "./lib/generation.ts";
 import { handlePush } from "./lib/push.ts";
 import { runOnboarding } from "./lib/onboarding/index.ts";
+import { showWelcomeScreen } from "./lib/ui/welcome.ts";
 import { runSetupWizard } from "./lib/setup.ts";
 import {
   startUpdateCheck,
@@ -192,6 +193,9 @@ cli
       options.push = true;
     }
 
+    // Show welcome screen on every run
+    await showWelcomeScreen(VERSION);
+
     // Check if setup is needed (first-run or --setup flag)
     const existingConfig = await loadUserConfig();
     const existingProjectConfig = await loadProjectConfig();
@@ -201,18 +205,12 @@ cli
     const isProjectComplete = isConfigComplete(existingProjectConfig);
 
     if (options.setup || (!isGlobalComplete && !isProjectComplete)) {
-      // Determine if this is first-run (full onboarding) or explicit --setup (wizard only)
-      const isFirstRun =
-        !isGlobalComplete && !isProjectComplete && !options.setup;
-
       const onboardingResult = await runOnboarding({
-        version: VERSION,
         defaults: {
           provider: options.provider,
           model: options.model,
         },
         target: "global",
-        skipWelcome: !isFirstRun, // Skip welcome for explicit --setup
       });
 
       if (!onboardingResult.completed) {
@@ -283,10 +281,6 @@ cli
       model = modelDef.id;
       modelName = modelDef.name;
     }
-
-    console.clear();
-
-    intro(pc.bgCyan(pc.black(` AI Git ${VERSION} `)));
 
     if (options.dangerouslyAutoApprove) {
       log.error(pc.red("You are running in auto-approve mode."));

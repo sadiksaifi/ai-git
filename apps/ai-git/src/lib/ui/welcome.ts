@@ -55,15 +55,18 @@ function truncatePath(path: string, maxWidth: number): string {
  */
 function wrapText(text: string, maxWidth: number): string[] {
   const words = text.split(" ");
+  if (words.length === 0) return [];
+  
   const lines: string[] = [];
-  let currentLine = words[0];
+  let currentLine = words[0] ?? "";
 
   for (let i = 1; i < words.length; i++) {
-    if (stripAnsi(currentLine + " " + words[i]).length <= maxWidth) {
-      currentLine += " " + words[i];
+    const word = words[i] ?? "";
+    if (stripAnsi(currentLine + " " + word).length <= maxWidth) {
+      currentLine += " " + word;
     } else {
       lines.push(currentLine);
-      currentLine = words[i];
+      currentLine = word;
     }
   }
   lines.push(currentLine);
@@ -105,14 +108,15 @@ export async function showWelcomeScreen(version: string): Promise<WelcomeResult>
   ];
 
   // Build right column content (without borders)
-  const rightContent: string[] = [
+  // Use null to mark separator row
+  const rightContent: (string | null)[] = [
     "",
     ` ${pc.bold("Features:")}`,
     ` ${pc.dim("•")} Conventional Commits format`,
     ` ${pc.dim("•")} Smart scope detection`,
     ` ${pc.dim("•")} Interactive refinement`,
     "",
-    " " + pc.dim("─".repeat(rightWidth - 2)),
+    null, // separator marker
     ` ${pc.bold("Tip:")} ${pc.cyan(`ai-git ${tip.flag}`)}`,
   ];
 
@@ -130,34 +134,50 @@ export async function showWelcomeScreen(version: string): Promise<WelcomeResult>
   // Build the box
   const lines: string[] = [];
 
-  // Top border with title
+  // Top border with title and middle connector
   const title = ` AI Git v${version} `;
   const titlePadLeft = 3;
-  const titlePadRight = totalWidth - titlePadLeft - title.length - 2;
+  const leftRemaining = leftWidth - titlePadLeft - title.length;
+  
   lines.push(
     pc.dim(BOX.topLeft) +
       pc.dim(BOX.horizontal.repeat(titlePadLeft)) +
       title +
-      pc.dim(BOX.horizontal.repeat(Math.max(0, titlePadRight))) +
+      pc.dim(BOX.horizontal.repeat(Math.max(0, leftRemaining))) +
+      pc.dim(BOX.horizontalDown) +
+      pc.dim(BOX.horizontal.repeat(rightWidth)) +
       pc.dim(BOX.topRight)
   );
 
   // Content rows with middle divider
   for (let i = 0; i < maxRows; i++) {
     const leftCell = padTo(leftContent[i] || "", leftWidth);
-    const rightCell = padTo(rightContent[i] || "", rightWidth);
-    lines.push(
-      pc.dim(BOX.vertical) +
-        leftCell +
+    const rightItem = rightContent[i];
+    
+    // Check if this is a separator row (marked with null)
+    if (rightItem === null) {
+      lines.push(
         pc.dim(BOX.vertical) +
-        rightCell +
-        pc.dim(BOX.vertical)
-    );
+          leftCell +
+          pc.dim(BOX.verticalRight) +
+          pc.dim(BOX.horizontal.repeat(rightWidth)) +
+          pc.dim(BOX.verticalLeft)
+      );
+    } else {
+      const rightCell = padTo(rightItem || "", rightWidth);
+      lines.push(
+        pc.dim(BOX.vertical) +
+          leftCell +
+          pc.dim(BOX.vertical) +
+          rightCell +
+          pc.dim(BOX.vertical)
+      );
+    }
   }
 
-  // Bottom border
+  // Bottom border (connects to clack UI below)
   lines.push(
-    pc.dim(BOX.bottomLeft) +
+    pc.dim(BOX.verticalRight) +
       pc.dim(BOX.horizontal.repeat(leftWidth)) +
       pc.dim(BOX.horizontalUp) +
       pc.dim(BOX.horizontal.repeat(rightWidth)) +
@@ -168,7 +188,6 @@ export async function showWelcomeScreen(version: string): Promise<WelcomeResult>
   for (const line of lines) {
     console.log(line);
   }
-  console.log();
 
   // No confirmation needed - jump straight into setup
   return { proceed: true };
