@@ -7,7 +7,7 @@
  * Installation information for CLI tools.
  */
 export const INSTALL_INFO = {
-  claude: {
+  "claude-code": {
     name: "Claude Code",
     binary: "claude",
     installCommand: "npm install -g @anthropic-ai/claude-code",
@@ -39,7 +39,7 @@ export const WELCOME_COPY = {
     "This quick setup will configure your AI provider.",
     "You'll choose between:",
     "",
-    "  CLI Mode - Use installed AI tools (claude, gemini-cli)",
+    "  CLI Mode - Use installed AI tools (claude-code, gemini-cli)",
     "  API Mode - Use API keys (macOS only)",
   ],
 } as const;

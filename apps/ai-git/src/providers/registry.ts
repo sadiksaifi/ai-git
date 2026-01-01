@@ -13,7 +13,7 @@ export const PROVIDERS: ProviderDefinition[] = [
   // CLI PROVIDERS
   // ==============================================================================
   {
-    id: "claude",
+    id: "claude-code",
     name: "Claude Code",
     mode: "cli",
     binary: "claude",
@@ -81,7 +81,7 @@ export const PROVIDERS: ProviderDefinition[] = [
 // ==============================================================================
 
 /**
- * Find a provider by its ID (e.g., "gemini-cli", "claude").
+ * Find a provider by its ID (e.g., "gemini-cli", "claude-code").
  */
 export function getProviderById(id: string): ProviderDefinition | undefined {
   return PROVIDERS.find((p) => p.id === id);

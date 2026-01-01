@@ -88,7 +88,7 @@ export async function runWizard(options: WizardOptions): Promise<WizardResult> {
     {
       value: "cli",
       label: "CLI Mode",
-      hint: "Use installed AI CLI tools (claude, gemini)",
+      hint: "Use installed AI CLI tools (claude-code, gemini-cli)",
     },
     {
       value: "api",

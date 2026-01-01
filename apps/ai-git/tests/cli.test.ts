@@ -11,7 +11,7 @@ const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
 // Test configuration to bypass setup wizard
 const TEST_CONFIG = {
   mode: "cli",
-  provider: "claude",
+  provider: "claude-code",
   model: "haiku",
 };
 

@@ -20,7 +20,7 @@ export interface InvokeOptions {
  * to handle their specific invocation patterns.
  */
 export interface ProviderAdapter {
-  /** Unique provider identifier (e.g., "gemini", "claude") */
+  /** Unique provider identifier (e.g., "gemini-cli", "claude-code") */
   providerId: string;
 
   /** Connection mode (cli or api) */

@@ -11,7 +11,7 @@ import { getAPIAdapter } from "./api/index.ts";
  * Get a provider adapter by provider ID.
  * Automatically routes to the correct mode-specific registry.
  *
- * @param providerId - The provider ID (e.g., "gemini", "claude", "openrouter")
+ * @param providerId - The provider ID (e.g., "gemini-cli", "claude-code", "openrouter")
  * @param mode - Optional mode hint (if not provided, searches all modes)
  * @returns The provider adapter or undefined if not found
  */

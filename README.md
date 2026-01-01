@@ -10,7 +10,7 @@ A CLI tool that leverages AI to automatically generate semantically correct, con
 - 📝 **Conventional Commits** - Strictly adheres to [v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification
 - 🎨 **Interactive TUI** - Beautiful prompts for staging, editing, and confirming
 - 🪙 **Token Efficient** - Uses [TOON](https://toonformat.dev/) to minimize prompt size and cost
-- 🔌 **Multiple Providers** - CLI mode (Claude, Gemini CLI) or API mode (OpenRouter, OpenAI, Anthropic, Gemini)
+- 🔌 **Multiple Providers** - CLI mode (Claude Code, Gemini CLI) or API mode (OpenRouter, OpenAI, Anthropic, Gemini)
 - 🔐 **Secure** - API keys stored in keychain, never in config files
 
 ## Installation
@@ -41,7 +41,7 @@ ai-git
 ```
 
 On first run, you'll be guided through a quick setup wizard to configure your AI provider:
-- **CLI Mode** - Use installed AI tools (claude, gemini-cli)
+- **CLI Mode** - Use installed AI tools (claude-code, gemini-cli)
 - **API Mode** - Use API keys (OpenRouter, OpenAI, Anthropic, Gemini)
 
 Settings are saved to `~/.config/ai-git/config.json`
@@ -67,7 +67,7 @@ For more info, run any command with the `--help` flag:
 
 Options:
   --mode <mode>        Connection mode: cli or api (auto-detected from provider)
-  -P, --provider <id>  AI provider (claude, gemini-cli, openrouter, openai, anthropic, gemini)
+  -P, --provider <id>  AI provider (claude-code, gemini-cli, openrouter, openai, anthropic, gemini)
   -M, --model <id>     Model ID (e.g., haiku, gpt-4o-mini, anthropic/claude-3.5-haiku)
   -a, --stage-all      Automatically stage all changes
   -c, --commit         Automatically commit (skip editor/confirmation)
@@ -108,7 +108,7 @@ Uses locally installed AI CLI tools (no API keys needed).
 
 | Provider | ID | Models | Requirements |
 | :--- | :--- | :--- | :--- |
-| Claude Code | `claude` | haiku, sonnet, opus | [Install CLI](https://claude.com/claude-code) |
+| Claude Code | `claude-code` | haiku, sonnet, opus | [Install CLI](https://claude.com/claude-code) |
 | Gemini | `gemini-cli` | flash, pro, flash-lite | [Install CLI](https://ai.google.dev/gemini-api/docs/cli) |
 
 ### API Mode
@@ -139,7 +139,7 @@ AI Git uses a **three-tier configuration system**:
 {
   "$schema": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
   "mode": "cli",
-  "provider": "claude",
+  "provider": "claude-code",
   "model": "haiku",
   "defaults": {
     "stageAll": false,
@@ -181,7 +181,7 @@ The default prompt works excellently for most projects. Customize only for proje
 {
   "$schema": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
   "mode": "cli",
-  "provider": "claude",
+  "provider": "claude-code",
   "model": "sonnet",
   "prompt": {
     "context": "Monorepo with packages: web, mobile, shared, api, docs, infra.",
