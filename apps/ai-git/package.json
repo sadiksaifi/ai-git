@@ -1,0 +1,41 @@
+{
+  "name": "ai-git",
+  "version": "1.0.0",
+  "description": "A CLI tool that leverages AI to automatically generate semantically correct, Conventional Commits compliant git messages.",
+  "author": "Sadik Saifi <mail@sadiksaifi.dev>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sadiksaifi/ai-git"
+  },
+  "module": "src/index.ts",
+  "type": "module",
+  "bin": {
+    "ai-git": "src/index.ts"
+  },
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "compile": "bun build --compile --minify --sourcemap src/index.ts --outfile dist/ai-git",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/prompts": "^2.4.9"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.1",
+    "@ai-sdk/google": "^3.0.1",
+    "@ai-sdk/openai": "^3.0.1",
+    "@clack/prompts": "^0.11.0",
+    "@openrouter/ai-sdk-provider": "^1.5.4",
+    "@toon-format/toon": "^2.0.1",
+    "ai": "^6.0.5",
+    "cac": "^6.7.14",
+    "picocolors": "^1.1.1",
+    "prompts": "^2.4.2"
+  }
+}
