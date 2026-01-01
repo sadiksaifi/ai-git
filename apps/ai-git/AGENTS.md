@@ -9,11 +9,11 @@ AI Git is a CLI tool that uses AI to generate Conventional Commits-compliant git
 ## Commands
 
 ```bash
-bun install          # Install dependencies
-bun start            # Run CLI in development
-bun run build        # Compile to single binary (dist/ai-git)
-bun run typecheck    # Type check without emitting
-bun test             # Run tests
+bun install             # Install dependencies
+bun start               # Run CLI in development
+bun run compile         # Compile to single binary (dist/ai-git)
+bun run typecheck       # Type check without emitting
+bun test                # Run tests
 bun start --dry-run -a  # Test prompt generation without AI call
 ```
 

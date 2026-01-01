@@ -23,7 +23,6 @@ import {
   getProjectConfigPath,
   type UserConfig,
 } from "../../config.ts";
-import type { Mode } from "../../types.ts";
 import {
   isSecretsAvailable,
   setApiKey,
@@ -68,6 +67,7 @@ interface FlowContext {
 
 /**
  * Run the setup wizard with progress indicators.
+ * Shows all providers in a unified list with type hints (CLI/API).
  */
 export async function runWizard(options: WizardOptions): Promise<WizardResult> {
   const { defaults, target } = options;
@@ -78,82 +78,108 @@ export async function runWizard(options: WizardOptions): Promise<WizardResult> {
   // Determine if API mode is available upfront
   const apiModeAvailable = isSecretsAvailable();
 
-  type ModeOption = {
-    value: Mode;
-    label: string;
-    hint: string;
-  };
+  // Pre-check CLI provider availability
+  const cliProviders = PROVIDERS.filter((p) => p.mode === "cli");
+  const cliAvailability = await Promise.all(
+    cliProviders.map(async (p) => {
+      const adapter = getAdapter(p.id);
+      const available = adapter ? await adapter.checkAvailable() : false;
+      return { providerId: p.id, available };
+    })
+  );
+  const cliAvailabilityMap = new Map(
+    cliAvailability.map((a) => [a.providerId, a.available])
+  );
 
-  const modeOptions: ModeOption[] = [
-    {
-      value: "cli",
-      label: "CLI Mode",
-      hint: "Use installed AI CLI tools (claude, gemini)",
-    },
-    {
-      value: "api",
-      label: "API Mode",
-      hint: apiModeAvailable
-        ? "Use API keys (OpenRouter, OpenAI, Anthropic, Gemini)"
-        : pc.yellow("macOS only - not available on this platform"),
-    },
-  ];
+  // Build unified provider options with type hints
+  const providerOptions = PROVIDERS.map((p) => {
+    const isCli = p.mode === "cli";
+    const isApi = p.mode === "api";
 
-  const modeResult = await select({
-    message: "Select connection mode:",
-    options: modeOptions,
-    initialValue: defaults?.mode ?? "cli",
+    let hint: string | undefined;
+    if (isCli) {
+      const available = cliAvailabilityMap.get(p.id);
+      if (!available) {
+        hint = pc.yellow("not installed");
+      } else if (p.isDefault) {
+        hint = "recommended";
+      }
+    } else if (isApi) {
+      if (!apiModeAvailable) {
+        hint = pc.yellow("macOS only");
+      } else if (p.isDefault) {
+        hint = "recommended";
+      }
+    }
+
+    const typeLabel = isCli ? "CLI" : "API";
+    return {
+      value: p.id,
+      label: `${p.name} (${typeLabel})`,
+      hint,
+    };
   });
 
-  if (isCancel(modeResult)) {
+  // Find default provider (prefer CLI default, then API default)
+  const defaultProvider =
+    defaults?.provider ??
+    PROVIDERS.find((p) => p.mode === "cli" && p.isDefault)?.id ??
+    PROVIDERS.find((p) => p.isDefault)?.id;
+
+  const providerResult = await select({
+    message: "Select AI provider:",
+    options: providerOptions,
+    initialValue: defaultProvider,
+  });
+
+  if (isCancel(providerResult)) {
     return { config: null, completed: false };
   }
 
-  const mode = modeResult as Mode;
+  const providerId = providerResult as string;
+  const providerDef = getProviderById(providerId);
 
-  // Handle API mode selection on unsupported platform
-  if (mode === "api" && !apiModeAvailable) {
-    note(
-      [
-        ERROR_MESSAGES.platformNotSupported.message,
-        "",
-        pc.dim(ERROR_MESSAGES.platformNotSupported.hint),
-      ].join("\n"),
-      pc.yellow(ERROR_MESSAGES.platformNotSupported.title)
-    );
+  if (!providerDef) {
+    log.error(pc.red(`Error: Unknown provider '${providerId}'.`));
+    return { config: null, completed: false };
+  }
 
-    // Offer to switch to CLI mode
-    const switchToCli = await select({
-      message: "What would you like to do?",
-      options: [
-        { value: "cli", label: "Use CLI mode instead" },
-        { value: "exit", label: "Exit setup" },
-      ],
-    });
+  // Route to appropriate flow based on provider's mode
+  const ctx: FlowContext = { defaults, target, configFile, configType };
 
-    if (isCancel(switchToCli) || switchToCli === "exit") {
-      return { config: null, completed: false };
-    }
+  if (providerDef.mode === "api") {
+    // Check if API mode is available on this platform
+    if (!apiModeAvailable) {
+      note(
+        [
+          ERROR_MESSAGES.platformNotSupported.message,
+          "",
+          pc.dim(ERROR_MESSAGES.platformNotSupported.hint),
+        ].join("\n"),
+        pc.yellow(ERROR_MESSAGES.platformNotSupported.title)
+      );
 
-    // Continue with CLI mode
-    const cliResult = await setupCLIFlow({
-      defaults,
-      target,
-      configFile,
-      configType,
-    });
-    if (cliResult.restart) {
+      // Offer to choose a different provider
+      const retry = await select({
+        message: "What would you like to do?",
+        options: [
+          { value: "retry", label: "Choose a different provider" },
+          { value: "exit", label: "Exit setup" },
+        ],
+      });
+
+      if (isCancel(retry) || retry === "exit") {
+        return { config: null, completed: false };
+      }
+
       return await runWizard(options);
     }
-    return cliResult;
+
+    return await setupAPIFlow(ctx, providerId);
   }
 
-  // Route to appropriate flow
-  if (mode === "api") {
-    return await setupAPIFlow({ defaults, target, configFile, configType });
-  }
-
-  const cliResult = await setupCLIFlow({ defaults, target, configFile, configType });
+  // CLI provider
+  const cliResult = await setupCLIFlow(ctx, providerId, cliAvailabilityMap);
   if (cliResult.restart) {
     return await runWizard(options);
   }
@@ -164,57 +190,25 @@ export async function runWizard(options: WizardOptions): Promise<WizardResult> {
 // CLI MODE FLOW
 // ==============================================================================
 
-async function setupCLIFlow(ctx: FlowContext): Promise<InternalFlowResult> {
+async function setupCLIFlow(
+  ctx: FlowContext,
+  providerId: string,
+  availabilityMap: Map<string, boolean>
+): Promise<InternalFlowResult> {
   const { defaults, target, configFile, configType } = ctx;
 
-  const cliProviders = PROVIDERS.filter((p) => p.mode === "cli");
-
-  // Pre-check which providers are available
-  const providerAvailability = await Promise.all(
-    cliProviders.map(async (p) => {
-      const adapter = getAdapter(p.id, "cli");
-      const available = adapter ? await adapter.checkAvailable() : false;
-      return { provider: p, available };
-    })
-  );
-
-  const providerOptions = providerAvailability.map(({ provider, available }) => ({
-    value: provider.id,
-    label: provider.name,
-    hint: !available
-      ? pc.yellow(`not installed`)
-      : provider.isDefault
-        ? "recommended"
-        : undefined,
-  }));
-
-  const providerResult = await select({
-    message: "Select CLI provider:",
-    options: providerOptions,
-    initialValue:
-      defaults?.provider ?? cliProviders.find((p) => p.isDefault)?.id,
-  });
-
-  if (isCancel(providerResult)) {
-    return { config: null, completed: false };
-  }
-
-  const provider = providerResult as string;
-  const providerDef = getProviderById(provider);
-
+  const providerDef = getProviderById(providerId);
   if (!providerDef) {
-    log.error(pc.red(`Error: Unknown provider '${provider}'.`));
+    log.error(pc.red(`Error: Unknown provider '${providerId}'.`));
     return { config: null, completed: false };
   }
 
   // Check if selected CLI is available
-  const selectedAvailability = providerAvailability.find(
-    (pa) => pa.provider.id === provider
-  );
+  const isAvailable = availabilityMap.get(providerId);
 
-  if (!selectedAvailability?.available) {
+  if (!isAvailable) {
     // Show helpful installation instructions
-    const installKey = provider as keyof typeof INSTALL_INFO;
+    const installKey = providerId as keyof typeof INSTALL_INFO;
     const errorInfo = ERROR_MESSAGES.cliNotInstalled(
       providerDef.binary!,
       installKey
@@ -234,7 +228,7 @@ async function setupCLIFlow(ctx: FlowContext): Promise<InternalFlowResult> {
     const retry = await select({
       message: "What would you like to do?",
       options: [
-        { value: "retry", label: "Choose a different option" },
+        { value: "retry", label: "Choose a different provider" },
         { value: "exit", label: "Exit and install the CLI first" },
       ],
     });
@@ -243,7 +237,7 @@ async function setupCLIFlow(ctx: FlowContext): Promise<InternalFlowResult> {
       return { config: null, completed: false };
     }
 
-    // Return special result to restart from mode selection
+    // Return special result to restart from provider selection
     return { config: null, completed: false, restart: true };
   }
 
@@ -264,10 +258,9 @@ async function setupCLIFlow(ctx: FlowContext): Promise<InternalFlowResult> {
 
   const model = modelResult as string;
 
-  // Save configuration
+  // Save configuration (without mode)
   const config: UserConfig = {
-    mode: "cli",
-    provider,
+    provider: providerId,
     model,
   };
 
@@ -277,19 +270,9 @@ async function setupCLIFlow(ctx: FlowContext): Promise<InternalFlowResult> {
     await saveProjectConfig(config);
   }
 
-  // Success summary
-  note(
-    [
-      `Mode: ${pc.cyan("CLI")}`,
-      `Provider: ${pc.cyan(providerDef.name)}`,
-      `Model: ${pc.cyan(
-        providerDef.models.find((m) => m.id === model)?.name ?? model
-      )}`,
-      "",
-      pc.dim(`Saved to: ${configFile}`),
-    ].join("\n"),
-    pc.green(`${configType} Configuration Saved`)
-  );
+  // Minimal success message
+  const modelName = providerDef.models.find((m) => m.id === model)?.name ?? model;
+  log.success(`${pc.cyan(providerDef.name)} → ${pc.cyan(modelName)}`);
 
   return { config, completed: true };
 }
@@ -298,36 +281,19 @@ async function setupCLIFlow(ctx: FlowContext): Promise<InternalFlowResult> {
 // API MODE FLOW
 // ==============================================================================
 
-async function setupAPIFlow(ctx: FlowContext): Promise<WizardResult> {
+async function setupAPIFlow(
+  ctx: FlowContext,
+  providerId: string
+): Promise<WizardResult> {
   const { defaults, target, configFile, configType } = ctx;
 
-  const apiProviders = PROVIDERS.filter((p) => p.mode === "api");
-  const defaultApiProvider =
-    apiProviders.find((p) => p.isDefault)?.id ?? "openrouter";
-
-  const providerResult = await select({
-    message: "Select API provider:",
-    options: apiProviders.map((p) => ({
-      value: p.id,
-      label: p.name,
-      hint: p.id === "openrouter" ? "recommended" : undefined,
-    })),
-    initialValue: defaults?.provider ?? defaultApiProvider,
-  });
-
-  if (isCancel(providerResult)) {
-    return { config: null, completed: false };
-  }
-
-  const provider = providerResult as string;
-  const providerDef = getProviderById(provider);
-
+  const providerDef = getProviderById(providerId);
   if (!providerDef) {
-    log.error(pc.red(`Error: Unknown provider '${provider}'.`));
+    log.error(pc.red(`Error: Unknown provider '${providerId}'.`));
     return { config: null, completed: false };
   }
 
-  const existingKey = await getApiKey(provider);
+  const existingKey = await getApiKey(providerId);
   let apiKey: string;
 
   if (existingKey) {
@@ -360,7 +326,7 @@ async function setupAPIFlow(ctx: FlowContext): Promise<WizardResult> {
   let models: CachedModel[];
 
   try {
-    const adapter = getAPIAdapter(provider);
+    const adapter = getAPIAdapter(providerId);
     if (!adapter) {
       s.stop(pc.red("Error: Provider adapter not found"));
       return { config: null, completed: false };
@@ -385,10 +351,10 @@ async function setupAPIFlow(ctx: FlowContext): Promise<WizardResult> {
     }));
 
     // Cache the models
-    await cacheModels(provider, models);
+    await cacheModels(providerId, models);
 
     // Save the API key (it's validated now)
-    await setApiKey(provider, apiKey);
+    await setApiKey(providerId, apiKey);
 
     s.stop(pc.green(`Found ${models.length} models`));
   } catch (error) {
@@ -416,19 +382,18 @@ async function setupAPIFlow(ctx: FlowContext): Promise<WizardResult> {
     }
 
     // Recursively restart from API key step
-    return await setupAPIFlow(ctx);
+    return await setupAPIFlow(ctx, providerId);
   }
 
   // Select model
-  const model = await selectModel(models, provider, defaults?.model);
+  const model = await selectModel(models, providerId, defaults?.model);
   if (!model) {
     return { config: null, completed: false };
   }
 
-  // Save configuration
+  // Save configuration (without mode)
   const config: UserConfig = {
-    mode: "api",
-    provider,
+    provider: providerId,
     model,
   };
 
@@ -438,19 +403,9 @@ async function setupAPIFlow(ctx: FlowContext): Promise<WizardResult> {
     await saveProjectConfig(config);
   }
 
-  // Find model name for display
+  // Minimal success message
   const modelName = models.find((m) => m.id === model)?.name ?? model;
-
-  note(
-    [
-      `Mode: ${pc.cyan("API")}`,
-      `Provider: ${pc.cyan(providerDef.name)}`,
-      `Model: ${pc.cyan(modelName)}`,
-      "",
-      pc.dim(`Saved to: ${configFile}`),
-    ].join("\n"),
-    pc.green(`${configType} Configuration Saved`)
-  );
+  log.success(`${pc.cyan(providerDef.name)} → ${pc.cyan(modelName)}`);
 
   return { config, completed: true };
 }

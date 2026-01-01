@@ -128,23 +128,109 @@ export async function stageAll(): Promise<void> {
 }
 
 /**
- * Create a git commit with the given message.
+ * Commit result information.
  */
-export async function commit(message: string): Promise<void> {
-  await $`git commit -m ${message}`;
+export interface CommitResult {
+  /** Short commit hash */
+  hash: string;
+  /** Branch name */
+  branch: string;
+  /** First line of commit message */
+  subject: string;
+  /** Number of files changed */
+  filesChanged: number;
+  /** Number of insertions */
+  insertions: number;
+  /** Number of deletions */
+  deletions: number;
+  /** List of files with their status (A=added, M=modified, D=deleted) */
+  files: Array<{ status: string; path: string }>;
+  /** Whether this is the root commit */
+  isRoot: boolean;
+}
+
+/**
+ * Create a git commit with the given message.
+ * Returns structured commit information.
+ */
+export async function commit(message: string): Promise<CommitResult> {
+  // Run commit quietly and capture output
+  const result = await $`git commit -m ${message}`.quiet();
+  const stdout = result.stdout.toString();
+
+  // Parse the commit output
+  // Format: "[branch hash] message\n files changed, insertions, deletions\n create mode ... file\n ..."
+  const lines = stdout.trim().split("\n");
+  
+  // Parse first line: "[main abc1234] commit message" or "[main (root-commit) abc1234] message"
+  const headerMatch = lines[0]?.match(/^\[([^\s\]]+)(?:\s+\([^)]+\))?\s+([a-f0-9]+)\]/);
+  const branch = headerMatch?.[1] ?? "unknown";
+  const hash = headerMatch?.[2] ?? "unknown";
+  const isRoot = lines[0]?.includes("(root-commit)") ?? false;
+  
+  // Parse subject from the header line
+  const subjectMatch = lines[0]?.match(/\]\s+(.+)$/);
+  const subject = subjectMatch?.[1] ?? message.split("\n")[0] ?? "";
+
+  // Parse stats line: " 8 files changed, 233 insertions(+)"
+  let filesChanged = 0;
+  let insertions = 0;
+  let deletions = 0;
+  
+  for (const line of lines) {
+    const statsMatch = line.match(/(\d+)\s+files?\s+changed(?:,\s+(\d+)\s+insertions?\(\+\))?(?:,\s+(\d+)\s+deletions?\(-\))?/);
+    if (statsMatch) {
+      filesChanged = parseInt(statsMatch[1] ?? "0", 10);
+      insertions = parseInt(statsMatch[2] ?? "0", 10);
+      deletions = parseInt(statsMatch[3] ?? "0", 10);
+      break;
+    }
+  }
+
+  // Parse file list: " create mode 100644 path/to/file" or " rename ... => ..."
+  const files: Array<{ status: string; path: string }> = [];
+  for (const line of lines) {
+    const createMatch = line.match(/^\s+create mode \d+ (.+)$/);
+    if (createMatch) {
+      files.push({ status: "A", path: createMatch[1] ?? "" });
+      continue;
+    }
+    const deleteMatch = line.match(/^\s+delete mode \d+ (.+)$/);
+    if (deleteMatch) {
+      files.push({ status: "D", path: deleteMatch[1] ?? "" });
+      continue;
+    }
+    const renameMatch = line.match(/^\s+rename (.+) => (.+) \(\d+%\)$/);
+    if (renameMatch) {
+      files.push({ status: "R", path: `${renameMatch[1]} → ${renameMatch[2]}` });
+      continue;
+    }
+  }
+
+  return {
+    hash,
+    branch,
+    subject,
+    filesChanged,
+    insertions,
+    deletions,
+    files,
+    isRoot,
+  };
 }
 
 /**
  * Push changes to remote.
+ * Throws with stderr available on error.
  */
 export async function push(): Promise<void> {
-  await $`git push`;
+  await $`git push`.quiet();
 }
 
 /**
  * Add a remote and push.
  */
 export async function addRemoteAndPush(url: string): Promise<void> {
-  await $`git remote add origin ${url}`;
-  await $`git push -u origin HEAD`;
+  await $`git remote add origin ${url}`.quiet();
+  await $`git push -u origin HEAD`.quiet();
 }

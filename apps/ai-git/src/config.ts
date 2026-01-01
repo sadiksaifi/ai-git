@@ -1,6 +1,5 @@
 import * as path from "node:path";
 import * as os from "node:os";
-import type { Mode } from "./types.ts";
 import { getProviderById } from "./providers/registry.ts";
 import { getRepoRoot } from "./lib/git.ts";
 
@@ -43,8 +42,6 @@ export interface PromptCustomization {
  * User configuration schema for ~/.config/ai-git/config.json
  */
 export interface UserConfig {
-  /** Connection mode (cli or api) */
-  mode?: Mode;
   /** Default provider ID */
   provider?: string;
   /** Default model ID */
@@ -65,7 +62,6 @@ export interface UserConfig {
  * Resolved configuration with all values populated.
  */
 export interface ResolvedConfig {
-  mode: Mode;
   provider: string;
   model: string;
   defaults: {
@@ -144,16 +140,20 @@ const CONFIG_SCHEMA_URL =
 /**
  * Save user configuration to the config file.
  * Includes $schema for editor autocomplete/validation support.
+ * Removes legacy 'mode' property if present (migration).
  */
 export async function saveUserConfig(config: UserConfig): Promise<void> {
   // Ensure config directory exists
   const { mkdir } = await import("node:fs/promises");
   await mkdir(CONFIG_DIR, { recursive: true });
 
+  // Remove legacy 'mode' property if present (migration)
+  const { mode: _legacyMode, ...cleanConfig } = config as UserConfig & { mode?: unknown };
+
   // Add $schema at the top for editor support
   const configWithSchema = {
     $schema: CONFIG_SCHEMA_URL,
-    ...config,
+    ...cleanConfig,
   };
 
   await Bun.write(CONFIG_FILE, JSON.stringify(configWithSchema, null, 2));
@@ -162,12 +162,16 @@ export async function saveUserConfig(config: UserConfig): Promise<void> {
 /**
  * Save project configuration to the project config file.
  * Includes $schema for editor autocomplete/validation support.
+ * Removes legacy 'mode' property if present (migration).
  */
 export async function saveProjectConfig(config: UserConfig): Promise<void> {
+  // Remove legacy 'mode' property if present (migration)
+  const { mode: _legacyMode, ...cleanConfig } = config as UserConfig & { mode?: unknown };
+
   // Add $schema at the top for editor support
   const configWithSchema = {
     $schema: CONFIG_SCHEMA_URL,
-    ...config,
+    ...cleanConfig,
   };
 
   const configPath = await getProjectConfigPath();
@@ -179,7 +183,6 @@ export async function saveProjectConfig(config: UserConfig): Promise<void> {
  * Used to determine if the setup wizard should run.
  *
  * A config is complete if it has:
- * - mode set to a valid value
  * - provider set to a valid provider ID
  * - model set to a valid model ID for that provider
  */
@@ -189,12 +192,7 @@ export function isConfigComplete(config: UserConfig | undefined): boolean {
   }
 
   // Check required fields exist
-  if (!config.mode || !config.provider || !config.model) {
-    return false;
-  }
-
-  // Validate mode
-  if (config.mode !== "cli" && config.mode !== "api") {
+  if (!config.provider || !config.model) {
     return false;
   }
 
@@ -233,7 +231,7 @@ const DEFAULT_WORKFLOW_OPTIONS = {
  * Priority: CLI flags > Project config file > User config file
  *
  * Note: This function assumes the setup wizard has already run,
- * so the config file contains valid mode, provider, and model values.
+ * so the config file contains valid provider and model values.
  */
 export async function resolveConfigAsync(
   cliOptions: Partial<ResolvedConfig>
@@ -250,7 +248,7 @@ export async function resolveConfigAsync(
 
   // Base config is user config, or empty if not present (but one of them must be present per above check)
   const baseConfig = userConfig || {} as UserConfig;
-  
+
   // Merge project config on top of user config
   const mergedConfig = {
     ...baseConfig,
@@ -259,14 +257,8 @@ export async function resolveConfigAsync(
     prompt: { ...baseConfig.prompt, ...projectConfig?.prompt },
   };
 
-  // Ensure we have the required fields from either config
-  // (We validated at least one is complete above, but we need to ensure the merged result has values)
-  // If userConfig was incomplete but projectConfig was complete, this works.
-  // If userConfig was complete, we have values.
-  
   // Fallbacks are just for safety, the check above ensures we should have them.
   const resolved: ResolvedConfig = {
-    mode: mergedConfig.mode ?? baseConfig.mode!,
     provider: mergedConfig.provider ?? baseConfig.provider!,
     model: mergedConfig.model ?? baseConfig.model!,
     defaults: { ...DEFAULT_WORKFLOW_OPTIONS, ...mergedConfig.defaults },
@@ -275,9 +267,6 @@ export async function resolveConfigAsync(
   };
 
   // Apply CLI options (highest priority - overrides config file)
-  if (cliOptions.mode !== undefined) {
-    resolved.mode = cliOptions.mode;
-  }
   if (cliOptions.provider !== undefined) {
     resolved.provider = cliOptions.provider;
   }
@@ -291,20 +280,10 @@ export async function resolveConfigAsync(
   return resolved;
 }
 
-/**
- * Infer mode from provider if not explicitly set.
- * Falls back to the provider's defined mode.
- */
-export function inferModeFromProvider(providerId: string): Mode {
-  const provider = getProviderById(providerId);
-  return provider?.mode ?? "cli";
-}
-
 // Re-export registry functions for convenience
 export {
   getProviderById,
   getProviderByBinary,
-  getProvidersByMode,
   getProviderIds,
   getModelIds,
   getModelById,

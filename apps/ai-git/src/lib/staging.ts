@@ -83,6 +83,7 @@ export async function handleStaging(
           await stageFiles(selected as string[]);
           s.stop("Staged selected files");
           stagedFiles = await getStagedFiles();
+          note(stagedFiles.map((f) => `+ ${f}`).join("\n"), "Staged Files");
         }
       }
     }
@@ -141,6 +142,7 @@ export async function handleStaging(
         await stageFiles(selected as string[]);
         s.stop("Staged selected files");
         stagedFiles = await getStagedFiles();
+        note(stagedFiles.map((f) => `+ ${f}`).join("\n"), "Staged Files");
       }
     }
   }

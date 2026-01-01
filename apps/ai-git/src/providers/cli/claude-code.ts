@@ -11,8 +11,8 @@ import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
  * - `--system-prompt` sets the system instructions
  * - Main prompt is passed as positional argument
  */
-export const claudeAdapter: CLIProviderAdapter = {
-  providerId: "claude",
+export const claudeCodeAdapter: CLIProviderAdapter = {
+  providerId: "claude-code",
   mode: "cli",
   binary: "claude",
 

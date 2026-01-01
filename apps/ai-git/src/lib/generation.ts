@@ -11,12 +11,50 @@ import { encode } from "@toon-format/toon";
 import { buildSystemPrompt } from "../prompt.ts";
 import type { PromptCustomization } from "../config.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
-import { getStagedDiff, getBranchName, setBranchName, commit } from "./git.ts";
-import { TEMP_MSG_FILE } from "./utils.ts";
+import { getStagedDiff, getBranchName, setBranchName, commit, type CommitResult } from "./git.ts";
+import { TEMP_MSG_FILE, wrapText } from "./utils.ts";
 
 // ==============================================================================
 // AI GENERATION ENGINE
 // ==============================================================================
+
+/**
+ * Format and display the commit result in a styled box.
+ */
+function showCommitResult(result: CommitResult): void {
+  const lines: string[] = [];
+  
+  // Header: [branch hash] subject
+  const rootLabel = result.isRoot ? " (root-commit)" : "";
+  lines.push(pc.dim(`[${result.branch}${rootLabel} ${result.hash}]`) + ` ${result.subject}`);
+  lines.push("");
+  
+  // Stats
+  const stats: string[] = [];
+  if (result.filesChanged > 0) {
+    stats.push(`${result.filesChanged} file${result.filesChanged === 1 ? "" : "s"} changed`);
+  }
+  if (result.insertions > 0) {
+    stats.push(pc.green(`${result.insertions} insertion${result.insertions === 1 ? "" : "s"}(+)`));
+  }
+  if (result.deletions > 0) {
+    stats.push(pc.red(`${result.deletions} deletion${result.deletions === 1 ? "" : "s"}(-)`));
+  }
+  if (stats.length > 0) {
+    lines.push(stats.join(", "));
+  }
+  
+  // File list (if any new/deleted files)
+  if (result.files.length > 0) {
+    lines.push("");
+    for (const file of result.files) {
+      const statusColor = file.status === "A" ? pc.green : file.status === "D" ? pc.red : pc.yellow;
+      lines.push(`${statusColor(file.status)} ${file.path}`);
+    }
+  }
+  
+  note(lines.join("\n"), "Commit Created");
+}
 
 export interface GenerationOptions {
   commit: boolean;
@@ -130,7 +168,17 @@ export async function runGenerationLoop(
       // Handle dry run
       if (options.dryRun) {
         s.stop("Dry run complete");
-        note(fullInput, "Dry Run: Full Prompt");
+        
+        const width = process.stdout.columns || 80;
+        const border = pc.dim("─".repeat(width));
+        
+        console.log("");
+        console.log(pc.bgCyan(pc.black(" DRY RUN: FULL AI PROMPT ")));
+        console.log(border);
+        console.log(wrapText(fullInput, width));
+        console.log(border);
+        console.log("");
+        
         return { message: "", committed: false, aborted: false };
       }
 
@@ -216,7 +264,8 @@ export async function runGenerationLoop(
 
     // Commit logic
     if (options.commit) {
-      await commit(cleanMsg);
+      const result = await commit(cleanMsg);
+      showCommitResult(result);
       return { message: cleanMsg, committed: true, aborted: false };
     }
 
@@ -263,7 +312,8 @@ export async function runGenerationLoop(
     }
 
     if (action === "commit") {
-      await commit(cleanMsg);
+      const result = await commit(cleanMsg);
+      showCommitResult(result);
       return { message: cleanMsg, committed: true, aborted: false };
     }
 

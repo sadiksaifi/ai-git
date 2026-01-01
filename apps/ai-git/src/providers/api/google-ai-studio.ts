@@ -4,7 +4,7 @@ import type { APIProviderAdapter, APIModelDefinition, InvokeOptions } from "../t
 import { getApiKey, createTimeoutController, COMMON_HEADERS } from "./utils.ts";
 
 // ==============================================================================
-// GOOGLE GEMINI API ADAPTER
+// GOOGLE AI STUDIO ADAPTER
 // ==============================================================================
 
 const BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
@@ -64,15 +64,15 @@ function getModelPriority(modelId: string): number {
 }
 
 /**
- * Google Gemini API adapter using Vercel AI SDK.
+ * Google AI Studio adapter using Vercel AI SDK.
  */
-export const geminiApiAdapter: APIProviderAdapter = {
-  providerId: "gemini-api",
+export const googleAiStudioAdapter: APIProviderAdapter = {
+  providerId: "google-ai-studio",
   mode: "api",
   baseUrl: BASE_URL,
 
   async invoke({ model, prompt }: InvokeOptions): Promise<string> {
-    const apiKey = await getApiKey("gemini-api");
+    const apiKey = await getApiKey("google-ai-studio");
 
     const google = createGoogleGenerativeAI({
       apiKey,
@@ -88,7 +88,7 @@ export const geminiApiAdapter: APIProviderAdapter = {
 
   async checkAvailable(): Promise<boolean> {
     try {
-      const apiKey = await getApiKey("gemini-api");
+      const apiKey = await getApiKey("google-ai-studio");
       return !!apiKey;
     } catch {
       return false;
@@ -96,7 +96,7 @@ export const geminiApiAdapter: APIProviderAdapter = {
   },
 
   async fetchModels(providedApiKey?: string): Promise<APIModelDefinition[]> {
-    const apiKey = await getApiKey("gemini-api", providedApiKey);
+    const apiKey = await getApiKey("google-ai-studio", providedApiKey);
 
     const { controller, cleanup } = createTimeoutController();
 

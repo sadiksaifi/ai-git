@@ -7,41 +7,18 @@
  * Installation information for CLI tools.
  */
 export const INSTALL_INFO = {
-  claude: {
+  "claude-code": {
     name: "Claude Code",
     binary: "claude",
     installCommand: "npm install -g @anthropic-ai/claude-code",
     docsUrl: "https://code.claude.com/docs/en/setup",
   },
-  gemini: {
+  "gemini-cli": {
     name: "Gemini CLI",
     binary: "gemini",
     installCommand: "npm install -g @google/gemini-cli",
     docsUrl: "https://geminicli.com/docs/get-started/installation",
   },
-} as const;
-
-/**
- * Welcome screen copy.
- */
-export const WELCOME_COPY = {
-  tagline: "AI-powered git commit messages",
-  description: [
-    "AI Git analyzes your staged changes and generates",
-    "Conventional Commits-compliant messages automatically.",
-  ],
-  features: [
-    "Semantic commit types (feat, fix, chore, etc.)",
-    "Smart scope detection from file paths",
-    "Interactive refinement with AI feedback",
-  ],
-  setupOverview: [
-    "This quick setup will configure your AI provider.",
-    "You'll choose between:",
-    "",
-    "  CLI Mode - Use installed AI tools (claude, gemini)",
-    "  API Mode - Use API keys (macOS only)",
-  ],
 } as const;
 
 /**
@@ -52,14 +29,6 @@ export const ERROR_MESSAGES = {
     message: "No configuration found.",
     suggestion: "Run: ai-git --setup",
   },
-  missingMode: {
-    message: "No connection mode configured.",
-    suggestion: "Run: ai-git --setup to select CLI or API mode.",
-  },
-  invalidMode: (mode: string) => ({
-    message: `Invalid mode '${mode}'. Must be 'cli' or 'api'.`,
-    suggestion: "Run: ai-git --setup",
-  }),
   missingProvider: {
     message: "No AI provider configured.",
     suggestion: "Run: ai-git --setup to select a provider.",
@@ -98,14 +67,3 @@ export const ERROR_MESSAGES = {
   },
 } as const;
 
-/**
- * Quick reference commands shown after setup.
- */
-export const QUICK_REFERENCE = {
-  commands: [
-    { cmd: "ai-git", desc: "Generate a commit message" },
-    { cmd: "ai-git -a", desc: "Stage all changes first" },
-    { cmd: "ai-git --dangerously-auto-approve", desc: "Full auto mode (stage, commit, push)" },
-    { cmd: "ai-git --help", desc: "See all options" },
-  ],
-} as const;

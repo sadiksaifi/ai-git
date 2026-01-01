@@ -7,8 +7,8 @@ import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
  *
  * CLI Pattern: gemini --model <model> <input>
  */
-export const geminiAdapter: CLIProviderAdapter = {
-  providerId: "gemini",
+export const geminiCliAdapter: CLIProviderAdapter = {
+  providerId: "gemini-cli",
   mode: "cli",
   binary: "gemini",
 

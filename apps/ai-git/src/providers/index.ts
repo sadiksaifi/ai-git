@@ -1,4 +1,3 @@
-import type { Mode } from "../types.ts";
 import type { ProviderAdapter } from "./types.ts";
 import { getCLIAdapter, getCLIAdapterByBinary } from "./cli/index.ts";
 import { getAPIAdapter } from "./api/index.ts";
@@ -9,25 +8,13 @@ import { getAPIAdapter } from "./api/index.ts";
 
 /**
  * Get a provider adapter by provider ID.
- * Automatically routes to the correct mode-specific registry.
+ * Automatically routes to the correct adapter based on provider ID.
  *
- * @param providerId - The provider ID (e.g., "gemini", "claude", "openrouter")
- * @param mode - Optional mode hint (if not provided, searches all modes)
+ * @param providerId - The provider ID (e.g., "gemini-cli", "claude-code", "openrouter")
  * @returns The provider adapter or undefined if not found
  */
-export function getAdapter(
-  providerId: string,
-  mode?: Mode
-): ProviderAdapter | undefined {
-  // If mode is specified, only search that mode
-  if (mode === "cli") {
-    return getCLIAdapter(providerId);
-  }
-  if (mode === "api") {
-    return getAPIAdapter(providerId);
-  }
-
-  // No mode specified - search CLI first, then API
+export function getAdapter(providerId: string): ProviderAdapter | undefined {
+  // Search CLI adapters first
   const cliAdapter = getCLIAdapter(providerId);
   if (cliAdapter) {
     return cliAdapter;

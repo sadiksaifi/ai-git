@@ -2,7 +2,7 @@
 
 A CLI tool that leverages AI to automatically generate semantically correct, conventional commits compliant git messages.
 
-<img width="1512" height="949" alt="Screenshot 2025-12-03 at 20 30 32" src="https://github.com/user-attachments/assets/165330d2-64e1-44ed-829f-8aec980254ab" />
+<img width="1351" height="883" alt="Screenshot 2026-01-02 at 03 23 41" src="https://github.com/user-attachments/assets/657cbb28-ac54-435f-9759-a31a762c45a3" />
 
 ## Features
 
@@ -10,7 +10,7 @@ A CLI tool that leverages AI to automatically generate semantically correct, con
 - 📝 **Conventional Commits** - Strictly adheres to [v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification
 - 🎨 **Interactive TUI** - Beautiful prompts for staging, editing, and confirming
 - 🪙 **Token Efficient** - Uses [TOON](https://toonformat.dev/) to minimize prompt size and cost
-- 🔌 **Multiple Providers** - CLI mode (Claude, Gemini) or API mode (OpenRouter, OpenAI, Anthropic, Gemini)
+- 🔌 **Multiple Providers** - Claude Code, Gemini CLI, OpenRouter, OpenAI, Anthropic, Google AI Studio
 - 🔐 **Secure** - API keys stored in keychain, never in config files
 
 ## Installation
@@ -40,9 +40,7 @@ Run `ai-git` in any git repository:
 ai-git
 ```
 
-On first run, you'll be guided through a quick setup wizard to configure your AI provider:
-- **CLI Mode** - Use installed AI tools (claude, gemini)
-- **API Mode** - Use API keys (OpenRouter, OpenAI, Anthropic, Gemini)
+On first run, you'll be guided through a quick setup wizard to choose your AI provider.
 
 Settings are saved to `~/.config/ai-git/config.json`
 
@@ -54,31 +52,25 @@ Settings are saved to `~/.config/ai-git/config.json`
 ### CLI Reference
 
 ```sh
-ai-git
-
+$ ai-git --help
 Usage:
-  $ ai-git
+  $ ai-git [options]
 
-Commands:
-    Generate a commit message using AI
-
-For more info, run any command with the `--help` flag:
-  $ ai-git --help
+Generate a commit message using AI
 
 Options:
-  --mode <mode>        Connection mode: cli or api (auto-detected from provider)
-  -P, --provider <id>  AI provider (claude, gemini, openrouter, openai, anthropic, gemini-api)
-  -M, --model <id>     Model ID (e.g., haiku, gpt-4o-mini, anthropic/claude-3.5-haiku)
-  -a, --stage-all      Automatically stage all changes
-  -c, --commit         Automatically commit (skip editor/confirmation)
-  -p, --push           Automatically push after commit
-  -H, --hint           Provide a hint/context to the AI
-  -v, --version        Display version number
-  -h, --help           Display this message
+  -P, --provider <id>         AI provider (claude-code, gemini-cli, openrouter, openai, anthropic, google-ai-studio)
+  -M, --model <id>            Model ID (e.g., haiku, gpt-4o-mini, anthropic/claude-3.5-haiku)
+  -a, --stage-all             Automatically stage all changes
+  -c, --commit                Automatically commit (skip editor/confirmation)
+  -p, --push                  Automatically push after commit
+  -H, --hint <text>           Provide a hint/context to the AI
   --dangerously-auto-approve  Run fully automated (Stage All + Commit + Push)
-  --dry-run            Print the prompt and diff without calling AI
-  --setup              Re-run the setup wizard to reconfigure AI provider
-  --init               Initialize project-level configuration
+  --dry-run                   Print the prompt and diff without calling AI
+  --setup                     Re-run the setup wizard to reconfigure AI provider
+  --init                      Initialize project-level configuration
+  -v, --version               Display version number
+  -h, --help                  Display this message
 ```
 
 ### Examples
@@ -88,41 +80,27 @@ Options:
 ai-git
 
 # Override provider for this run
-ai-git --provider gemini --model gemini-3-flash-preview
+ai-git --provider gemini-cli --model gemini-3-flash-preview
 
-# API mode with OpenRouter
+# Use OpenRouter
 ai-git --provider openrouter --model anthropic/claude-3.5-haiku
 
 # Automated (Be careful!)
 ai-git --dangerously-auto-approve --hint "Refactored authentication module"
-
-# Dry run to test prompt generation
-ai-git --dry-run --stage-all
 ```
 
 ## Supported Providers
 
-### CLI Mode
-
-Uses locally installed AI CLI tools (no API keys needed).
-
-| Provider | ID | Models | Requirements |
+| Provider | ID | Type | Requirements |
 | :--- | :--- | :--- | :--- |
-| Claude Code | `claude` | haiku, sonnet, opus | [Install CLI](https://claude.com/claude-code) |
-| Gemini | `gemini` | flash, pro, flash-lite | [Install CLI](https://ai.google.dev/gemini-api/docs/cli) |
+| Claude Code | `claude-code` | CLI | [Install CLI](https://claude.com/claude-code) |
+| Gemini CLI | `gemini-cli` | CLI | [Install CLI](https://ai.google.dev/gemini-api/docs/cli) |
+| OpenRouter | `openrouter` | API | [Get API Key](https://openrouter.ai/keys) |
+| OpenAI | `openai` | API | [Get API Key](https://platform.openai.com/api-keys) |
+| Google AI Studio | `google-ai-studio` | API | [Get API Key](https://aistudio.google.com/app/apikey) |
+| Anthropic | `anthropic` | API | [Get API Key](https://console.anthropic.com/settings/keys) |
 
-### API Mode
-
-Uses cloud APIs (requires API key, stored securely in keychain).
-
-| Provider | ID | Documentation |
-| :--- | :--- | :--- |
-| OpenRouter | `openrouter` | [Model list](https://openrouter.ai/models) - Access 200+ models from multiple providers |
-| OpenAI | `openai` | [Models](https://platform.openai.com/docs/models) - GPT-4o, GPT-4o-mini, etc. |
-| Gemini | `gemini-api` | [Models](https://ai.google.dev/gemini-api/docs/models) - Gemini 2.5 Flash/Pro |
-| Anthropic | `anthropic` | [Models](https://docs.anthropic.com/en/docs/about-claude/models) - Claude 3.5 Sonnet/Haiku |
-
-Configure API keys with `ai-git --setup`
+Configure with `ai-git --setup`
 
 ## Configuration
 
@@ -134,12 +112,10 @@ AI Git uses a **three-tier configuration system**:
 
 ### Example Configs
 
-**CLI Mode:**
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
-  "mode": "cli",
-  "provider": "claude",
+  "provider": "claude-code",
   "model": "haiku",
   "defaults": {
     "stageAll": false,
@@ -149,11 +125,9 @@ AI Git uses a **three-tier configuration system**:
 }
 ```
 
-**API Mode:**
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
-  "mode": "api",
   "provider": "openrouter",
   "model": "anthropic/claude-3.5-haiku"
 }
@@ -180,8 +154,7 @@ The default prompt works excellently for most projects. Customize only for proje
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
-  "mode": "cli",
-  "provider": "claude",
+  "provider": "claude-code",
   "model": "sonnet",
   "prompt": {
     "context": "Monorepo with packages: web, mobile, shared, api, docs, infra.",

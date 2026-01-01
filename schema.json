@@ -8,12 +8,6 @@
     "$schema": {
       "type": "string"
     },
-    "mode": {
-      "type": "string",
-      "enum": ["cli", "api"],
-      "description": "Connection mode. 'cli' uses installed AI CLI tools (claude, gemini), 'api' uses API keys (OpenRouter, OpenAI, Anthropic, Gemini).",
-      "default": "cli"
-    },
     "editor": {
       "type": "string",
       "description": "Preferred editor command (e.g. 'vim', 'nvim', 'nano'). Overrides $EDITOR environment variable.",
@@ -21,9 +15,9 @@
     },
     "provider": {
       "type": "string",
-      "enum": ["claude", "gemini", "openrouter", "openai", "gemini-api", "anthropic"],
+      "enum": ["claude-code", "gemini-cli", "openrouter", "openai", "google-ai-studio", "anthropic"],
       "description": "AI provider to use for generating commit messages.",
-      "examples": ["claude", "gemini", "openrouter", "openai", "gemini-api", "anthropic"]
+      "examples": ["claude-code", "gemini-cli", "openrouter", "openai", "google-ai-studio", "anthropic"]
     },
     "model": {
       "type": "string",
@@ -100,7 +94,7 @@
     },
     "api": {
       "type": "object",
-      "description": "API-specific configuration options (only used when mode is 'api').",
+      "description": "API-specific configuration options (only used with API providers).",
       "properties": {
         "modelCacheTTL": {
           "type": "number",
@@ -113,13 +107,13 @@
       "additionalProperties": false
     }
   },
-  "required": ["mode", "provider", "model"],
+  "required": ["provider", "model"],
   "additionalProperties": false,
   "allOf": [
     {
       "if": {
         "properties": {
-          "provider": { "const": "claude" }
+          "provider": { "const": "claude-code" }
         }
       },
       "then": {
@@ -134,7 +128,7 @@
     {
       "if": {
         "properties": {
-          "provider": { "const": "gemini" }
+          "provider": { "const": "gemini-cli" }
         }
       },
       "then": {
@@ -185,14 +179,14 @@
     {
       "if": {
         "properties": {
-          "provider": { "const": "gemini-api" }
+          "provider": { "const": "google-ai-studio" }
         }
       },
       "then": {
         "properties": {
           "model": {
             "type": "string",
-            "description": "Google Gemini API model ID (e.g., 'gemini-2.0-flash'). Models are fetched dynamically."
+            "description": "Google AI Studio model ID (e.g., 'gemini-2.0-flash'). Models are fetched dynamically."
           }
         }
       }
