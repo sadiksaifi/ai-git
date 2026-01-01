@@ -2,7 +2,7 @@ import type { APIProviderAdapter } from "../types.ts";
 import { openRouterAdapter } from "./openrouter.ts";
 import { openAIAdapter } from "./openai.ts";
 import { anthropicAdapter } from "./anthropic.ts";
-import { geminiAdapter } from "./gemini.ts";
+import { googleAiStudioAdapter } from "./google-ai-studio.ts";
 
 // ==============================================================================
 // API MODE ADAPTER REGISTRY
@@ -15,7 +15,7 @@ import { geminiAdapter } from "./gemini.ts";
  * - OpenRouter (openrouter.ai) - Access to multiple AI providers
  * - OpenAI API - GPT-4o, GPT-4, etc.
  * - Anthropic API - Claude models
- * - Google Gemini API - Gemini models
+ * - Google AI Studio - Gemini models
  *
  * All adapters use Vercel AI SDK for consistent interface.
  */
@@ -23,7 +23,7 @@ const apiAdapters: Map<string, APIProviderAdapter> = new Map([
   [openRouterAdapter.providerId, openRouterAdapter],
   [openAIAdapter.providerId, openAIAdapter],
   [anthropicAdapter.providerId, anthropicAdapter],
-  [geminiAdapter.providerId, geminiAdapter],
+  [googleAiStudioAdapter.providerId, googleAiStudioAdapter],
 ]);
 
 /**
@@ -60,4 +60,4 @@ export function getAllAPIAdapters(): APIProviderAdapter[] {
 export { openRouterAdapter } from "./openrouter.ts";
 export { openAIAdapter } from "./openai.ts";
 export { anthropicAdapter } from "./anthropic.ts";
-export { geminiAdapter } from "./gemini.ts";
+export { googleAiStudioAdapter } from "./google-ai-studio.ts";

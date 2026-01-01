@@ -10,7 +10,7 @@ A CLI tool that leverages AI to automatically generate semantically correct, con
 - 📝 **Conventional Commits** - Strictly adheres to [v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification
 - 🎨 **Interactive TUI** - Beautiful prompts for staging, editing, and confirming
 - 🪙 **Token Efficient** - Uses [TOON](https://toonformat.dev/) to minimize prompt size and cost
-- 🔌 **Multiple Providers** - CLI mode (Claude Code, Gemini CLI) or API mode (OpenRouter, OpenAI, Anthropic, Gemini)
+- 🔌 **Multiple Providers** - CLI mode (Claude Code, Gemini CLI) or API mode (OpenRouter, OpenAI, Anthropic, Google AI Studio)
 - 🔐 **Secure** - API keys stored in keychain, never in config files
 
 ## Installation
@@ -67,7 +67,7 @@ For more info, run any command with the `--help` flag:
 
 Options:
   --mode <mode>        Connection mode: cli or api (auto-detected from provider)
-  -P, --provider <id>  AI provider (claude-code, gemini-cli, openrouter, openai, anthropic, gemini)
+  -P, --provider <id>  AI provider (claude-code, gemini-cli, openrouter, openai, anthropic, google-ai-studio)
   -M, --model <id>     Model ID (e.g., haiku, gpt-4o-mini, anthropic/claude-3.5-haiku)
   -a, --stage-all      Automatically stage all changes
   -c, --commit         Automatically commit (skip editor/confirmation)
@@ -119,7 +119,7 @@ Uses cloud APIs (requires API key, stored securely in keychain).
 | :--- | :--- | :--- |
 | OpenRouter | `openrouter` | [Model list](https://openrouter.ai/models) - Access 200+ models from multiple providers |
 | OpenAI | `openai` | [Models](https://platform.openai.com/docs/models) - GPT-4o, GPT-4o-mini, etc. |
-| Gemini | `gemini` | [Models](https://ai.google.dev/gemini-api/docs/models) - Gemini 2.5 Flash/Pro |
+| Google AI Studio | `google-ai-studio` | [Models](https://ai.google.dev/gemini-api/docs/models) - Gemini 2.5 Flash/Pro |
 | Anthropic | `anthropic` | [Models](https://docs.anthropic.com/en/docs/about-claude/models) - Claude 3.5 Sonnet/Haiku |
 
 Configure API keys with `ai-git --setup`

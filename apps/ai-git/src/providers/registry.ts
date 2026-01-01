@@ -61,8 +61,8 @@ export const PROVIDERS: ProviderDefinition[] = [
     models: [], // Populated dynamically via fetchModels()
   },
   {
-    id: "gemini",
-    name: "Google Gemini",
+    id: "google-ai-studio",
+    name: "Google AI Studio",
     mode: "api",
     dynamicModels: true,
     models: [], // Populated dynamically via fetchModels()

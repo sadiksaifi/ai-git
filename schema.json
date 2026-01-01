@@ -11,7 +11,7 @@
     "mode": {
       "type": "string",
       "enum": ["cli", "api"],
-      "description": "Connection mode. 'cli' uses installed AI CLI tools (claude-code, gemini-cli), 'api' uses API keys (OpenRouter, OpenAI, Anthropic, Gemini).",
+      "description": "Connection mode. 'cli' uses installed AI CLI tools (claude-code, gemini-cli), 'api' uses API keys (OpenRouter, OpenAI, Anthropic, Google AI Studio).",
       "default": "cli"
     },
     "editor": {
@@ -21,9 +21,9 @@
     },
     "provider": {
       "type": "string",
-      "enum": ["claude-code", "gemini-cli", "openrouter", "openai", "gemini", "anthropic"],
+      "enum": ["claude-code", "gemini-cli", "openrouter", "openai", "google-ai-studio", "anthropic"],
       "description": "AI provider to use for generating commit messages.",
-      "examples": ["claude-code", "gemini-cli", "openrouter", "openai", "gemini", "anthropic"]
+      "examples": ["claude-code", "gemini-cli", "openrouter", "openai", "google-ai-studio", "anthropic"]
     },
     "model": {
       "type": "string",
@@ -185,14 +185,14 @@
     {
       "if": {
         "properties": {
-          "provider": { "const": "gemini" }
+          "provider": { "const": "google-ai-studio" }
         }
       },
       "then": {
         "properties": {
           "model": {
             "type": "string",
-            "description": "Google Gemini API model ID (e.g., 'gemini-2.0-flash'). Models are fetched dynamically."
+            "description": "Google AI Studio model ID (e.g., 'gemini-2.0-flash'). Models are fetched dynamically."
           }
         }
       }
