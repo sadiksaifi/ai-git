@@ -43,7 +43,7 @@ export function Footer() {
           <p className="text-sm text-muted-foreground">
             Built by{" "}
             <a
-              href="https://github.com/sadiksaifi"
+              href="https://sadiksaifi.dev"
               target="_blank"
               rel="noopener noreferrer"
               className="text-foreground underline-offset-4 hover:underline"
