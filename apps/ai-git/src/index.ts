@@ -88,7 +88,7 @@ cli
   )
   .option(
     "-P, --provider <id>",
-    "AI provider (claude, gemini, openrouter, openai, anthropic, gemini-api)",
+    "AI provider (claude, gemini-cli, openrouter, openai, anthropic, gemini)",
   )
   .option(
     "-M, --model <id>",
@@ -233,9 +233,9 @@ cli
       console.error(
         pc.red(`Error: Unknown provider '${resolvedConfig.provider}'.`),
       );
-      console.error(pc.dim(`CLI providers: claude, gemini`));
+      console.error(pc.dim(`CLI providers: claude, gemini-cli`));
       console.error(
-        pc.dim(`API providers: openrouter, openai, anthropic, gemini-api`),
+        pc.dim(`API providers: openrouter, openai, anthropic, gemini`),
       );
       process.exit(1);
     }

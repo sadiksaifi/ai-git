@@ -11,7 +11,7 @@
     "mode": {
       "type": "string",
       "enum": ["cli", "api"],
-      "description": "Connection mode. 'cli' uses installed AI CLI tools (claude, gemini), 'api' uses API keys (OpenRouter, OpenAI, Anthropic, Gemini).",
+      "description": "Connection mode. 'cli' uses installed AI CLI tools (claude, gemini-cli), 'api' uses API keys (OpenRouter, OpenAI, Anthropic, Gemini).",
       "default": "cli"
     },
     "editor": {
@@ -21,9 +21,9 @@
     },
     "provider": {
       "type": "string",
-      "enum": ["claude", "gemini", "openrouter", "openai", "gemini-api", "anthropic"],
+      "enum": ["claude", "gemini-cli", "openrouter", "openai", "gemini", "anthropic"],
       "description": "AI provider to use for generating commit messages.",
-      "examples": ["claude", "gemini", "openrouter", "openai", "gemini-api", "anthropic"]
+      "examples": ["claude", "gemini-cli", "openrouter", "openai", "gemini", "anthropic"]
     },
     "model": {
       "type": "string",
@@ -134,7 +134,7 @@
     {
       "if": {
         "properties": {
-          "provider": { "const": "gemini" }
+          "provider": { "const": "gemini-cli" }
         }
       },
       "then": {
@@ -185,7 +185,7 @@
     {
       "if": {
         "properties": {
-          "provider": { "const": "gemini-api" }
+          "provider": { "const": "gemini" }
         }
       },
       "then": {

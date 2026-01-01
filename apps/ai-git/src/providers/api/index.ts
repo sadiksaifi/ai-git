@@ -2,7 +2,7 @@ import type { APIProviderAdapter } from "../types.ts";
 import { openRouterAdapter } from "./openrouter.ts";
 import { openAIAdapter } from "./openai.ts";
 import { anthropicAdapter } from "./anthropic.ts";
-import { geminiApiAdapter } from "./gemini-api.ts";
+import { geminiAdapter } from "./gemini.ts";
 
 // ==============================================================================
 // API MODE ADAPTER REGISTRY
@@ -23,7 +23,7 @@ const apiAdapters: Map<string, APIProviderAdapter> = new Map([
   [openRouterAdapter.providerId, openRouterAdapter],
   [openAIAdapter.providerId, openAIAdapter],
   [anthropicAdapter.providerId, anthropicAdapter],
-  [geminiApiAdapter.providerId, geminiApiAdapter],
+  [geminiAdapter.providerId, geminiAdapter],
 ]);
 
 /**
@@ -60,4 +60,4 @@ export function getAllAPIAdapters(): APIProviderAdapter[] {
 export { openRouterAdapter } from "./openrouter.ts";
 export { openAIAdapter } from "./openai.ts";
 export { anthropicAdapter } from "./anthropic.ts";
-export { geminiApiAdapter } from "./gemini-api.ts";
+export { geminiAdapter } from "./gemini.ts";

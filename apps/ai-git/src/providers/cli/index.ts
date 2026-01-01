@@ -1,6 +1,6 @@
 import type { CLIProviderAdapter } from "../types.ts";
 import { claudeAdapter } from "./claude.ts";
-import { geminiAdapter } from "./gemini.ts";
+import { geminiCliAdapter } from "./gemini-cli.ts";
 
 // ==============================================================================
 // CLI MODE ADAPTER REGISTRY
@@ -12,14 +12,14 @@ import { geminiAdapter } from "./gemini.ts";
  */
 const cliAdapters: Map<string, CLIProviderAdapter> = new Map([
   [claudeAdapter.providerId, claudeAdapter],
-  [geminiAdapter.providerId, geminiAdapter],
+  [geminiCliAdapter.providerId, geminiCliAdapter],
   // Future CLI adapters:
   // [codexAdapter.providerId, codexAdapter],
 ]);
 
 /**
  * Get a CLI adapter by provider ID.
- * @param providerId - The provider ID (e.g., "gemini", "claude")
+ * @param providerId - The provider ID (e.g., "gemini-cli", "claude")
  * @returns The CLI adapter or undefined if not found
  */
 export function getCLIAdapter(providerId: string): CLIProviderAdapter | undefined {
@@ -49,4 +49,4 @@ export function getCLIProviderIds(): string[] {
 
 // Re-export adapters for direct access if needed
 export { claudeAdapter } from "./claude.ts";
-export { geminiAdapter } from "./gemini.ts";
+export { geminiCliAdapter } from "./gemini-cli.ts";

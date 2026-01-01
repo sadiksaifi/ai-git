@@ -13,7 +13,7 @@ export const INSTALL_INFO = {
     installCommand: "npm install -g @anthropic-ai/claude-code",
     docsUrl: "https://code.claude.com/docs/en/setup",
   },
-  gemini: {
+  "gemini-cli": {
     name: "Gemini CLI",
     binary: "gemini",
     installCommand: "npm install -g @google/gemini-cli",
@@ -39,7 +39,7 @@ export const WELCOME_COPY = {
     "This quick setup will configure your AI provider.",
     "You'll choose between:",
     "",
-    "  CLI Mode - Use installed AI tools (claude, gemini)",
+    "  CLI Mode - Use installed AI tools (claude, gemini-cli)",
     "  API Mode - Use API keys (macOS only)",
   ],
 } as const;

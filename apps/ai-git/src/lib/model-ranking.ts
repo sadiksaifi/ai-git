@@ -50,7 +50,7 @@ export const DEFAULT_MODELS: Record<string, string> = {
   openrouter: "anthropic/claude-3.5-haiku",
   anthropic: "claude-3-5-haiku-latest",
   openai: "gpt-4o-mini",
-  "gemini-api": "gemini-2.0-flash",
+  "gemini": "gemini-2.0-flash",
 };
 
 // ==============================================================================

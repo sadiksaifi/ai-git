@@ -10,7 +10,7 @@ A CLI tool that leverages AI to automatically generate semantically correct, con
 - 📝 **Conventional Commits** - Strictly adheres to [v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification
 - 🎨 **Interactive TUI** - Beautiful prompts for staging, editing, and confirming
 - 🪙 **Token Efficient** - Uses [TOON](https://toonformat.dev/) to minimize prompt size and cost
-- 🔌 **Multiple Providers** - CLI mode (Claude, Gemini) or API mode (OpenRouter, OpenAI, Anthropic, Gemini)
+- 🔌 **Multiple Providers** - CLI mode (Claude, Gemini CLI) or API mode (OpenRouter, OpenAI, Anthropic, Gemini)
 - 🔐 **Secure** - API keys stored in keychain, never in config files
 
 ## Installation
@@ -41,7 +41,7 @@ ai-git
 ```
 
 On first run, you'll be guided through a quick setup wizard to configure your AI provider:
-- **CLI Mode** - Use installed AI tools (claude, gemini)
+- **CLI Mode** - Use installed AI tools (claude, gemini-cli)
 - **API Mode** - Use API keys (OpenRouter, OpenAI, Anthropic, Gemini)
 
 Settings are saved to `~/.config/ai-git/config.json`
@@ -67,7 +67,7 @@ For more info, run any command with the `--help` flag:
 
 Options:
   --mode <mode>        Connection mode: cli or api (auto-detected from provider)
-  -P, --provider <id>  AI provider (claude, gemini, openrouter, openai, anthropic, gemini-api)
+  -P, --provider <id>  AI provider (claude, gemini-cli, openrouter, openai, anthropic, gemini)
   -M, --model <id>     Model ID (e.g., haiku, gpt-4o-mini, anthropic/claude-3.5-haiku)
   -a, --stage-all      Automatically stage all changes
   -c, --commit         Automatically commit (skip editor/confirmation)
@@ -88,7 +88,7 @@ Options:
 ai-git
 
 # Override provider for this run
-ai-git --provider gemini --model gemini-3-flash-preview
+ai-git --provider gemini-cli --model gemini-3-flash-preview
 
 # API mode with OpenRouter
 ai-git --provider openrouter --model anthropic/claude-3.5-haiku
@@ -109,7 +109,7 @@ Uses locally installed AI CLI tools (no API keys needed).
 | Provider | ID | Models | Requirements |
 | :--- | :--- | :--- | :--- |
 | Claude Code | `claude` | haiku, sonnet, opus | [Install CLI](https://claude.com/claude-code) |
-| Gemini | `gemini` | flash, pro, flash-lite | [Install CLI](https://ai.google.dev/gemini-api/docs/cli) |
+| Gemini | `gemini-cli` | flash, pro, flash-lite | [Install CLI](https://ai.google.dev/gemini-api/docs/cli) |
 
 ### API Mode
 
@@ -119,7 +119,7 @@ Uses cloud APIs (requires API key, stored securely in keychain).
 | :--- | :--- | :--- |
 | OpenRouter | `openrouter` | [Model list](https://openrouter.ai/models) - Access 200+ models from multiple providers |
 | OpenAI | `openai` | [Models](https://platform.openai.com/docs/models) - GPT-4o, GPT-4o-mini, etc. |
-| Gemini | `gemini-api` | [Models](https://ai.google.dev/gemini-api/docs/models) - Gemini 2.5 Flash/Pro |
+| Gemini | `gemini` | [Models](https://ai.google.dev/gemini-api/docs/models) - Gemini 2.5 Flash/Pro |
 | Anthropic | `anthropic` | [Models](https://docs.anthropic.com/en/docs/about-claude/models) - Claude 3.5 Sonnet/Haiku |
 
 Configure API keys with `ai-git --setup`

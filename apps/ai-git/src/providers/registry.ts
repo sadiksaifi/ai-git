@@ -9,6 +9,9 @@ import type { ProviderDefinition, ModelDefinition, Mode } from "../types.ts";
  * Add new providers here to extend support.
  */
 export const PROVIDERS: ProviderDefinition[] = [
+  // ==============================================================================
+  // CLI PROVIDERS
+  // ==============================================================================
   {
     id: "claude",
     name: "Claude Code",
@@ -22,12 +25,16 @@ export const PROVIDERS: ProviderDefinition[] = [
     ],
   },
   {
-    id: "gemini",
+    id: "gemini-cli",
     name: "Gemini CLI",
     mode: "cli",
     binary: "gemini",
     models: [
-      { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview", isDefault: true },
+      {
+        id: "gemini-3-flash-preview",
+        name: "Gemini 3 Flash Preview",
+        isDefault: true,
+      },
       { id: "gemini-3-pro-preview", name: "Gemini 3 Pro Preview" },
       { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite" },
       { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
@@ -38,7 +45,6 @@ export const PROVIDERS: ProviderDefinition[] = [
   // ==============================================================================
   // API PROVIDERS
   // ==============================================================================
-
   {
     id: "openrouter",
     name: "OpenRouter",
@@ -55,7 +61,7 @@ export const PROVIDERS: ProviderDefinition[] = [
     models: [], // Populated dynamically via fetchModels()
   },
   {
-    id: "gemini-api",
+    id: "gemini",
     name: "Google Gemini",
     mode: "api",
     dynamicModels: true,
@@ -75,7 +81,7 @@ export const PROVIDERS: ProviderDefinition[] = [
 // ==============================================================================
 
 /**
- * Find a provider by its ID (e.g., "gemini", "claude").
+ * Find a provider by its ID (e.g., "gemini-cli", "claude").
  */
 export function getProviderById(id: string): ProviderDefinition | undefined {
   return PROVIDERS.find((p) => p.id === id);
@@ -85,7 +91,9 @@ export function getProviderById(id: string): ProviderDefinition | undefined {
  * Find a provider by its binary name (e.g., "gemini", "claude").
  * Only applicable for CLI mode providers.
  */
-export function getProviderByBinary(binary: string): ProviderDefinition | undefined {
+export function getProviderByBinary(
+  binary: string,
+): ProviderDefinition | undefined {
   return PROVIDERS.find((p) => p.mode === "cli" && p.binary === binary);
 }
 
@@ -116,7 +124,7 @@ export function getModelIds(providerId: string): string[] {
  */
 export function getModelById(
   provider: ProviderDefinition,
-  modelId: string
+  modelId: string,
 ): ModelDefinition | undefined {
   return provider.models.find((m) => m.id === modelId);
 }

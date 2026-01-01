@@ -66,13 +66,13 @@ function getModelPriority(modelId: string): number {
 /**
  * Google Gemini API adapter using Vercel AI SDK.
  */
-export const geminiApiAdapter: APIProviderAdapter = {
-  providerId: "gemini-api",
+export const geminiAdapter: APIProviderAdapter = {
+  providerId: "gemini",
   mode: "api",
   baseUrl: BASE_URL,
 
   async invoke({ model, prompt }: InvokeOptions): Promise<string> {
-    const apiKey = await getApiKey("gemini-api");
+    const apiKey = await getApiKey("gemini");
 
     const google = createGoogleGenerativeAI({
       apiKey,
@@ -88,7 +88,7 @@ export const geminiApiAdapter: APIProviderAdapter = {
 
   async checkAvailable(): Promise<boolean> {
     try {
-      const apiKey = await getApiKey("gemini-api");
+      const apiKey = await getApiKey("gemini");
       return !!apiKey;
     } catch {
       return false;
@@ -96,7 +96,7 @@ export const geminiApiAdapter: APIProviderAdapter = {
   },
 
   async fetchModels(providedApiKey?: string): Promise<APIModelDefinition[]> {
-    const apiKey = await getApiKey("gemini-api", providedApiKey);
+    const apiKey = await getApiKey("gemini", providedApiKey);
 
     const { controller, cleanup } = createTimeoutController();
 
