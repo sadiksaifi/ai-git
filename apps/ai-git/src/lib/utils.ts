@@ -28,3 +28,35 @@ export const LOCKFILES = [
   ":(exclude)go.sum",
 ];
 
+/**
+ * Wrap text to a specific width.
+ */
+export function wrapText(text: string, width: number): string {
+  if (width <= 0) return text;
+  
+  const lines = text.split("\n");
+  const wrappedLines: string[] = [];
+
+  for (const line of lines) {
+    if (line.length <= width) {
+      wrappedLines.push(line);
+      continue;
+    }
+
+    let currentLine = line;
+    while (currentLine.length > width) {
+      let splitIndex = currentLine.lastIndexOf(" ", width);
+      if (splitIndex === -1) {
+        splitIndex = width;
+      }
+      wrappedLines.push(currentLine.slice(0, splitIndex));
+      currentLine = currentLine.slice(splitIndex).trimStart();
+    }
+    if (currentLine.length > 0) {
+      wrappedLines.push(currentLine);
+    }
+  }
+
+  return wrappedLines.join("\n");
+}
+

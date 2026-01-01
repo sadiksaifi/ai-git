@@ -12,7 +12,7 @@ import { buildSystemPrompt } from "../prompt.ts";
 import type { PromptCustomization } from "../config.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
 import { getStagedDiff, getBranchName, setBranchName, commit, type CommitResult } from "./git.ts";
-import { TEMP_MSG_FILE } from "./utils.ts";
+import { TEMP_MSG_FILE, wrapText } from "./utils.ts";
 
 // ==============================================================================
 // AI GENERATION ENGINE
@@ -168,7 +168,17 @@ export async function runGenerationLoop(
       // Handle dry run
       if (options.dryRun) {
         s.stop("Dry run complete");
-        note(fullInput, "Dry Run: Full Prompt");
+        
+        const width = process.stdout.columns || 80;
+        const border = pc.dim("─".repeat(width));
+        
+        console.log("");
+        console.log(pc.bgCyan(pc.black(" DRY RUN: FULL AI PROMPT ")));
+        console.log(border);
+        console.log(wrapText(fullInput, width));
+        console.log(border);
+        console.log("");
+        
         return { message: "", committed: false, aborted: false };
       }
 
