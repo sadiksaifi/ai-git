@@ -419,9 +419,9 @@ cli
     if (genResult.committed) {
       const headerLine = genResult.message.split("\n")[0] || "";
       if (options.commit) {
-        outro(pc.green(`Commit created: ${headerLine}`));
+        log.success(pc.green(`Commit created: ${headerLine}`));
       } else {
-        outro(pc.green("Commit created successfully."));
+        log.success(pc.green("Commit created successfully."));
       }
     }
 
@@ -431,7 +431,7 @@ cli
       dangerouslyAutoApprove: options.dangerouslyAutoApprove,
     });
 
-    outro("Done!");
+    outro(pc.green("Done!"));
   });
 
 cli.help((sections) => {

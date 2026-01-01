@@ -34,9 +34,7 @@ export async function safePush(isAutomated: boolean): Promise<void> {
       stderr.includes("no remote repository specified")
     ) {
       if (isAutomated) {
-        console.error(
-          pc.red("Error: No remote repository configured. Cannot push.")
-        );
+        log.error(pc.red("No remote repository configured. Cannot push."));
         return;
       }
 
@@ -69,14 +67,15 @@ export async function safePush(isAutomated: boolean): Promise<void> {
       try {
         await addRemoteAndPush(remoteUrl as string);
         s2.stop("Remote added and pushed successfully");
-      } catch (e) {
+      } catch (e: any) {
         s2.stop("Failed to push to new remote");
-        console.error(e);
+        const errMsg = e.stderr?.toString() || e.message || "Unknown error";
+        log.error(pc.red(errMsg));
       }
     } else {
-      // Some other error
-      console.error(pc.red("Error pushing changes:"));
-      console.error(error);
+      // Some other error - extract meaningful message
+      const errMsg = stderr || error.message || "Unknown error";
+      log.error(pc.red(`Push failed: ${errMsg}`));
     }
   }
 }
