@@ -57,14 +57,17 @@ export function HowItWorks() {
 
           <div className="space-y-12">
             {steps.map((step, index) => (
-              <div key={step.number} className="relative flex gap-6">
+              <div
+                key={step.number}
+                className="relative flex gap-4 md:gap-6"
+              >
                 {/* Step number */}
-                <div className="relative z-10 flex size-12 shrink-0 items-center justify-center rounded-full border border-border bg-background text-lg font-bold text-primary">
+                <div className="relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-background text-base font-bold text-primary md:size-12 md:text-lg">
                   {step.number}
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 pb-4">
+                <div className="flex-1 min-w-0 pb-4">
                   <h3 className="mb-2 text-xl font-semibold">{step.title}</h3>
                   <p className="mb-4 text-muted-foreground">
                     {step.description}
