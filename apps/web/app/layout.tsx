@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     template: "%s | AI Git",
   },
   description:
-    "Generate semantically correct, Conventional Commits-compliant git commit messages with AI. Supports Claude Code, Gemini CLI, OpenRouter, OpenAI, Anthropic, and more.",
+    "Generate semantically correct, Conventional Commits-compliant git commit messages with AI. Supports Claude Code, Gemini CLI, Codex, OpenRouter, OpenAI, Anthropic, and more.",
   keywords: [
     "git",
     "commit messages",
@@ -41,6 +41,7 @@ export const metadata: Metadata = {
     "openai",
     "gemini",
     "openrouter",
+    "codex",
   ],
   authors: [{ name: "Sadik Saifi", url: "https://sadiksaifi.dev" }],
   creator: "Sadik Saifi",
