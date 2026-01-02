@@ -10,7 +10,7 @@ A CLI tool that leverages AI to automatically generate semantically correct, con
 - 📝 **Conventional Commits** - Strictly adheres to [v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification
 - 🎨 **Interactive TUI** - Beautiful prompts for staging, editing, and confirming
 - 🪙 **Token Efficient** - Uses [TOON](https://toonformat.dev/) to minimize prompt size and cost
-- 🔌 **Multiple Providers** - Claude Code, Gemini CLI, OpenRouter, OpenAI, Anthropic, Google AI Studio
+- 🔌 **Multiple Providers** - Claude Code, Gemini CLI, Codex, OpenRouter, OpenAI, Anthropic, Google AI Studio
 - 🔐 **Secure** - API keys stored in keychain, never in config files
 
 ## Installation
@@ -60,7 +60,7 @@ Usage:
 Generate a commit message using AI
 
 Options:
-  -P, --provider <id>         AI provider (claude-code, gemini-cli, openrouter, openai, anthropic, google-ai-studio)
+  -P, --provider <id>         AI provider (claude-code, gemini-cli, codex, openrouter, openai, anthropic, google-ai-studio)
   -M, --model <id>            Model ID (e.g., haiku, gpt-4o-mini, anthropic/claude-3.5-haiku)
   -a, --stage-all             Automatically stage all changes
   -c, --commit                Automatically commit (skip editor/confirmation)
@@ -83,6 +83,9 @@ ai-git
 # Override provider for this run
 ai-git --provider gemini-cli --model gemini-3-flash-preview
 
+# Use Codex
+ai-git --provider codex --model gpt-5.2-codex
+
 # Use OpenRouter
 ai-git --provider openrouter --model anthropic/claude-3.5-haiku
 
@@ -96,6 +99,7 @@ ai-git --dangerously-auto-approve --hint "Refactored authentication module"
 | :--- | :--- | :--- | :--- |
 | Claude Code | `claude-code` | CLI | [Install CLI](https://claude.com/claude-code) |
 | Gemini CLI | `gemini-cli` | CLI | [Install CLI](https://ai.google.dev/gemini-api/docs/cli) |
+| Codex | `codex` | CLI | [Install CLI](https://developers.openai.com/codex/cli) (`npm install -g @openai/codex`) |
 | OpenRouter | `openrouter` | API | [Get API Key](https://openrouter.ai/keys) |
 | OpenAI | `openai` | API | [Get API Key](https://platform.openai.com/api-keys) |
 | Google AI Studio | `google-ai-studio` | API | [Get API Key](https://aistudio.google.com/app/apikey) |

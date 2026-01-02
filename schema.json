@@ -15,9 +15,9 @@
     },
     "provider": {
       "type": "string",
-      "enum": ["claude-code", "gemini-cli", "openrouter", "openai", "google-ai-studio", "anthropic"],
+      "enum": ["claude-code", "gemini-cli", "codex", "openrouter", "openai", "google-ai-studio", "anthropic"],
       "description": "AI provider to use for generating commit messages.",
-      "examples": ["claude-code", "gemini-cli", "openrouter", "openai", "google-ai-studio", "anthropic"]
+      "examples": ["claude-code", "gemini-cli", "codex", "openrouter", "openai", "google-ai-studio", "anthropic"]
     },
     "model": {
       "type": "string",
@@ -27,6 +27,8 @@
         "sonnet",
         "opus",
         "gemini-3-flash-preview",
+        "gpt-5.2-codex",
+        "gpt-5.1-codex-max",
         "anthropic/claude-3.5-haiku",
         "gpt-4o-mini",
         "gemini-2.0-flash",
@@ -142,6 +144,31 @@
               "gemini-2.5-pro"
             ],
             "description": "Gemini CLI model to use. 'gemini-3-flash-preview' is recommended for speed."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": { "const": "codex" }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "enum": [
+              "gpt-5.2-codex",
+              "gpt-5.1-codex-max",
+              "gpt-5.1-codex-mini",
+              "gpt-5.2",
+              "gpt-5.1",
+              "gpt-5.1-codex",
+              "gpt-5-codex",
+              "gpt-5-codex-mini",
+              "gpt-5"
+            ],
+            "description": "Codex CLI model to use. 'gpt-5.2-codex' is recommended for best results."
           }
         }
       }

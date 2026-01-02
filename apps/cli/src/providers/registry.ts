@@ -41,6 +41,23 @@ export const PROVIDERS: ProviderDefinition[] = [
       { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
     ],
   },
+  {
+    id: "codex",
+    name: "Codex",
+    mode: "cli",
+    binary: "codex",
+    models: [
+      { id: "gpt-5.2-codex", name: "GPT-5.2 Codex", isDefault: true },
+      { id: "gpt-5.1-codex-max", name: "GPT-5.1 Codex Max" },
+      { id: "gpt-5.1-codex-mini", name: "GPT-5.1 Codex Mini" },
+      { id: "gpt-5.2", name: "GPT-5.2" },
+      { id: "gpt-5.1", name: "GPT-5.1" },
+      { id: "gpt-5.1-codex", name: "GPT-5.1 Codex" },
+      { id: "gpt-5-codex", name: "GPT-5 Codex" },
+      { id: "gpt-5-codex-mini", name: "GPT-5 Codex Mini" },
+      { id: "gpt-5", name: "GPT-5" },
+    ],
+  },
 
   // ==============================================================================
   // API PROVIDERS

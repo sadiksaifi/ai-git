@@ -1,5 +1,6 @@
 import type { CLIProviderAdapter } from "../types.ts";
 import { claudeCodeAdapter } from "./claude-code.ts";
+import { codexAdapter } from "./codex.ts";
 import { geminiCliAdapter } from "./gemini-cli.ts";
 
 // ==============================================================================
@@ -12,9 +13,8 @@ import { geminiCliAdapter } from "./gemini-cli.ts";
  */
 const cliAdapters: Map<string, CLIProviderAdapter> = new Map([
   [claudeCodeAdapter.providerId, claudeCodeAdapter],
+  [codexAdapter.providerId, codexAdapter],
   [geminiCliAdapter.providerId, geminiCliAdapter],
-  // Future CLI adapters:
-  // [codexAdapter.providerId, codexAdapter],
 ]);
 
 /**
@@ -49,4 +49,5 @@ export function getCLIProviderIds(): string[] {
 
 // Re-export adapters for direct access if needed
 export { claudeCodeAdapter } from "./claude-code.ts";
+export { codexAdapter } from "./codex.ts";
 export { geminiCliAdapter } from "./gemini-cli.ts";
