@@ -6,7 +6,7 @@ import { Providers } from "@/components/landing/providers";
 import { Installation } from "@/components/landing/installation";
 import { Footer } from "@/components/landing/footer";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ai-git.dev";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.ai-git.xyz/";
 
 // JSON-LD structured data for SEO
 const jsonLd = {
