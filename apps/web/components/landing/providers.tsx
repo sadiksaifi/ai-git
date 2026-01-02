@@ -13,6 +13,11 @@ const providers = [
     description: "Google's Gemini via local CLI",
   },
   {
+    name: "Codex",
+    type: "CLI",
+    description: "OpenAI's Codex via local CLI",
+  },
+  {
     name: "OpenRouter",
     type: "API",
     description: "Access 100+ models via API",
