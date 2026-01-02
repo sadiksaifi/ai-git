@@ -28,7 +28,8 @@ brew install ai-git
 git clone https://github.com/sadiksaifi/ai-git.git
 cd ai-git
 bun install
-bun run build
+cd apps/ai-git/
+bun compile
 mv dist/ai-git ~/.local/bin/
 ```
 
