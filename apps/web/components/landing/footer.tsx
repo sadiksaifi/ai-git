@@ -6,16 +6,16 @@ export function Footer() {
   return (
     <footer className="border-t border-border px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
+        <div className="flex flex-col items-center gap-6 sm:grid sm:grid-cols-3">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 sm:justify-self-start">
             <span className="text-lg font-bold tracking-tight">
               <span className="text-primary">AI</span> Git
             </span>
           </Link>
 
           {/* Links */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 sm:justify-self-center">
             <a
               href="https://github.com/sadiksaifi/ai-git"
               target="_blank"
@@ -40,7 +40,7 @@ export function Footer() {
           </div>
 
           {/* Copyright */}
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground sm:justify-self-end">
             Built by{" "}
             <a
               href="https://sadiksaifi.dev"
