@@ -6,7 +6,8 @@
 		"url": "https://sadiksaifi.dev"
 	},
 	"scripts": {
-		"cli": "bun --filter ai-git"
+		"cli": "bun --filter cli",
+		"web": "bun --filter web"
 	},
 	"packageManager": "bun@1.3.5",
   "workspaces": [
