@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { siteUrl } from "@/lib/constants";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -16,8 +17,6 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ai-git.dev";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

@@ -1,6 +1,5 @@
+import { siteUrl } from "@/lib/constants";
 import type { MetadataRoute } from "next";
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ai-git.dev";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
