@@ -17,7 +17,6 @@ export const PROVIDERS: ProviderDefinition[] = [
     name: "Claude Code",
     mode: "cli",
     binary: "claude",
-    isDefault: true,
     models: [
       { id: "haiku", name: "Claude Haiku", isDefault: true },
       { id: "sonnet", name: "Claude Sonnet" },
@@ -29,6 +28,7 @@ export const PROVIDERS: ProviderDefinition[] = [
     name: "Gemini CLI",
     mode: "cli",
     binary: "gemini",
+    isDefault: true,
     models: [
       {
         id: "gemini-3-flash-preview",
