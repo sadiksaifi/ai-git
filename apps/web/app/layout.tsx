@@ -66,10 +66,11 @@ export const metadata: Metadata = {
       "Generate semantically correct, Conventional Commits-compliant git commit messages with AI. Analyze your changes, understand your intent, commit automatically.",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og.jpg",
         width: 1200,
         height: 630,
         alt: "AI Git - AI-Powered Git Commit Messages",
+        type: "image/jpeg",
       },
     ],
   },
@@ -78,8 +79,16 @@ export const metadata: Metadata = {
     title: "AI Git - AI-Powered Git Commit Messages",
     description:
       "Generate semantically correct, Conventional Commits-compliant git commit messages with AI.",
-    images: ["/og-image.png"],
+    images: ["/og.jpg"],
     creator: "@thesadiksaifi",
+  },
+  appleWebApp: {
+    title: "AI Git",
+    statusBarStyle: "default",
+    capable: true,
+  },
+  formatDetection: {
+    telephone: false,
   },
   alternates: {
     canonical: siteUrl,
