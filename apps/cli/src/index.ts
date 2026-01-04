@@ -28,7 +28,7 @@ import { handleStaging } from "./lib/staging.ts";
 import { runGenerationLoop } from "./lib/generation.ts";
 import { handlePush } from "./lib/push.ts";
 import { runOnboarding } from "./lib/onboarding/index.ts";
-import { showWelcomeScreen } from "./lib/ui/welcome.ts";
+import { showWelcomeScreen, type WelcomeOptions } from "./lib/ui/welcome.ts";
 import { runSetupWizard } from "./lib/setup.ts";
 import {
   startUpdateCheck,
@@ -193,9 +193,6 @@ cli
       options.push = true;
     }
 
-    // Show welcome screen on every run
-    await showWelcomeScreen(VERSION);
-
     // Check if setup is needed (first-run or --setup flag)
     const existingConfig = await loadUserConfig();
     const existingProjectConfig = await loadProjectConfig();
@@ -203,6 +200,39 @@ cli
     // We only force setup if NEITHER config exists/is complete
     const isGlobalComplete = isConfigComplete(existingConfig);
     const isProjectComplete = isConfigComplete(existingProjectConfig);
+
+    // Prepare welcome options
+    let welcomeOptions: WelcomeOptions = {};
+    if (!options.setup && (isGlobalComplete || isProjectComplete)) {
+      try {
+        const resolved = await resolveConfigAsync({
+          provider: options.provider,
+          model: options.model,
+        });
+
+        const providerDef = getProviderById(resolved.provider);
+        let modelName = resolved.model;
+
+        // Try to get human readable model name
+        if (providerDef && !providerDef.dynamicModels) {
+          const m = getModelById(providerDef, resolved.model);
+          if (m) {
+            modelName = m.name;
+          }
+        }
+
+        welcomeOptions = {
+          showConfig: true,
+          providerName: providerDef?.name || resolved.provider,
+          modelName: modelName,
+        };
+      } catch {
+        // Ignore errors, just show default welcome screen
+      }
+    }
+
+    // Show welcome screen on every run
+    await showWelcomeScreen(VERSION, welcomeOptions);
 
     if (options.setup || (!isGlobalComplete && !isProjectComplete)) {
       const onboardingResult = await runOnboarding({

@@ -1,75 +1,87 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { TerminalDemo } from "./terminal-demo";
+import { buttonVariants } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Github01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { cn } from "@/lib/utils";
+import loupeImage from "@/assets/loupe.webp";
 
 export function Hero() {
   return (
-    <section className="relative flex min-h-screen flex-col items-center justify-center px-4 pt-16 sm:px-6 lg:px-8">
-      {/* Background gradient */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-0 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-primary/10 blur-3xl" />
+    <section className="relative flex h-screen flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
+      {/* Background Image */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden flex justify-center">
+        <Image
+          src={loupeImage}
+          alt=""
+          priority
+          className="h-screen w-full max-w-none opacity-40 object-cover blur-sm"
+        />
+        {/* Grain overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.25] mix-blend-overlay"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          }}
+        />
       </div>
 
-      <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center gap-8 text-center">
+      <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 text-center">
         {/* Badge */}
         <Badge
-          variant="secondary"
-          className="animate-fade-in-up px-4 py-1.5 text-sm"
+          variant="ghost"
+          className={cn(
+            "animate-fade-in-up px-4 text-sm select-none",
+            "hover:bg-transparent",
+            "hover:bg-linear-to-r hover:from-foreground hover:to-primary hover:bg-clip-text hover:text-transparent",
+            "bg-linear-to-r from-foreground to-primary bg-clip-text text-transparent",
+          )}
         >
-          AI-Powered Git Commits
+          AI Powered Git Commits
         </Badge>
 
-        {/* Headline */}
-        <h1 className="animate-fade-in-up animation-delay-100 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-          <span className="bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent">
-            AI Git
-          </span>
-        </h1>
+        <div className={cn("space-y-3")}>
+          {/* Headline */}
+          <h1
+            className={cn(
+              "animate-fade-in-up animation-delay-100",
+              "text-4xl! font-semibold tracking-tight",
+              "sm:text-5xl md:text-6xl lg:text-7xl tracking-tighter",
+              // "bg-linear-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent",
+            )}
+          >
+            Focus on Code, Not Commits
+          </h1>
 
-        {/* Subheadline */}
-        <p className="animate-fade-in-up animation-delay-200 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-          Generate semantically correct,{" "}
-          <span className="text-foreground">Conventional Commits-compliant</span>{" "}
-          git commit messages with AI. Analyze your changes, understand your
-          intent, commit automatically.
-        </p>
+          {/* Subheadline */}
+          <p className="animate-fade-in-up animation-delay-200 max-w-2xl text-sm text-muted-foreground tracking-tighter">
+            Generate conventional commit messages instantly with AI
+          </p>
+        </div>
 
         {/* CTA Buttons */}
-        <div className="animate-fade-in-up animation-delay-300 flex flex-col gap-4 sm:flex-row">
-          <Button size="lg" asChild>
-            <Link href="#installation" className="flex items-center gap-2">
-              Get Started
-              <HugeiconsIcon
-                icon={ArrowRight01Icon}
-                className="size-4"
-                strokeWidth={2}
-              />
-            </Link>
-          </Button>
-          <Button variant="outline" size="lg" asChild>
-            <a
-              href="https://github.com/sadiksaifi/ai-git"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2"
-            >
-              <HugeiconsIcon
-                icon={Github01Icon}
-                className="size-4"
-                strokeWidth={2}
-              />
-              View on GitHub
-            </a>
-          </Button>
-        </div>
+        <Link
+          href="#installation"
+          className={cn(
+            buttonVariants({
+            variant: "outline",
+              size: "lg",
+            }),
+            "bg-primary/4! border border-primary/20! text-primary!",
+            "hover:bg-primary/12! hover:border-primary/40!",
+            "pl-4 rounded-xs text-sm!",
+            "animate-fade-in-up animation-delay-300 my-5",
+          )}
+        >
+          $ Get Started
+          <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
+        </Link>
 
         {/* Terminal Demo */}
-        <div className="animate-fade-in-up animation-delay-400 mt-8 w-full">
-          <TerminalDemo />
-        </div>
+        {/* <div className="animate-fade-in-up animation-delay-400 mt-8 w-full"> */}
+        {/*   <TerminalDemo /> */}
+        {/* </div> */}
       </div>
     </section>
   );

@@ -89,7 +89,7 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.705 0.213 47.604);
+  --primary: oklch(58.84% 0.16015362642635164 6.051980764741131);
   --primary-foreground: oklch(0.98 0.016 73.684);
   --secondary: oklch(0.274 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
@@ -117,6 +117,12 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  section {
+    scroll-margin-top: 5rem;
+  }
   * {
     @apply border-border outline-ring/50;
   }
@@ -140,10 +146,10 @@
 @keyframes glow {
   0%,
   100% {
-    box-shadow: 0 0 20px oklch(0.705 0.213 47.604 / 0.3);
+    box-shadow: 0 0 20px oklch(58.84% 0.16015362642635164 6.051980764741131 / 0.3);
   }
   50% {
-    box-shadow: 0 0 40px oklch(0.705 0.213 47.604 / 0.5);
+    box-shadow: 0 0 20px oklch(58.84% 0.16015362642635164 6.051980764741131 / 0.5);
   }
 }
 
