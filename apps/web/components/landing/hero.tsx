@@ -65,7 +65,7 @@ export function Hero() {
           href="#installation"
           className={cn(
             buttonVariants({
-							variant: "outline",
+            variant: "outline",
               size: "lg",
             }),
             "bg-primary/4! border border-primary/20! text-primary!",
