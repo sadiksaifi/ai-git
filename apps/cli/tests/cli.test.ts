@@ -104,7 +104,7 @@ describe("ai-git CLI", () => {
     const stdout = await new Response(proc.stdout).text();
     await proc.exited;
 
-    expect(stdout).toContain("Dry Run: Full Prompt");
+    expect(stdout).toContain("DRY RUN: FULL AI PROMPT");
     expect(stdout).toContain(
       'Role: Git Commit Message Generator (Conventional Commits v1.0.0)'
     );

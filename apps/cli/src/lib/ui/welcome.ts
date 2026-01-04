@@ -76,7 +76,16 @@ function wrapText(text: string, maxWidth: number): string[] {
 /**
  * Display a two-column welcome screen inspired by Claude Code.
  */
-export async function showWelcomeScreen(version: string): Promise<WelcomeResult> {
+export interface WelcomeOptions {
+  showConfig?: boolean;
+  providerName?: string;
+  modelName?: string;
+}
+
+/**
+ * Display a two-column welcome screen inspired by Claude Code.
+ */
+export async function showWelcomeScreen(version: string, options?: WelcomeOptions): Promise<WelcomeResult> {
   console.clear();
 
   // Layout dimensions
@@ -109,16 +118,30 @@ export async function showWelcomeScreen(version: string): Promise<WelcomeResult>
 
   // Build right column content (without borders)
   // Use null to mark separator row
-  const rightContent: (string | null)[] = [
-    "",
-    ` ${pc.bold("Features:")}`,
-    ` ${pc.dim("•")} Conventional Commits format`,
-    ` ${pc.dim("•")} Smart scope detection`,
-    ` ${pc.dim("•")} Interactive refinement`,
-    "",
-    null, // separator marker
-    ` ${pc.bold("Tip:")} ${pc.cyan(`ai-git ${tip.flag}`)}`,
-  ];
+  const rightContent: (string | null)[] = [];
+
+  if (options?.showConfig) {
+    rightContent.push(
+      "",
+      ` ${pc.bold("Configuration:")}`,
+      ` ${pc.dim("•")} ${pc.dim("Provider:")} ${pc.cyan(options.providerName || "Unknown")}`,
+      ` ${pc.dim("•")} ${pc.dim("Model:")}    ${pc.cyan(options.modelName || "Unknown")}`,
+      "",
+      null, // separator marker
+    );
+  } else {
+    rightContent.push(
+      "",
+      ` ${pc.bold("Features:")}`,
+      ` ${pc.dim("•")} Conventional Commits format`,
+      ` ${pc.dim("•")} Smart scope detection`,
+      ` ${pc.dim("•")} Interactive refinement`,
+      "",
+      null, // separator marker
+    );
+  }
+
+  rightContent.push(` ${pc.bold("Tip:")} ${pc.cyan(`ai-git ${tip.flag}`)}`);
 
   // Wrap tip description
   const wrappedTip = wrapText(tip.desc, rightWidth - 2); // -2 for left padding
