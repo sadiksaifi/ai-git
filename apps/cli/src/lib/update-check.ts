@@ -231,8 +231,8 @@ export function startUpdateCheck(
 export function showUpdateNotification(result: UpdateCheckResult): void {
   if (!result.updateAvailable || !result.latestVersion) return;
 
-  log.warn(
-    `Update available: ${result.currentVersion} -> ${result.latestVersion}\n` +
-      pc.dim(`Run: brew upgrade ai-git`)
-  );
+	log.warn(
+		pc.yellow(`Update available: ${result.currentVersion} -> ${result.latestVersion}\n`) +
+		pc.dim(`Run: brew upgrade ai-git`)
+	);
 }
