@@ -316,7 +316,7 @@ cli
       log.error(pc.red("You are running in auto-approve mode."));
 
       const s = spinner();
-      s.start("Proceeding in 5s... (Enter to skip, Ctrl+C to cancel)");
+      s.start(pc.yellow("Proceeding in 5s... (Enter to skip, Ctrl+C to cancel)"));
 
       // Set up keypress detection to allow skipping the countdown
       let skipped = false;
@@ -357,7 +357,7 @@ cli
       }
 
       for (let i = 5; i > 0 && !skipped; i--) {
-        s.message(`Proceeding in ${i}s... (Enter to skip, Ctrl+C to cancel)`);
+        s.message(pc.yellow(`Proceeding in ${i}s... (Enter to skip, Ctrl+C to cancel)`));
         // Race between 1s delay and skip - allows immediate response to Enter
         await Promise.race([setTimeout(1000), skipPromise]);
       }
