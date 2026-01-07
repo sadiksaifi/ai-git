@@ -264,9 +264,21 @@ export async function runGenerationLoop(
 
     // Commit logic
     if (options.commit) {
-      const result = await commit(cleanMsg);
-      showCommitResult(result);
-      return { message: cleanMsg, committed: true, aborted: false };
+      try {
+        const result = await commit(cleanMsg);
+        showCommitResult(result);
+        return { message: cleanMsg, committed: true, aborted: false };
+      } catch (err) {
+        log.error(pc.red("Git commit failed."));
+        if (err && typeof err === "object" && "stderr" in err) {
+          console.error(pc.dim(String((err as any).stderr).trim()));
+        } else if (err instanceof Error) {
+          console.error(pc.dim(err.message));
+        } else {
+          console.error(pc.dim(String(err)));
+        }
+        return { message: cleanMsg, committed: false, aborted: true };
+      }
     }
 
     // Interactive flow
@@ -312,9 +324,21 @@ export async function runGenerationLoop(
     }
 
     if (action === "commit") {
-      const result = await commit(cleanMsg);
-      showCommitResult(result);
-      return { message: cleanMsg, committed: true, aborted: false };
+      try {
+        const result = await commit(cleanMsg);
+        showCommitResult(result);
+        return { message: cleanMsg, committed: true, aborted: false };
+      } catch (err) {
+        log.error(pc.red("Git commit failed."));
+        if (err && typeof err === "object" && "stderr" in err) {
+          console.error(pc.dim(String((err as any).stderr).trim()));
+        } else if (err instanceof Error) {
+          console.error(pc.dim(err.message));
+        } else {
+          console.error(pc.dim(String(err)));
+        }
+        continue;
+      }
     }
 
     if (action === "edit") {
