@@ -4,7 +4,7 @@
 
 /**
  * Connection mode - how we communicate with the AI provider.
- * - "cli": Uses installed CLI tools (claude-code, gemini-cli)
+ * - "cli": Uses installed CLI tools (claude-code, gemini-cli, codex)
  * - "api": Uses API calls via Vercel AI SDK (OpenRouter, OpenAI, Anthropic, Gemini)
  */
 export type Mode = "cli" | "api";
