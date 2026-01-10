@@ -68,8 +68,9 @@ const GITHUB_RELEASES_URL =
  * Uses Bun's built-in semver module.
  */
 function isNewerVersion(currentVersion: string, latestVersion: string): boolean {
-  // Strip 'v' prefix if present
-  const current = currentVersion.replace(/^v/, "");
+  // Strip 'v' prefix and '-dev.X' suffix if present
+  // This treats dev versions as their base version (e.g., 2.0.3-dev.2 -> 2.0.3)
+  const current = currentVersion.replace(/^v/, "").replace(/-dev\.\d+$/, "");
   const latest = latestVersion.replace(/^v/, "");
 
   // semver.order returns -1 if first < second, 0 if equal, 1 if first > second

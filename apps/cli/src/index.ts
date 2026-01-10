@@ -11,7 +11,7 @@ import {
 import { setTimeout } from "node:timers/promises";
 import cac from "cac";
 import pc from "picocolors";
-import packageJson from "../package.json";
+import { VERSION } from "./version.ts";
 
 import {
   loadUserConfig,
@@ -48,7 +48,6 @@ import { FLAGS } from "./lib/flags.ts";
 // ==============================================================================
 
 const cli = cac("ai-git");
-const VERSION = packageJson.version;
 
 // ==============================================================================
 // CLI OPTIONS INTERFACE
