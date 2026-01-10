@@ -25,13 +25,6 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Sync version with tag
-        run: |
-          VERSION=${{ github.ref_name }}
-          CLEAN_VERSION="${VERSION#v}"
-          echo "Syncing package.json version to $CLEAN_VERSION"
-          sed -i "s/\"version\": \".*\"/\"version\": \"$CLEAN_VERSION\"/" apps/cli/package.json
-
       - name: Build for macOS ARM64
         working-directory: apps/cli
         run: |
