@@ -21,7 +21,7 @@ export function getVersion(): string {
     if (exactMatch?.[1]) return exactMatch[1];
 
     // After tag: v2.0.4-2-g9ff0c17 -> 2.0.4-dev.2
-    const devMatch = describe.match(/^v(\d+\.\d+\.\d+)-(\d+)-g[a-f0-9]+$/);
+    const devMatch = describe.match(/^v(\d+\.\d+\.\d+)-(\d+)-g[a-fA-F0-9]+$/);
     if (devMatch?.[1] && devMatch[2]) return `${devMatch[1]}-dev.${devMatch[2]}`;
 
     return "0.0.0-dev";
