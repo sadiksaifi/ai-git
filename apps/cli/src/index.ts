@@ -107,12 +107,12 @@ cli
     FLAGS.hint.description,
   )
   .option(
-    FLAGS.dangerouslyAutoApprove.long,
-    FLAGS.dangerouslyAutoApprove.description,
-  )
-  .option(
     `${FLAGS.exclude.short}, ${FLAGS.exclude.long} ${FLAGS.exclude.arg}`,
     FLAGS.exclude.description,
+  )
+  .option(
+    FLAGS.dangerouslyAutoApprove.long,
+    FLAGS.dangerouslyAutoApprove.description,
   )
   .option(FLAGS.dryRun.long, FLAGS.dryRun.description)
   .option(FLAGS.setup.long, FLAGS.setup.description)
