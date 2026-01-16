@@ -452,9 +452,17 @@ cli
     }
 
     // 3. PUSH LOGIC
+    // Interactive mode: no workflow flags provided (only --provider, --model, --hint)
+    const isInteractiveMode =
+      !options.commit &&
+      !options.stageAll &&
+      !options.push &&
+      !options.dangerouslyAutoApprove;
+
     await handlePush({
       push: options.push,
       dangerouslyAutoApprove: options.dangerouslyAutoApprove,
+      isInteractiveMode,
     });
 
     outro(pc.green("Done!"));
