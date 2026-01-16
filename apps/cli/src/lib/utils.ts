@@ -60,3 +60,47 @@ export function wrapText(text: string, width: number): string {
   return wrappedLines.join("\n");
 }
 
+/**
+ * Check if a file path matches any exclusion pattern.
+ * Supports: exact paths, directory prefixes (trailing /), simple globs (*)
+ */
+export function matchesExcludePattern(
+  filePath: string,
+  patterns: string[]
+): boolean {
+  for (const pattern of patterns) {
+    // Directory pattern (ends with /)
+    if (pattern.endsWith("/")) {
+      if (filePath.startsWith(pattern) || filePath + "/" === pattern) {
+        return true;
+      }
+    }
+    // Glob pattern with *
+    else if (pattern.includes("*")) {
+      const regex = new RegExp(
+        "^" + pattern.replace(/\./g, "\\.").replace(/\*/g, ".*") + "$"
+      );
+      // Match against full path and basename
+      if (regex.test(filePath) || regex.test(filePath.split("/").pop() ?? "")) {
+        return true;
+      }
+    }
+    // Exact match or prefix (treat as directory)
+    else if (filePath === pattern || filePath.startsWith(pattern + "/")) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Filter out files that match any exclusion pattern.
+ */
+export function filterExcludedFiles(
+  files: string[],
+  patterns: string[]
+): string[] {
+  if (!patterns || patterns.length === 0) return files;
+  return files.filter((f) => !matchesExcludePattern(f, patterns));
+}
+

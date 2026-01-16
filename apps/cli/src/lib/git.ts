@@ -1,6 +1,6 @@
 import { $ } from "bun";
 import pc from "picocolors";
-import { LOCKFILES } from "./utils.ts";
+import { LOCKFILES, filterExcludedFiles } from "./utils.ts";
 
 // ==============================================================================
 // GIT OPERATIONS
@@ -125,6 +125,25 @@ export async function stageFiles(files: string[]): Promise<void> {
  */
 export async function stageAll(): Promise<void> {
   await $`git add -A`;
+}
+
+/**
+ * Stage all changes except those matching exclusion patterns.
+ */
+export async function stageAllExcept(
+  excludePatterns?: string[]
+): Promise<void> {
+  if (!excludePatterns || excludePatterns.length === 0) {
+    await stageAll();
+    return;
+  }
+
+  const allFiles = await getUnstagedFiles();
+  const filesToStage = filterExcludedFiles(allFiles, excludePatterns);
+
+  if (filesToStage.length > 0) {
+    await stageFiles(filesToStage);
+  }
 }
 
 /**

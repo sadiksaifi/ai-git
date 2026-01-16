@@ -41,6 +41,12 @@ export const FLAGS = {
     long: "--dangerously-auto-approve",
     description: "Run fully automated (Stage All + Commit + Push)",
   },
+  exclude: {
+    short: "-X",
+    long: "--exclude",
+    arg: "<pattern>",
+    description: "Exclude files/directories from staging (use with -a)",
+  },
   dryRun: {
     long: "--dry-run",
     description: "Print the prompt and diff without calling AI",
