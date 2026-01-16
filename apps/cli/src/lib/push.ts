@@ -9,6 +9,7 @@ import { push, addRemoteAndPush } from "./git.ts";
 export interface PushOptions {
   push: boolean;
   dangerouslyAutoApprove: boolean;
+  isInteractiveMode: boolean;
 }
 
 /**
@@ -87,8 +88,10 @@ export async function safePush(isAutomated: boolean): Promise<void> {
  */
 export async function handlePush(options: PushOptions): Promise<void> {
   if (options.push) {
+    // --push flag provided: push automatically
     await safePush(options.dangerouslyAutoApprove);
-  } else if (!options.dangerouslyAutoApprove) {
+  } else if (options.isInteractiveMode) {
+    // Interactive mode (no workflow flags): prompt user
     const shouldPush = await confirm({
       message: "Do you want to git push?",
       initialValue: false,
@@ -98,4 +101,5 @@ export async function handlePush(options: PushOptions): Promise<void> {
       await safePush(false);
     }
   }
+  // Flag-only mode without --push: do nothing (no prompt, no push)
 }
