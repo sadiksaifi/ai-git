@@ -45,7 +45,8 @@ export const FLAGS = {
     short: "-X",
     long: "--exclude",
     arg: "<pattern>",
-    description: "Exclude files/directories from staging (use with -a)",
+    description:
+      "Exclude files/dirs from staging. Supports: path, dir/, glob (*, ?, [...]), regex (/pattern/flags or regex:pattern)",
   },
   dryRun: {
     long: "--dry-run",
