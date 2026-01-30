@@ -3,6 +3,7 @@ import { openRouterAdapter } from "./openrouter.ts";
 import { openAIAdapter } from "./openai.ts";
 import { anthropicAdapter } from "./anthropic.ts";
 import { googleAiStudioAdapter } from "./google-ai-studio.ts";
+import { cerebrasAdapter } from "./cerebras.ts";
 
 // ==============================================================================
 // API MODE ADAPTER REGISTRY
@@ -16,6 +17,7 @@ import { googleAiStudioAdapter } from "./google-ai-studio.ts";
  * - OpenAI API - GPT-4o, GPT-4, etc.
  * - Anthropic API - Claude models
  * - Google AI Studio - Gemini models
+ * - Cerebras - Fast inference
  *
  * All adapters use Vercel AI SDK for consistent interface.
  */
@@ -24,6 +26,7 @@ const apiAdapters: Map<string, APIProviderAdapter> = new Map([
   [openAIAdapter.providerId, openAIAdapter],
   [anthropicAdapter.providerId, anthropicAdapter],
   [googleAiStudioAdapter.providerId, googleAiStudioAdapter],
+  [cerebrasAdapter.providerId, cerebrasAdapter],
 ]);
 
 /**
@@ -61,3 +64,4 @@ export { openRouterAdapter } from "./openrouter.ts";
 export { openAIAdapter } from "./openai.ts";
 export { anthropicAdapter } from "./anthropic.ts";
 export { googleAiStudioAdapter } from "./google-ai-studio.ts";
+export { cerebrasAdapter } from "./cerebras.ts";

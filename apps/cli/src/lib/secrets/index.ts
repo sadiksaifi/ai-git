@@ -32,12 +32,27 @@ export function getSecretsManager(): SecretsManager {
     return secretsManagerInstance;
   }
 
-  // Linux and Windows support coming soon
-  throw new Error(
-    "API mode is currently only available on macOS. " +
-      "Support for Linux and Windows is coming soon.\n\n" +
-      "For now, please use CLI mode with an installed AI CLI tool."
-  );
+  // Fallback for Linux/Windows using environment variables
+  // account format: "provider-api-key" -> "PROVIDER_API_KEY"
+  return {
+    async setSecret(_service: string, account: string, secret: string): Promise<void> {
+      console.warn(
+        `\n[Secrets] Platform '${process.platform}' does not support secure storage yet.\n` +
+        `Please set the environment variable manually:\n` +
+        `export ${account.replace(/-/g, "_").toUpperCase()}=${secret}\n`
+      );
+    },
+    async getSecret(_service: string, account: string): Promise<string | null> {
+      const envKey = account.replace(/-/g, "_").toUpperCase();
+      return process.env[envKey] || null;
+    },
+    async deleteSecret(_service: string, _account: string): Promise<boolean> {
+      return false;
+    },
+    async isAvailable(): Promise<boolean> {
+      return true;
+    }
+  };
 }
 
 /**

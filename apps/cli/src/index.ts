@@ -264,7 +264,7 @@ cli
       console.error(
         pc.red(`Error: Unknown provider '${resolvedConfig.provider}'.`),
       );
-      console.error(pc.dim(`Supported providers: claude-code, gemini-cli, codex, openrouter, openai, anthropic, google-ai-studio`));
+      console.error(pc.dim(`Supported providers: claude-code, gemini-cli, codex, openrouter, openai, anthropic, google-ai-studio, cerebras`));
       process.exit(1);
     }
 

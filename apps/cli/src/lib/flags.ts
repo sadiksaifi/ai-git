@@ -5,7 +5,7 @@ export const FLAGS = {
     long: "--provider",
     arg: "<id>",
     description:
-      "AI provider (claude-code, gemini-cli, codex, openrouter, openai, anthropic, google-ai-studio)",
+      "AI provider (claude-code, gemini-cli, codex, openrouter, openai, anthropic, google-ai-studio, cerebras)",
   },
   model: {
     short: "-M",

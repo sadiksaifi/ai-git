@@ -15,9 +15,9 @@
     },
     "provider": {
       "type": "string",
-      "enum": ["claude-code", "gemini-cli", "codex", "openrouter", "openai", "google-ai-studio", "anthropic"],
+      "enum": ["claude-code", "gemini-cli", "codex", "openrouter", "openai", "google-ai-studio", "anthropic", "cerebras"],
       "description": "AI provider to use for generating commit messages.",
-      "examples": ["claude-code", "gemini-cli", "codex", "openrouter", "openai", "google-ai-studio", "anthropic"]
+      "examples": ["claude-code", "gemini-cli", "codex", "openrouter", "openai", "google-ai-studio", "anthropic", "cerebras"]
     },
     "model": {
       "type": "string",
@@ -229,6 +229,21 @@
           "model": {
             "type": "string",
             "description": "Anthropic API model ID (e.g., 'claude-3-5-haiku-latest'). Models are fetched dynamically."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": { "const": "cerebras" }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "Cerebras API model ID (e.g., 'llama-3.3-70b'). Models are fetched dynamically."
           }
         }
       }
