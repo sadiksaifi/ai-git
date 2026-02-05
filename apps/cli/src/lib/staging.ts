@@ -10,6 +10,7 @@ import {
   getUnstagedFiles,
   stageFiles,
   stageAll,
+  stageAllExcept,
 } from "./git.ts";
 
 // ==============================================================================
@@ -19,6 +20,7 @@ import {
 export interface StagingOptions {
   stageAll: boolean;
   dangerouslyAutoApprove: boolean;
+  exclude?: string[];
 }
 
 export interface StagingResult {
@@ -62,7 +64,7 @@ export async function handleStaging(
       if (action === "all") {
         const s = spinner();
         s.start("Staging all changes...");
-        await stageAll();
+        await stageAllExcept(options.exclude);
         s.stop("Staged all changes");
         stagedFiles = await getStagedFiles();
         note(stagedFiles.map((f) => `+ ${f}`).join("\n"), "Staged Files");
@@ -100,7 +102,7 @@ export async function handleStaging(
     if (options.stageAll) {
       const s = spinner();
       s.start("Staging all changes...");
-      await stageAll();
+      await stageAllExcept(options.exclude);
       s.stop("Staged all changes");
       stagedFiles = await getStagedFiles();
       note(stagedFiles.map((f) => `+ ${f}`).join("\n"), "Staged Files");
@@ -122,7 +124,7 @@ export async function handleStaging(
       if (action === "all") {
         const s = spinner();
         s.start("Staging all changes...");
-        await stageAll();
+        await stageAllExcept(options.exclude);
         s.stop("Staged all changes");
         stagedFiles = await getStagedFiles();
         note(stagedFiles.map((f) => `+ ${f}`).join("\n"), "Staged Files");

@@ -64,6 +64,7 @@ export interface CLIOptions {
   push: boolean;
   dangerouslyAutoApprove: boolean;
   hint?: string;
+  exclude?: string | string[]; // cac converts repeated flags to array
   dryRun: boolean;
 
   // Meta
@@ -104,6 +105,10 @@ cli
   .option(
     `${FLAGS.hint.short}, ${FLAGS.hint.long} ${FLAGS.hint.arg}`,
     FLAGS.hint.description,
+  )
+  .option(
+    `${FLAGS.exclude.short}, ${FLAGS.exclude.long} ${FLAGS.exclude.arg}`,
+    FLAGS.exclude.description,
   )
   .option(
     FLAGS.dangerouslyAutoApprove.long,
@@ -394,9 +399,17 @@ cli
     await checkInsideRepo();
 
     // 1. STAGE MANAGEMENT
+    // Normalize exclude to array
+    const excludePatterns = options.exclude
+      ? Array.isArray(options.exclude)
+        ? options.exclude
+        : [options.exclude]
+      : undefined;
+
     const stagingResult = await handleStaging({
       stageAll: options.stageAll,
       dangerouslyAutoApprove: options.dangerouslyAutoApprove,
+      exclude: excludePatterns,
     });
 
     if (stagingResult.aborted) {

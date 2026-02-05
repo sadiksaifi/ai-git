@@ -66,6 +66,7 @@ Options:
   -c, --commit                Automatically commit (skip editor/confirmation)
   -p, --push                  Automatically push after commit
   -H, --hint <text>           Provide a hint/context to the AI
+  -X, --exclude <pattern>     Exclude files/directories from staging (use with -a)
   --dangerously-auto-approve  Run fully automated (Stage All + Commit + Push)
   --dry-run                   Print the prompt and diff without calling AI
   --setup                     Re-run the setup wizard to reconfigure AI provider
@@ -88,6 +89,9 @@ ai-git --provider codex --model gpt-5.2-codex
 
 # Use OpenRouter
 ai-git --provider openrouter --model anthropic/claude-3.5-haiku
+
+# Exclude files/directories from staging
+ai-git -a --exclude "tests/" --exclude "*.test.ts"
 
 # Automated (Be careful!)
 ai-git --dangerously-auto-approve --hint "Refactored authentication module"

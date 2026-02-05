@@ -41,6 +41,13 @@ export const FLAGS = {
     long: "--dangerously-auto-approve",
     description: "Run fully automated (Stage All + Commit + Push)",
   },
+  exclude: {
+    short: "-X",
+    long: "--exclude",
+    arg: "<pattern>",
+    description:
+      "Exclude files/dirs from staging. Supports: path, dir/, glob (*, ?, [...]), regex (/pattern/flags or regex:pattern)",
+  },
   dryRun: {
     long: "--dry-run",
     description: "Print the prompt and diff without calling AI",
