@@ -67,12 +67,24 @@ export const cerebrasAdapter: APIProviderAdapter = {
       baseURL: BASE_URL,
     });
 
-    const { text } = await generateText({
-      model: cerebras(model),
-      prompt,
-    });
+    const { controller, cleanup } = createTimeoutController();
 
-    return text;
+    try {
+      const { text } = await generateText({
+        model: cerebras(model),
+        prompt,
+        abortSignal: controller.signal,
+      });
+
+      return text;
+    } catch (err) {
+      if (controller.signal.aborted) {
+        throw new Error("Cerebras request timed out.");
+      }
+      throw err;
+    } finally {
+      cleanup();
+    }
   },
 
   async checkAvailable(): Promise<boolean> {
