@@ -16,7 +16,7 @@ export const codexAdapter: CLIProviderAdapter = {
   binary: "codex",
 
   async invoke({ model, prompt }: InvokeOptions): Promise<string> {
-    const proc = Bun.spawn(["codex", "exec", "--model", model, prompt], {
+    const proc = Bun.spawn(["codex", "--model", model, "exec", prompt], {
       stdout: "pipe",
       stderr: "pipe",
     });

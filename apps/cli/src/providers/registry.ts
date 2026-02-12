@@ -17,28 +17,11 @@ export const PROVIDERS: ProviderDefinition[] = [
     name: "Claude Code",
     mode: "cli",
     binary: "claude",
-    models: [
-      { id: "haiku", name: "Claude Haiku", isDefault: true },
-      { id: "sonnet", name: "Claude Sonnet" },
-      { id: "opus", name: "Claude Opus" },
-    ],
-  },
-  {
-    id: "gemini-cli",
-    name: "Gemini CLI",
-    mode: "cli",
-    binary: "gemini",
     isDefault: true,
     models: [
-      {
-        id: "gemini-3-flash-preview",
-        name: "Gemini 3 Flash Preview",
-        isDefault: true,
-      },
-      { id: "gemini-3-pro-preview", name: "Gemini 3 Pro Preview" },
-      { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite" },
-      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
-      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
+      { id: "sonnet", name: "Claude Sonnet", isDefault: true },
+      { id: "haiku", name: "Claude Haiku" },
+      { id: "opus", name: "Claude Opus" },
     ],
   },
   {
@@ -57,6 +40,23 @@ export const PROVIDERS: ProviderDefinition[] = [
       { id: "gpt-5-codex", name: "GPT-5 Codex" },
       { id: "gpt-5-codex-mini", name: "GPT-5 Codex Mini" },
       { id: "gpt-5", name: "GPT-5" },
+    ],
+  },
+  {
+    id: "gemini-cli",
+    name: "Gemini CLI",
+    mode: "cli",
+    binary: "gemini",
+    models: [
+      {
+        id: "gemini-3-flash-preview",
+        name: "Gemini 3 Flash Preview",
+        isDefault: true,
+      },
+      { id: "gemini-3-pro-preview", name: "Gemini 3 Pro Preview" },
+      { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite" },
+      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
     ],
   },
 
