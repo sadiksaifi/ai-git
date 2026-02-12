@@ -11,13 +11,33 @@
     "editor": {
       "type": "string",
       "description": "Preferred editor command (e.g. 'vim', 'nvim', 'nano'). Overrides $EDITOR environment variable.",
-      "examples": ["vim", "nvim", "nano"]
+      "examples": [
+        "vim",
+        "nvim",
+        "nano"
+      ]
     },
     "provider": {
       "type": "string",
-      "enum": ["claude-code", "gemini-cli", "codex", "openrouter", "openai", "google-ai-studio", "anthropic"],
+      "enum": [
+        "claude-code",
+        "gemini-cli",
+        "codex",
+        "openrouter",
+        "openai",
+        "google-ai-studio",
+        "anthropic"
+      ],
       "description": "AI provider to use for generating commit messages.",
-      "examples": ["claude-code", "gemini-cli", "codex", "openrouter", "openai", "google-ai-studio", "anthropic"]
+      "examples": [
+        "claude-code",
+        "gemini-cli",
+        "codex",
+        "openrouter",
+        "openai",
+        "google-ai-studio",
+        "anthropic"
+      ]
     },
     "model": {
       "type": "string",
@@ -30,10 +50,8 @@
         "gpt-5.3-codex",
         "gpt-5.2-codex",
         "gpt-5.1-codex-max",
-        "anthropic/claude-3.5-haiku",
-        "gpt-4o-mini",
-        "gemini-2.0-flash",
-        "claude-3-5-haiku-latest"
+        "openai/gpt-5.3-codex",
+        "claude-opus-4-6"
       ]
     },
     "defaults": {
@@ -97,11 +115,11 @@
     },
     "api": {
       "type": "object",
-      "description": "API-specific configuration options (only used with API providers).",
+      "description": "API-specific configuration options. Kept for compatibility; options may be ignored by some versions.",
       "properties": {
         "modelCacheTTL": {
           "type": "number",
-          "description": "Hours to cache the model list from API providers. Default: 48 hours.",
+          "description": "Preferred model-list cache TTL in hours for API providers (best-effort compatibility setting).",
           "default": 48,
           "minimum": 1,
           "maximum": 168
@@ -110,19 +128,28 @@
       "additionalProperties": false
     }
   },
-  "required": ["provider", "model"],
+  "required": [
+    "provider",
+    "model"
+  ],
   "additionalProperties": false,
   "allOf": [
     {
       "if": {
         "properties": {
-          "provider": { "const": "claude-code" }
+          "provider": {
+            "const": "claude-code"
+          }
         }
       },
       "then": {
         "properties": {
           "model": {
-            "enum": ["haiku", "sonnet", "opus"],
+            "enum": [
+              "haiku",
+              "sonnet",
+              "opus"
+            ],
             "description": "Claude CLI model to use. 'haiku' is recommended for speed and cost."
           }
         }
@@ -131,7 +158,9 @@
     {
       "if": {
         "properties": {
-          "provider": { "const": "gemini-cli" }
+          "provider": {
+            "const": "gemini-cli"
+          }
         }
       },
       "then": {
@@ -152,7 +181,9 @@
     {
       "if": {
         "properties": {
-          "provider": { "const": "codex" }
+          "provider": {
+            "const": "codex"
+          }
         }
       },
       "then": {
@@ -178,14 +209,16 @@
     {
       "if": {
         "properties": {
-          "provider": { "const": "openrouter" }
+          "provider": {
+            "const": "openrouter"
+          }
         }
       },
       "then": {
         "properties": {
           "model": {
             "type": "string",
-            "description": "OpenRouter model ID (e.g., 'anthropic/claude-3.5-haiku'). Models are fetched dynamically."
+            "description": "OpenRouter model ID (e.g., 'openai/gpt-5.3-codex'). Models are fetched dynamically."
           }
         }
       }
@@ -193,14 +226,16 @@
     {
       "if": {
         "properties": {
-          "provider": { "const": "openai" }
+          "provider": {
+            "const": "openai"
+          }
         }
       },
       "then": {
         "properties": {
           "model": {
             "type": "string",
-            "description": "OpenAI model ID (e.g., 'gpt-4o-mini'). Models are fetched dynamically."
+            "description": "OpenAI model ID (e.g., 'gpt-5.3-codex'). Models are fetched dynamically."
           }
         }
       }
@@ -208,14 +243,16 @@
     {
       "if": {
         "properties": {
-          "provider": { "const": "google-ai-studio" }
+          "provider": {
+            "const": "google-ai-studio"
+          }
         }
       },
       "then": {
         "properties": {
           "model": {
             "type": "string",
-            "description": "Google AI Studio model ID (e.g., 'gemini-2.0-flash'). Models are fetched dynamically."
+            "description": "Google AI Studio model ID (e.g., 'gemini-3-flash-preview'). Models are fetched dynamically."
           }
         }
       }
@@ -223,14 +260,16 @@
     {
       "if": {
         "properties": {
-          "provider": { "const": "anthropic" }
+          "provider": {
+            "const": "anthropic"
+          }
         }
       },
       "then": {
         "properties": {
           "model": {
             "type": "string",
-            "description": "Anthropic API model ID (e.g., 'claude-3-5-haiku-latest'). Models are fetched dynamically."
+            "description": "Anthropic API model ID (e.g., 'claude-opus-4-6'). Models are fetched dynamically."
           }
         }
       }

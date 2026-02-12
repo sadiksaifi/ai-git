@@ -35,6 +35,7 @@ import {
   showUpdateNotification,
 } from "./lib/update-check.ts";
 import { FLAGS } from "./lib/flags.ts";
+import { assertConfiguredModelAllowed } from "./providers/api/models/index.ts";
 
 // ==============================================================================
 // GLOBAL SETTINGS
@@ -300,6 +301,19 @@ cli
     if (providerDef.dynamicModels) {
       model = modelId;
       modelName = modelId; // Use ID as name for display (or could fetch from cache)
+
+      try {
+        await assertConfiguredModelAllowed(
+          providerDef.id as "openrouter" | "openai" | "anthropic" | "google-ai-studio",
+          model
+        );
+      } catch (error) {
+        console.error(
+          pc.red(`Error: ${error instanceof Error ? error.message : "Configured model is not allowed."}`),
+        );
+        console.error(pc.dim("Run `ai-git --setup` to select a supported model."));
+        process.exit(1);
+      }
     } else {
       // For CLI providers, validate model exists in registry
       const modelDef = getModelById(providerDef, modelId);

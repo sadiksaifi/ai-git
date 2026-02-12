@@ -2,6 +2,11 @@ import { generateText } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import type { APIProviderAdapter, APIModelDefinition, InvokeOptions } from "../types.ts";
 import { getApiKey, createTimeoutController, COMMON_HEADERS } from "./utils.ts";
+import {
+  dedupeProviderModels,
+  getModelCatalog,
+  rankProviderModels,
+} from "./models/index.ts";
 
 // ==============================================================================
 // ANTHROPIC API ADAPTER
@@ -40,32 +45,6 @@ function getModelDisplayName(model: { id: string; display_name?: string }): stri
     .split(" ")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
-}
-
-/**
- * Priority order for Anthropic models (lower = higher priority).
- */
-const MODEL_PRIORITY: Record<string, number> = {
-  // Claude 4.5 (latest)
-  "claude-3-5-haiku": 0,
-  "claude-sonnet-4": 1,
-  "claude-opus-4": 2,
-  // Claude 3.5
-  "claude-3-5-sonnet": 3,
-  // Claude 3
-  "claude-3-haiku": 4,
-  "claude-3-sonnet": 5,
-  "claude-3-opus": 6,
-};
-
-/**
- * Get priority for a model (lower = higher priority).
- */
-function getModelPriority(modelId: string): number {
-  for (const [key, priority] of Object.entries(MODEL_PRIORITY)) {
-    if (modelId.includes(key)) return priority;
-  }
-  return 100;
 }
 
 /**
@@ -122,18 +101,20 @@ export const anthropicAdapter: APIProviderAdapter = {
 
       const data = (await response.json()) as AnthropicModelsResponse;
 
+      const catalog = await getModelCatalog();
+
       // Filter to only model types
       const chatModels = data.data.filter((m) => m.type === "model");
 
-      // Map and sort by priority
+      // Map, rank, and dedupe through shared model catalog utilities.
       const models: APIModelDefinition[] = chatModels
         .map((m) => ({
           id: m.id,
           name: getModelDisplayName(m),
-        }))
-        .sort((a, b) => getModelPriority(a.id) - getModelPriority(b.id));
+        }));
 
-      return models;
+      const ranked = rankProviderModels("anthropic", models, catalog);
+      return dedupeProviderModels("anthropic", ranked);
     } finally {
       cleanup();
     }

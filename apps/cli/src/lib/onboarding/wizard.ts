@@ -33,8 +33,11 @@ import {
   cacheModels,
   type CachedModel,
 } from "../model-cache.ts";
-import { findDefaultModel } from "../model-ranking.ts";
 import { INSTALL_INFO, ERROR_MESSAGES } from "./constants.ts";
+import {
+  findRecommendedModel,
+  getModelCatalog,
+} from "../../providers/api/models/index.ts";
 
 // ==============================================================================
 // TYPES
@@ -447,7 +450,31 @@ async function selectModel(
   defaultModel?: string
 ): Promise<string | null> {
   // Find the recommended default model
-  const recommendedModel = defaultModel ?? findDefaultModel(models, providerId);
+  let recommendedModel = defaultModel;
+
+  if (!recommendedModel) {
+    try {
+      const catalog = await getModelCatalog();
+      const supportedProviderId =
+        providerId === "openrouter" ||
+        providerId === "anthropic" ||
+        providerId === "openai" ||
+        providerId === "google-ai-studio"
+          ? providerId
+          : null;
+
+      if (supportedProviderId) {
+        recommendedModel = findRecommendedModel(
+          supportedProviderId,
+          models,
+          catalog,
+          "balanced"
+        ) ?? undefined;
+      }
+    } catch {
+      // Recommendation is non-critical; continue with the first model fallback.
+    }
+  }
 
   // For small lists (< 20 models), use @clack/prompts select
   if (models.length <= 20) {
