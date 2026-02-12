@@ -85,7 +85,7 @@ ai-git
 ai-git --provider gemini-cli --model gemini-3-flash-preview
 
 # Use Codex
-ai-git --provider codex --model gpt-5.2-codex
+ai-git --provider codex --model gpt-5.3-codex
 
 # Use OpenRouter
 ai-git --provider openrouter --model anthropic/claude-3.5-haiku
