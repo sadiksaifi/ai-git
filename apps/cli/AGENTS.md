@@ -15,6 +15,7 @@ bun run compile         # Compile to single binary (dist/ai-git)
 bun run typecheck       # Type check without emitting
 bun test                # Run tests
 bun start --dry-run -a  # Test prompt generation without AI call
+bun run sync:model-catalog # Refresh API model snapshot from models.dev
 ```
 
 ## Architecture
@@ -35,10 +36,18 @@ CLI Entry (src/index.ts)
 
 ### Provider System (`src/providers/`)
 Two modes with unified adapter interface:
-- **CLI Mode** (`cli/`): Spawns installed binaries (`claude`, `gemini`)
-- **API Mode** (`api/`): HTTP APIs via Vercel AI SDK (OpenRouter, OpenAI, Anthropic, Gemini)
+- **CLI Mode** (`cli/`): Spawns installed binaries (`claude`, `gemini`, `codex`)
+- **API Mode** (`api/`): HTTP APIs via Vercel AI SDK (OpenRouter, OpenAI, Anthropic, Google AI Studio)
 
 Provider registry in `registry.ts` defines available providers and models.
+
+### API Model Catalog (`src/providers/api/models/`)
+API model filtering/ranking/defaults/deprecation checks are centralized here:
+- Source of truth: runtime fetch from `https://models.dev/api.json`
+- Cache: `~/.cache/ai-git/models-dev-catalog.json`
+- Fallback: bundled snapshot in `src/providers/api/models/snapshot.ts`
+- Behavior: deterministic tiered ranking + provider ordering for OpenRouter
+- Safety: deprecated configured API models are hard-failed with setup guidance
 
 ### Generation Loop (`src/lib/generation.ts`)
 Self-correcting generator-discriminator pattern:
@@ -79,20 +88,21 @@ for (const file of files) { await $`git add ${file}`; }
 
 ## Testing
 
-Tests use Bun's native test runner (`bun:test`). Located in `tests/`.
+Tests use Bun's native test runner (`bun:test`). Tests are colocated in `src/**/*.test.ts`.
 
-### Fake AI Pattern
-For deterministic AI testing without API calls:
-- `tests/fake-ai.ts` - Mock script that varies behavior based on counter file
-- Writes received prompts to `ai-prompt.log` for assertions
-- Test CLI via subprocess spawning, verifying stdout/stderr/exit codes
+Current coverage includes:
+- CLI behavior and runtime validation in `src/index.test.ts`
+- Utility and update-cache tests in `src/lib/*.test.ts`
+- API model catalog/ranking/provider adapter tests in `src/providers/api/**/*.test.ts`
 
 ## Adding New Providers
 
 1. Add entry to `PROVIDERS` array in `src/providers/registry.ts`
 2. Create adapter in `src/providers/cli/` or `src/providers/api/`
 3. Register in the respective `index.ts`
-4. Update `schema.json` for config validation
+4. If API provider behavior/ranking is affected, update `src/providers/api/models/provider-rules.ts`
+5. Refresh and commit snapshot data with `bun run sync:model-catalog` when needed
+6. Update `schema.json` for config validation
 
 ## Config Priority
 

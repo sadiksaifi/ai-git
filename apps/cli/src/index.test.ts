@@ -14,6 +14,7 @@ interface RunCLIOptions {
   cwd?: string;
   homeDir: string;
   pathEnv?: string;
+  extraEnv?: Record<string, string>;
 }
 
 interface RunCLIResult {
@@ -37,12 +38,12 @@ function cleanOutput(value: string): string {
     .replace(/\r/g, "");
 }
 
-function createTestHome(): string {
+function createTestHome(config: Record<string, string> = TEST_CONFIG): string {
   const homeDir = trackTempDir("ai-git-home-");
   const configDir = path.join(homeDir, ".config", "ai-git");
   const configFile = path.join(configDir, "config.json");
   fs.mkdirSync(configDir, { recursive: true });
-  fs.writeFileSync(configFile, JSON.stringify(TEST_CONFIG, null, 2));
+  fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
   return homeDir;
 }
 
@@ -106,6 +107,7 @@ async function runCLI(
       NO_COLOR: "1",
       CI: "1",
       PATH: options.pathEnv ?? process.env.PATH ?? "",
+      ...(options.extraEnv ?? {}),
     },
   });
 
@@ -207,6 +209,53 @@ describe("ai-git CLI", () => {
     });
 
     expect(result.stderr).toContain("Error: 'claude' CLI is not installed.");
+    expect(result.exitCode).toBe(1);
+  });
+
+  it("should fail fast when configured API model is deprecated", async () => {
+    const homeDir = createTestHome({
+      provider: "openai",
+      model: "o1-preview",
+    });
+    const noProviderPath = await createPathWithoutProviderCLI();
+    const repoDir = createGitRepo();
+
+    const catalogOverrideFile = path.join(trackTempDir("ai-git-catalog-"), "catalog.json");
+    fs.writeFileSync(
+      catalogOverrideFile,
+      JSON.stringify(
+        {
+          anthropic: { models: {} },
+          openai: {
+            models: {
+              "o1-preview": {
+                name: "o1 Preview",
+                status: "deprecated",
+                reasoning: true,
+                tool_call: true,
+                release_date: "2024-09-12",
+                last_updated: "2024-09-12",
+              },
+            },
+          },
+          google: { models: {} },
+        },
+        null,
+        2
+      )
+    );
+
+    const result = await runCLI([], {
+      cwd: repoDir,
+      homeDir,
+      pathEnv: noProviderPath,
+      extraEnv: {
+        AI_GIT_MODEL_CATALOG_OVERRIDE: catalogOverrideFile,
+      },
+    });
+
+    expect(result.stderr).toContain("is deprecated");
+    expect(result.stderr).toContain("ai-git --setup");
     expect(result.exitCode).toBe(1);
   });
 });

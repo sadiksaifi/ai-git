@@ -2,8 +2,11 @@ import { generateText } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { APIProviderAdapter, APIModelDefinition, InvokeOptions } from "../types.ts";
 import { getApiKey, createTimeoutController, COMMON_HEADERS } from "./utils.ts";
-import { rankModels, getProviderFromModelId } from "../../lib/model-ranking.ts";
-import type { CachedModel } from "../../lib/model-cache.ts";
+import {
+  dedupeProviderModels,
+  getModelCatalog,
+  rankProviderModels,
+} from "./models/index.ts";
 
 // ==============================================================================
 // OPENROUTER API ADAPTER
@@ -83,22 +86,16 @@ export const openRouterAdapter: APIProviderAdapter = {
 
       const data = (await response.json()) as OpenRouterModelsResponse;
 
-      // Map to CachedModel format for ranking
-      const models: CachedModel[] = data.data.map((m) => ({
+      const catalog = await getModelCatalog();
+
+      const models: APIModelDefinition[] = data.data.map((m) => ({
         id: m.id,
         name: m.name || m.id,
-        provider: getProviderFromModelId(m.id),
+        provider: m.id.split("/")[0] || undefined,
       }));
 
-      // Apply ranking (featured models first)
-      const rankedModels = rankModels(models);
-
-      // Return as APIModelDefinition
-      return rankedModels.map((m) => ({
-        id: m.id,
-        name: m.name,
-        provider: m.provider,
-      }));
+      const ranked = rankProviderModels("openrouter", models, catalog);
+      return dedupeProviderModels("openrouter", ranked);
     } finally {
       cleanup();
     }

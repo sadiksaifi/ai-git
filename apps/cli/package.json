@@ -17,7 +17,8 @@
     "start": "bun run src/index.ts",
     "compile": "bun build --compile --minify --sourcemap src/index.ts --outfile dist/ai-git",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "sync:model-catalog": "bun run scripts/sync-model-catalog.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

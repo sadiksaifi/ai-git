@@ -9,6 +9,11 @@ import { getProviderById } from "../../providers/registry.ts";
 import { getAdapter } from "../../providers/index.ts";
 import { isSecretsAvailable, hasApiKey } from "../secrets/index.ts";
 import { ERROR_MESSAGES, INSTALL_INFO } from "./constants.ts";
+import {
+  getCatalogModelMetadata,
+  getModelCatalog,
+  isDeprecatedModel,
+} from "../../providers/api/models/index.ts";
 
 // ==============================================================================
 // TYPES
@@ -129,6 +134,39 @@ export async function diagnoseConfig(
           code: "INVALID_MODEL",
           message: err.message,
           suggestion: `Available models: ${provider.models.map((m) => m.id).join(", ")}`,
+        });
+      }
+    } else if (
+      provider &&
+      (config.provider === "openrouter" ||
+        config.provider === "openai" ||
+        config.provider === "anthropic" ||
+        config.provider === "google-ai-studio")
+    ) {
+      try {
+        const catalog = await getModelCatalog();
+        const metadata = getCatalogModelMetadata(
+          config.provider,
+          {
+            id: config.model,
+            name: config.model,
+          },
+          catalog
+        );
+
+        if (isDeprecatedModel(metadata)) {
+          errors.push({
+            code: "DEPRECATED_MODEL",
+            message:
+              `Configured model '${metadata?.name || config.model}' is deprecated.`,
+            suggestion: "Run: ai-git --setup to choose a supported model.",
+          });
+        }
+      } catch {
+        warnings.push({
+          code: "MODEL_CATALOG_UNAVAILABLE",
+          message:
+            "Could not validate model deprecation because model catalog is unavailable.",
         });
       }
     }

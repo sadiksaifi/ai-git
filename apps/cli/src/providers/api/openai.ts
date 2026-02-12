@@ -2,6 +2,11 @@ import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { APIProviderAdapter, APIModelDefinition, InvokeOptions } from "../types.ts";
 import { getApiKey, createTimeoutController, COMMON_HEADERS } from "./utils.ts";
+import {
+  dedupeProviderModels,
+  getModelCatalog,
+  rankProviderModels,
+} from "./models/index.ts";
 
 // ==============================================================================
 // OPENAI API ADAPTER
@@ -22,32 +27,6 @@ interface OpenAIModelsResponse {
 }
 
 /**
- * Models to include (filter out fine-tuned, embedding, and legacy models).
- */
-const INCLUDED_MODEL_PREFIXES = [
-  "gpt-4",
-  "gpt-3.5",
-  "o1",
-  "o3",
-];
-
-/**
- * Models to exclude (internal or specialized models).
- */
-const EXCLUDED_MODEL_PATTERNS = [
-  "instruct",
-  "vision",
-  "audio",
-  "realtime",
-  "embedding",
-  "whisper",
-  "tts",
-  "dall-e",
-  "babbage",
-  "davinci",
-];
-
-/**
  * Get a human-readable name for an OpenAI model.
  */
 function getModelDisplayName(modelId: string): string {
@@ -61,7 +40,18 @@ function getModelDisplayName(modelId: string): string {
     "o1": "o1 (Reasoning)",
     "o1-mini": "o1 Mini (Reasoning)",
     "o1-preview": "o1 Preview",
+    "o1-pro": "o1 Pro (Reasoning)",
+    "o3": "o3 (Reasoning)",
     "o3-mini": "o3 Mini (Reasoning)",
+    "o3-pro": "o3 Pro (Reasoning)",
+    "o4-mini": "o4 Mini (Reasoning)",
+    "gpt-4.1": "GPT-4.1",
+    "gpt-4.1-mini": "GPT-4.1 Mini",
+    "gpt-5": "GPT-5",
+    "gpt-5-mini": "GPT-5 Mini",
+    "gpt-5-pro": "GPT-5 Pro",
+    "gpt-5.2": "GPT-5.2",
+    "gpt-5.2-chat-latest": "GPT-5.2 Chat",
   };
 
   // Check for exact match
@@ -82,20 +72,6 @@ function getModelDisplayName(modelId: string): string {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
-
-/**
- * Priority order for OpenAI models (lower = higher priority).
- */
-const MODEL_PRIORITY: Record<string, number> = {
-  "gpt-4o-mini": 0,
-  "gpt-4o": 1,
-  "o1-mini": 2,
-  "o1": 3,
-  "o3-mini": 4,
-  "gpt-4-turbo": 5,
-  "gpt-4": 6,
-  "gpt-3.5-turbo": 7,
-};
 
 /**
  * OpenAI API adapter using Vercel AI SDK.
@@ -149,48 +125,16 @@ export const openAIAdapter: APIProviderAdapter = {
       }
 
       const data = (await response.json()) as OpenAIModelsResponse;
+      const catalog = await getModelCatalog();
 
-      // Filter to relevant models
-      const filteredModels = data.data.filter((m) => {
-        // Must start with an included prefix
-        const hasIncludedPrefix = INCLUDED_MODEL_PREFIXES.some((prefix) =>
-          m.id.startsWith(prefix)
-        );
-        if (!hasIncludedPrefix) return false;
-
-        // Must not contain excluded patterns
-        const hasExcludedPattern = EXCLUDED_MODEL_PATTERNS.some((pattern) =>
-          m.id.toLowerCase().includes(pattern)
-        );
-        return !hasExcludedPattern;
-      });
-
-      // Map and sort by priority
-      const models: APIModelDefinition[] = filteredModels
+      const models: APIModelDefinition[] = data.data
         .map((m) => ({
           id: m.id,
           name: getModelDisplayName(m.id),
-        }))
-        .sort((a, b) => {
-          // Get base model name for priority lookup
-          const getPriority = (id: string): number => {
-            for (const [key, priority] of Object.entries(MODEL_PRIORITY)) {
-              if (id.startsWith(key)) return priority;
-            }
-            return 100;
-          };
-          return getPriority(a.id) - getPriority(b.id);
-        });
+        }));
 
-      // Remove duplicates (keep first occurrence which is highest priority)
-      const seen = new Set<string>();
-      return models.filter((m) => {
-        // Normalize: "gpt-4o-2024-11-20" -> "gpt-4o"
-        const baseId = m.id.replace(/-\d{4}-\d{2}-\d{2}$/, "");
-        if (seen.has(baseId)) return false;
-        seen.add(baseId);
-        return true;
-      });
+      const ranked = rankProviderModels("openai", models, catalog);
+      return dedupeProviderModels("openai", ranked);
     } finally {
       cleanup();
     }
