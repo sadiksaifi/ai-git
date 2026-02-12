@@ -44,7 +44,7 @@ describe("update-check", () => {
         // Ignore
       }
 
-      const { startUpdateCheck } = await import("../src/lib/update-check.ts");
+      const { startUpdateCheck } = await import("./update-check.ts");
       const result = await startUpdateCheck("0.4.2");
 
       expect(result).toHaveProperty("currentVersion", "0.4.2");
@@ -53,7 +53,7 @@ describe("update-check", () => {
     });
 
     it("should use cached result on second call", async () => {
-      const { startUpdateCheck } = await import("../src/lib/update-check.ts");
+      const { startUpdateCheck } = await import("./update-check.ts");
 
       // First call - may hit network
       const result1 = await startUpdateCheck("0.4.2");
@@ -73,7 +73,7 @@ describe("update-check", () => {
       fs.mkdirSync(CACHE_DIR, { recursive: true });
       fs.writeFileSync(UPDATE_CACHE_FILE, "invalid json {{{");
 
-      const { startUpdateCheck } = await import("../src/lib/update-check.ts");
+      const { startUpdateCheck } = await import("./update-check.ts");
       const result = await startUpdateCheck("0.4.2");
 
       // Should not throw, should return valid result
@@ -82,7 +82,7 @@ describe("update-check", () => {
     });
 
     it("should never reject (always returns result)", async () => {
-      const { startUpdateCheck } = await import("../src/lib/update-check.ts");
+      const { startUpdateCheck } = await import("./update-check.ts");
 
       // This should never throw
       const result = await startUpdateCheck("0.4.2");
@@ -94,7 +94,7 @@ describe("update-check", () => {
 
   describe("showUpdateNotification", () => {
     it("should not throw when no update available", () => {
-      const { showUpdateNotification } = require("../src/lib/update-check.ts");
+      const { showUpdateNotification } = require("./update-check.ts");
 
       // Should not throw
       expect(() => {
@@ -107,7 +107,7 @@ describe("update-check", () => {
     });
 
     it("should not throw when update is available", () => {
-      const { showUpdateNotification } = require("../src/lib/update-check.ts");
+      const { showUpdateNotification } = require("./update-check.ts");
 
       // Should not throw
       expect(() => {

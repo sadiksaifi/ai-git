@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import {
   matchesExcludePattern,
   filterExcludedFiles,
-} from "../src/lib/utils";
+} from "./utils";
 
 describe("matchesExcludePattern", () => {
   // ==============================================================================

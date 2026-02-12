@@ -68,7 +68,7 @@ Options:
   -H, --hint <text>           Provide a hint/context to the AI
   -X, --exclude <pattern>     Exclude files/directories from staging (use with -a)
   --dangerously-auto-approve  Run fully automated (Stage All + Commit + Push)
-  --dry-run                   Print the prompt and diff without calling AI
+  --dry-run                   Print the prompt and diff without calling AI (provider availability not required)
   --setup                     Re-run the setup wizard to reconfigure AI provider
   --init                      Initialize project-level configuration
   -v, --version               Display version number
@@ -95,6 +95,9 @@ ai-git -a --exclude "tests/" --exclude "*.test.ts"
 
 # Automated (Be careful!)
 ai-git --dangerously-auto-approve --hint "Refactored authentication module"
+
+# Dry run works without installed provider CLI/API key
+ai-git --dry-run -a
 ```
 
 ## Supported Providers
@@ -198,6 +201,9 @@ bun start
 
 # Test prompt generation without AI call
 bun start --dry-run -a
+
+# Disable update-check network calls (useful for tests/CI)
+AI_GIT_DISABLE_UPDATE_CHECK=1 bun test
 
 # Type check
 bun run typecheck

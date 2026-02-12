@@ -123,7 +123,14 @@ cli
   )
   .action(async (options: CLIOptions) => {
     // Start update check immediately (non-blocking)
-    const updateCheckPromise = startUpdateCheck(VERSION);
+    const updateCheckPromise =
+      process.env.AI_GIT_DISABLE_UPDATE_CHECK === "1"
+        ? Promise.resolve({
+            updateAvailable: false,
+            latestVersion: null,
+            currentVersion: VERSION,
+          })
+        : startUpdateCheck(VERSION);
 
     // Handle --init
     if (options.init) {
@@ -373,30 +380,32 @@ cli
 
     // Check dependencies
     await checkGitInstalled();
-
-    const isAvailable = await adapter.checkAvailable();
-    if (!isAvailable) {
-      if (adapter.mode === "cli" && providerDef.binary) {
-        console.error(
-          pc.red(`Error: '${providerDef.binary}' CLI is not installed.`),
-        );
-        console.error("");
-        console.error(
-          `The ${providerDef.name} CLI must be installed to use AI Git.`,
-        );
-        console.error("");
-        console.error(pc.dim("To switch to a different provider, run:"));
-        console.error(pc.dim(`  ai-git --setup`));
-      } else {
-        console.error(
-          pc.red(`Error: Provider '${providerDef.id}' is not available.`),
-        );
-        console.error(pc.dim(`Check your API key configuration.`));
-      }
-      process.exit(1);
-    }
-
     await checkInsideRepo();
+
+    // Dry run only prints the prompt and never calls the provider.
+    if (!options.dryRun) {
+      const isAvailable = await adapter.checkAvailable();
+      if (!isAvailable) {
+        if (adapter.mode === "cli" && providerDef.binary) {
+          console.error(
+            pc.red(`Error: '${providerDef.binary}' CLI is not installed.`),
+          );
+          console.error("");
+          console.error(
+            `The ${providerDef.name} CLI must be installed to use AI Git.`,
+          );
+          console.error("");
+          console.error(pc.dim("To switch to a different provider, run:"));
+          console.error(pc.dim(`  ai-git --setup`));
+        } else {
+          console.error(
+            pc.red(`Error: Provider '${providerDef.id}' is not available.`),
+          );
+          console.error(pc.dim(`Check your API key configuration.`));
+        }
+        process.exit(1);
+      }
+    }
 
     // 1. STAGE MANAGEMENT
     // Normalize exclude to array

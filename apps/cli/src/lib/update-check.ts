@@ -217,6 +217,15 @@ async function performUpdateCheck(
 export function startUpdateCheck(
   currentVersion: string
 ): Promise<UpdateCheckResult> {
+  // Test/CI escape hatch for deterministic runs without network calls.
+  if (process.env.AI_GIT_DISABLE_UPDATE_CHECK === "1") {
+    return Promise.resolve({
+      updateAvailable: false,
+      latestVersion: null,
+      currentVersion,
+    });
+  }
+
   // Fire-and-forget pattern: wrap in a Promise that never rejects
   return performUpdateCheck(currentVersion).catch(() => ({
     updateAvailable: false,
