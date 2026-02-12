@@ -27,6 +27,7 @@
         "sonnet",
         "opus",
         "gemini-3-flash-preview",
+        "gpt-5.3-codex",
         "gpt-5.2-codex",
         "gpt-5.1-codex-max",
         "anthropic/claude-3.5-haiku",
@@ -158,6 +159,7 @@
         "properties": {
           "model": {
             "enum": [
+              "gpt-5.3-codex",
               "gpt-5.2-codex",
               "gpt-5.1-codex-max",
               "gpt-5.1-codex-mini",
@@ -168,7 +170,7 @@
               "gpt-5-codex-mini",
               "gpt-5"
             ],
-            "description": "Codex CLI model to use. 'gpt-5.2-codex' is recommended for best results."
+            "description": "Codex CLI model to use. 'gpt-5.3-codex' is recommended for best results."
           }
         }
       }
