@@ -16,6 +16,8 @@ bun run typecheck       # Type check without emitting
 bun test                # Run tests
 bun start --dry-run -a  # Test prompt generation without AI call
 bun run sync:model-catalog # Refresh API model snapshot from models.dev
+bun run sync:schema-models # Refresh API model examples in root schema.json from models.dev
+bun run sync:models        # Run both model snapshot + schema sync
 ```
 
 ## Architecture

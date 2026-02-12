@@ -7,7 +7,10 @@
 	},
 	"scripts": {
 		"cli": "bun --filter cli",
-		"web": "bun --filter web"
+		"web": "bun --filter web",
+		"sync:model-catalog": "cd apps/cli && bun run sync:model-catalog",
+		"sync:schema-models": "cd apps/cli && bun run sync:schema-models",
+		"sync:models": "cd apps/cli && bun run sync:models"
 	},
 	"packageManager": "bun@1.3.9",
   "workspaces": [
