@@ -57,13 +57,8 @@ export const ERROR_MESSAGES = {
     };
   },
   apiKeyMissing: (providerName: string) => ({
-    message: `API key for ${providerName} not found in keychain.`,
+    message: `API key for ${providerName} not found in secure storage.`,
     suggestion: "Run: ai-git --setup to configure your API key.",
   }),
-  platformNotSupported: {
-    title: "Platform Not Supported",
-    message: "API mode requires macOS for secure keychain storage.",
-    hint: "Use CLI mode instead, or wait for Linux/Windows support.",
-  },
 } as const;
 

@@ -24,7 +24,6 @@ import {
   type UserConfig,
 } from "../../config.ts";
 import {
-  isSecretsAvailable,
   setApiKey,
   getApiKey,
 } from "../secrets/index.ts";
@@ -78,9 +77,6 @@ export async function runWizard(options: WizardOptions): Promise<WizardResult> {
     target === "global" ? CONFIG_FILE : await getProjectConfigPath();
   const configType = target === "global" ? "Global" : "Project";
 
-  // Determine if API mode is available upfront
-  const apiModeAvailable = isSecretsAvailable();
-
   // Pre-check CLI provider availability
   const cliProviders = PROVIDERS.filter((p) => p.mode === "cli");
   const cliAvailability = await Promise.all(
@@ -108,9 +104,7 @@ export async function runWizard(options: WizardOptions): Promise<WizardResult> {
         hint = "recommended";
       }
     } else if (isApi) {
-      if (!apiModeAvailable) {
-        hint = pc.yellow("macOS only");
-      } else if (p.isDefault) {
+      if (p.isDefault) {
         hint = "recommended";
       }
     }
@@ -151,33 +145,6 @@ export async function runWizard(options: WizardOptions): Promise<WizardResult> {
   const ctx: FlowContext = { defaults, target, configFile, configType };
 
   if (providerDef.mode === "api") {
-    // Check if API mode is available on this platform
-    if (!apiModeAvailable) {
-      note(
-        [
-          ERROR_MESSAGES.platformNotSupported.message,
-          "",
-          pc.dim(ERROR_MESSAGES.platformNotSupported.hint),
-        ].join("\n"),
-        pc.yellow(ERROR_MESSAGES.platformNotSupported.title)
-      );
-
-      // Offer to choose a different provider
-      const retry = await select({
-        message: "What would you like to do?",
-        options: [
-          { value: "retry", label: "Choose a different provider" },
-          { value: "exit", label: "Exit setup" },
-        ],
-      });
-
-      if (isCancel(retry) || retry === "exit") {
-        return { config: null, completed: false };
-      }
-
-      return await runWizard(options);
-    }
-
     return await setupAPIFlow(ctx, providerId);
   }
 

@@ -63,7 +63,7 @@ Self-correcting generator-discriminator pattern:
 Wrapper using Bun Shell (`$`). Lock files are excluded from diffs. Diffs truncated at 2500 lines.
 
 ### Secrets (`src/lib/secrets/`)
-API keys stored in macOS Keychain (API mode is macOS-only).
+API keys stored via `Bun.secrets` (native keychain on macOS/Linux/Windows), with AES-256-GCM encrypted file fallback for headless environments.
 
 ## Coding Conventions
 
