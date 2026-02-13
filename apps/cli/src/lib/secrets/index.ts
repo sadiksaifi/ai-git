@@ -36,14 +36,6 @@ export async function getSecretsManager(): Promise<SecretsManager> {
   return secretsManagerPromise;
 }
 
-/**
- * Check if secrets management is available on this platform.
- * Always returns true — encrypted file fallback ensures availability.
- */
-export function isSecretsAvailable(): boolean {
-  return true;
-}
-
 // ==============================================================================
 // CONVENIENCE FUNCTIONS
 // ==============================================================================

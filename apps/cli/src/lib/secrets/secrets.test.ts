@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import * as path from "node:path";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import { BunSecretsManager } from "./bun-secrets.ts";
 import { EncryptedFileSecretsManager } from "./encrypted-file.ts";
 import { getSecretsManager } from "./index.ts";
@@ -71,35 +72,29 @@ describe("BunSecretsManager", () => {
 // ==============================================================================
 
 describe("EncryptedFileSecretsManager", () => {
-  const testDir = path.join(import.meta.dir, ".test-secrets");
-  const testFile = path.join(testDir, "secrets.enc");
-  let originalHome: string | undefined;
+  let tempDir: string;
+  let secretsPath: string;
 
   beforeAll(() => {
-    // Redirect secrets storage to a test directory
-    originalHome = process.env.HOME;
-    // The encrypted-file module uses HOME/.config/ai-git/secrets.enc
-    // We'll create a fresh manager for each test and use the real path
-    // but clean up after
-    fs.mkdirSync(testDir, { recursive: true });
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "ai-git-secrets-test-"));
+    secretsPath = path.join(tempDir, "secrets.enc");
   });
 
   afterAll(() => {
-    // Cleanup test directory
     try {
-      fs.rmSync(testDir, { recursive: true });
+      fs.rmSync(tempDir, { recursive: true });
     } catch {
       // Ignore cleanup errors
     }
   });
 
   test("isAvailable always returns true", async () => {
-    const manager = new EncryptedFileSecretsManager();
+    const manager = new EncryptedFileSecretsManager(secretsPath);
     expect(await manager.isAvailable()).toBe(true);
   });
 
   test("get/set/delete roundtrip", async () => {
-    const manager = new EncryptedFileSecretsManager();
+    const manager = new EncryptedFileSecretsManager(secretsPath);
     const service = "test-service";
     const account = "test-account";
 
@@ -115,19 +110,19 @@ describe("EncryptedFileSecretsManager", () => {
   });
 
   test("get returns null for missing secret", async () => {
-    const manager = new EncryptedFileSecretsManager();
+    const manager = new EncryptedFileSecretsManager(secretsPath);
     const result = await manager.getSecret("test-service", "nonexistent");
     expect(result).toBeNull();
   });
 
   test("delete returns false for missing secret", async () => {
-    const manager = new EncryptedFileSecretsManager();
+    const manager = new EncryptedFileSecretsManager(secretsPath);
     const result = await manager.deleteSecret("test-service", "nonexistent");
     expect(result).toBe(false);
   });
 
   test("overwrite existing secret", async () => {
-    const manager = new EncryptedFileSecretsManager();
+    const manager = new EncryptedFileSecretsManager(secretsPath);
     const service = "test-service";
     const account = "overwrite-test";
 
@@ -141,13 +136,13 @@ describe("EncryptedFileSecretsManager", () => {
   });
 
   test("persists across manager instances", async () => {
-    const manager1 = new EncryptedFileSecretsManager();
+    const manager1 = new EncryptedFileSecretsManager(secretsPath);
     const service = "test-service";
     const account = "persist-test";
 
     await manager1.setSecret(service, account, "persistent-value");
 
-    const manager2 = new EncryptedFileSecretsManager();
+    const manager2 = new EncryptedFileSecretsManager(secretsPath);
     const retrieved = await manager2.getSecret(service, account);
     expect(retrieved).toBe("persistent-value");
 
