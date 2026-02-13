@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { shouldExitAfterOnboarding } from "./continuation.ts";
+import { shouldExitAfterOnboarding } from "./index.ts";
 
 describe("shouldExitAfterOnboarding", () => {
   it("returns false when user chooses to continue", () => {
@@ -8,5 +8,10 @@ describe("shouldExitAfterOnboarding", () => {
 
   it("returns true when user chooses not to continue", () => {
     expect(shouldExitAfterOnboarding(false)).toBe(true);
+  });
+
+  it("does not force exit for explicit --setup when user chooses continue", () => {
+    // Regression: setup flag used to force exit regardless of user choice.
+    expect(shouldExitAfterOnboarding(true)).toBe(false);
   });
 });

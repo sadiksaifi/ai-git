@@ -29,16 +29,24 @@ export interface OnboardingResult {
   continueToRun: boolean;
 }
 
+/**
+ * Determine whether the CLI should exit immediately after onboarding.
+ * Returning true exits setup flow; false continues into normal execution.
+ */
+export function shouldExitAfterOnboarding(continueToRun: boolean): boolean {
+  return !continueToRun;
+}
+
 // ==============================================================================
 // MAIN ORCHESTRATOR
 // ==============================================================================
 
 /**
- * Run the complete onboarding flow for first-time users.
+ * Run the complete onboarding flow.
  *
  * Flow:
  * 1. Setup wizard
- * 2. Ask if user wants to try now (for first-time global setup)
+ * 2. Ask if user wants to try now
  */
 export async function runOnboarding(
   options: OnboardingOptions
@@ -53,14 +61,9 @@ export async function runOnboarding(
     return { config: null, completed: false, continueToRun: false };
   }
 
-  // Step 2: Ask if user wants to try now (only for first-time global setup)
-  let continueToRun = false;
-  if (target === "global") {
-    continueToRun = await askTryNow();
-    if (!continueToRun) {
-      outro(pc.green("You're all set!"));
-    }
-  } else {
+  // Step 2: Ask if user wants to try now (for both global and project setup).
+  const continueToRun = await askTryNow();
+  if (!continueToRun) {
     outro(pc.green("You're all set!"));
   }
 
