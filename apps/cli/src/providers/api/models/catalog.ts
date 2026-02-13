@@ -166,6 +166,10 @@ function resolveCatalogProvider(
     return { provider: "google", modelId: model.id };
   }
 
+  if (providerId === "cerebras") {
+    return null; // Cerebras models are not in the models.dev catalog
+  }
+
   return {
     provider: providerId,
     modelId: model.id,

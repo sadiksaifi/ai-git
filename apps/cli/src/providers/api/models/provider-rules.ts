@@ -144,9 +144,11 @@ function resolveTier(ctx: ProviderModelRuleContext): ModelTier {
   const catalogProvider =
     ctx.providerId === "openrouter"
       ? getCatalogProviderFromModel(ctx.model)
-      : (ctx.providerId === "google-ai-studio"
-          ? "google"
-          : ctx.providerId);
+      : ctx.providerId === "google-ai-studio"
+        ? "google"
+        : ctx.providerId === "cerebras"
+          ? null
+          : ctx.providerId;
 
   if (!catalogProvider) {
     return "other";
@@ -211,6 +213,48 @@ export const PROVIDER_MODEL_RULES: Record<SupportedAPIProviderId, ProviderModelR
     resolveCatalogProvider: (model: APIModelDefinition) => getCatalogProviderFromModel(model),
     resolveTier,
     resolveProviderRank: getProviderRankForOpenRouter,
+  },
+  cerebras: {
+    includePatterns: [
+      /^llama/i,
+      /^qwen/i,
+      /^gpt-oss/i,
+      /^zai-glm/i,
+    ],
+    excludePatterns: [
+      /embedding/i,
+      /moderation/i,
+      /tts/i,
+      /whisper/i,
+      /vision/i,
+    ],
+    dedupeKey: (modelId: string) => {
+      // Normalize Cerebras model IDs by removing version suffixes
+      return stripDateSuffix(modelId)
+        .replace(/-instruct-\d+$/i, "-instruct")
+        .replace(/-thinking-\d+$/i, "-thinking");
+    },
+    resolveCatalogProvider: () => null,  // Not in catalog
+    resolveTier: (ctx: ProviderModelRuleContext) => {
+      const id = ctx.model.id.toLowerCase();
+
+      // Fast/small models
+      if (/8b|7b|3b|1b|mini|lite|flash/.test(id)) {
+        return "fast";
+      }
+
+      // Reasoning models
+      if (/thinking|reasoning|deep/.test(id)) {
+        return "reasoning";
+      }
+
+      // Large models as default
+      if (/70b|120b|235b/.test(id)) {
+        return "default";
+      }
+
+      return "other";
+    },
   },
 };
 
