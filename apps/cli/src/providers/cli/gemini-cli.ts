@@ -1,4 +1,3 @@
-import { $ } from "bun";
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
 
 /**
@@ -34,11 +33,6 @@ export const geminiCliAdapter: CLIProviderAdapter = {
   },
 
   async checkAvailable(): Promise<boolean> {
-    try {
-      await $`which gemini`.quiet();
-      return true;
-    } catch {
-      return false;
-    }
+    return !!(await Bun.which("gemini"));
   },
 };

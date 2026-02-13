@@ -1,8 +1,7 @@
-import * as path from "node:path";
-import * as os from "node:os";
 import { semver } from "bun";
 import { log } from "@clack/prompts";
 import pc from "picocolors";
+import { CACHE_DIR, UPDATE_CACHE_FILE } from "./paths.ts";
 
 // ==============================================================================
 // TYPES
@@ -42,12 +41,6 @@ interface GitHubRelease {
 // ==============================================================================
 // CONSTANTS
 // ==============================================================================
-
-/** Cache directory (XDG-compliant) */
-const CACHE_DIR = path.join(os.homedir(), ".cache", "ai-git");
-
-/** Cache file location */
-const UPDATE_CACHE_FILE = path.join(CACHE_DIR, "update-cache.json");
 
 /** Cache TTL: 30 minutes in milliseconds */
 const CACHE_TTL_MS = 30 * 60 * 1000;
@@ -243,6 +236,10 @@ export function showUpdateNotification(result: UpdateCheckResult): void {
 
 	log.warn(
 		pc.yellow(`Update available: ${result.currentVersion} -> ${result.latestVersion}\n`) +
-		pc.dim(`Run: brew upgrade ai-git`)
+		pc.dim(
+			process.platform === "darwin"
+				? "Run: brew upgrade ai-git"
+				: "Download and extract: https://github.com/sadiksaifi/ai-git/releases/latest"
+		)
 	);
 }

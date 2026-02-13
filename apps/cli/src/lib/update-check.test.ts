@@ -1,13 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import * as fs from "node:fs";
-import * as path from "node:path";
-import * as os from "node:os";
-
-// We need to test the module's internal functions
-// For now, we'll test via the exported functions and cache behavior
-
-const CACHE_DIR = path.join(os.homedir(), ".cache", "ai-git");
-const UPDATE_CACHE_FILE = path.join(CACHE_DIR, "update-cache.json");
+import { CACHE_DIR, UPDATE_CACHE_FILE } from "./paths.ts";
 
 describe("update-check", () => {
   let originalCache: string | null = null;
@@ -121,9 +114,10 @@ describe("update-check", () => {
   });
 
   describe("cache file location", () => {
-    it("should use XDG cache directory (~/.cache/ai-git/)", () => {
-      const expectedDir = path.join(os.homedir(), ".cache", "ai-git");
-      expect(CACHE_DIR).toBe(expectedDir);
+    it("should use platform-appropriate cache directory", () => {
+      // CACHE_DIR is imported from paths.ts which handles platform differences
+      expect(CACHE_DIR).toContain("ai-git");
+      expect(UPDATE_CACHE_FILE).toContain("update-cache.json");
     });
   });
 });

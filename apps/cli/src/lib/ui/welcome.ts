@@ -3,6 +3,7 @@
 // Two-column layout inspired by Claude Code's UI.
 // ==============================================================================
 
+import * as os from "node:os";
 import pc from "picocolors";
 import { BOX } from "./constants.ts";
 import { getRandomTip } from "../flags.ts";
@@ -96,7 +97,7 @@ export async function showWelcomeScreen(version: string, options?: WelcomeOption
   // Get context info
   const repoRoot = await getRepoRoot();
   const cwd = repoRoot || process.cwd();
-  const shortCwd = cwd.replace(process.env.HOME || "", "~");
+  const shortCwd = cwd.replace(os.homedir(), "~");
   const displayCwd = truncatePath(shortCwd, leftWidth - 4);
 
   // Get random tip

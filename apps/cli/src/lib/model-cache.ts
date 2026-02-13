@@ -1,5 +1,4 @@
-import * as path from "node:path";
-import * as os from "node:os";
+import { CACHE_DIR, getModelCacheFile } from "./paths.ts";
 
 // ==============================================================================
 // TYPES
@@ -35,9 +34,6 @@ interface ModelCache {
 // CONSTANTS
 // ==============================================================================
 
-/** Cache directory (XDG-compliant) */
-const CACHE_DIR = path.join(os.homedir(), ".cache", "ai-git");
-
 /** Default cache TTL: 48 hours in milliseconds */
 const DEFAULT_CACHE_TTL_MS = 48 * 60 * 60 * 1000;
 
@@ -46,20 +42,13 @@ const DEFAULT_CACHE_TTL_MS = 48 * 60 * 60 * 1000;
 // ==============================================================================
 
 /**
- * Get the cache file path for a provider.
- */
-function getCacheFilePath(provider: string): string {
-  return path.join(CACHE_DIR, `models-${provider}.json`);
-}
-
-/**
  * Load the cached models for a provider.
  * @param provider - The provider ID (e.g., "openrouter", "anthropic")
  * @returns The cache data, or null if not found/invalid
  */
 async function loadCache(provider: string): Promise<ModelCache | null> {
   try {
-    const file = Bun.file(getCacheFilePath(provider));
+    const file = Bun.file(getModelCacheFile(provider));
     const exists = await file.exists();
     if (!exists) return null;
     const content = await file.text();
@@ -85,7 +74,7 @@ async function saveCache(provider: string, models: CachedModel[]): Promise<void>
       models,
     };
 
-    await Bun.write(getCacheFilePath(provider), JSON.stringify(cache, null, 2));
+    await Bun.write(getModelCacheFile(provider), JSON.stringify(cache, null, 2));
   } catch {
     // Silently fail - cache is not critical
   }
@@ -144,7 +133,7 @@ export async function cacheModels(
 export async function invalidateCache(provider: string): Promise<void> {
   try {
     const { unlink } = await import("node:fs/promises");
-    await unlink(getCacheFilePath(provider));
+    await unlink(getModelCacheFile(provider));
   } catch {
     // Ignore errors (file might not exist)
   }

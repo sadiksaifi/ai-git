@@ -29,6 +29,7 @@ jobs:
         working-directory: apps/cli
         run: |
           bun compile --target bun-darwin-arm64
+          test -f dist/ai-git || { echo "ERROR: dist/ai-git not found after compile"; exit 1; }
           cd dist
           tar -czf ai-git-darwin-arm64.tar.gz ai-git
 
@@ -36,8 +37,33 @@ jobs:
         working-directory: apps/cli
         run: |
           bun compile --target bun-darwin-x64
+          test -f dist/ai-git || { echo "ERROR: dist/ai-git not found after compile"; exit 1; }
           cd dist
           tar -czf ai-git-darwin-x64.tar.gz ai-git
+
+      - name: Build for Linux x64
+        working-directory: apps/cli
+        run: |
+          bun compile --target bun-linux-x64
+          test -f dist/ai-git || { echo "ERROR: dist/ai-git not found after compile"; exit 1; }
+          cd dist
+          tar -czf ai-git-linux-x64.tar.gz ai-git
+
+      - name: Build for Linux ARM64
+        working-directory: apps/cli
+        run: |
+          bun compile --target bun-linux-arm64
+          test -f dist/ai-git || { echo "ERROR: dist/ai-git not found after compile"; exit 1; }
+          cd dist
+          tar -czf ai-git-linux-arm64.tar.gz ai-git
+
+      - name: Build for Windows x64
+        working-directory: apps/cli
+        run: |
+          bun compile --target bun-windows-x64
+          test -f dist/ai-git.exe || { echo "ERROR: dist/ai-git.exe not found after compile"; exit 1; }
+          cd dist
+          zip ai-git-windows-x64.zip ai-git.exe
 
       - name: Generate Changelog
         id: changelog
@@ -68,6 +94,9 @@ jobs:
           files: |
             apps/cli/dist/ai-git-darwin-arm64.tar.gz
             apps/cli/dist/ai-git-darwin-x64.tar.gz
+            apps/cli/dist/ai-git-linux-x64.tar.gz
+            apps/cli/dist/ai-git-linux-arm64.tar.gz
+            apps/cli/dist/ai-git-windows-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

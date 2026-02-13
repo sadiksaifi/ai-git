@@ -1,4 +1,3 @@
-import { $ } from "bun";
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
 
 /**
@@ -37,11 +36,6 @@ export const codexAdapter: CLIProviderAdapter = {
   },
 
   async checkAvailable(): Promise<boolean> {
-    try {
-      await $`which codex`.quiet();
-      return true;
-    } catch {
-      return false;
-    }
+    return !!(await Bun.which("codex"));
   },
 };

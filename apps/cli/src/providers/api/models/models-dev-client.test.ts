@@ -5,8 +5,8 @@ import * as os from "node:os";
 import {
   clearModelCatalogForTests,
   getModelCatalog,
-  getModelsDevCacheFilePath,
 } from "./index.ts";
+import { getModelsDevCacheFilePath } from "../../../lib/paths.ts";
 import { createCatalogFromRaw } from "./models-dev-client.ts";
 
 const originalFetch = globalThis.fetch;

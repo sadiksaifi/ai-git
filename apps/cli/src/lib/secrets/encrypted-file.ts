@@ -6,9 +6,9 @@ import {
 } from "node:crypto";
 import { mkdirSync, readFileSync } from "node:fs";
 import { hostname, userInfo } from "node:os";
-import * as os from "node:os";
 import * as path from "node:path";
 import type { SecretsManager } from "./types.ts";
+import { SECRETS_FILE } from "../paths.ts";
 
 // ==============================================================================
 // ENCRYPTED FILE SECRETS IMPLEMENTATION
@@ -39,12 +39,6 @@ interface SecretsFile {
   secrets: Record<string, EncryptedEntry>;
 }
 
-const DEFAULT_SECRETS_PATH = path.join(
-  os.homedir(),
-  ".config",
-  "ai-git",
-  "secrets.enc"
-);
 
 function makeKey(service: string, account: string): string {
   return `${service}:${account}`;
@@ -136,7 +130,7 @@ export class EncryptedFileSecretsManager implements SecretsManager {
   private cachedSalt: string | null = null;
 
   constructor(secretsPath?: string) {
-    this.secretsPath = secretsPath ?? DEFAULT_SECRETS_PATH;
+    this.secretsPath = secretsPath ?? SECRETS_FILE;
   }
 
   private getKey(salt: Buffer): Buffer {

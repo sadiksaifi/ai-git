@@ -12,7 +12,8 @@ import { buildSystemPrompt } from "../prompt.ts";
 import type { PromptCustomization } from "../config.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
 import { getStagedDiff, getBranchName, setBranchName, commit, type CommitResult } from "./git.ts";
-import { TEMP_MSG_FILE, wrapText } from "./utils.ts";
+import { wrapText } from "./utils.ts";
+import { TEMP_MSG_FILE } from "./paths.ts";
 
 // ==============================================================================
 // AI GENERATION ENGINE
@@ -345,7 +346,12 @@ export async function runGenerationLoop(
       // Edit Flow - opens editor and returns to menu (fixes Issue #5)
       await Bun.write(TEMP_MSG_FILE, cleanMsg);
       
-      const candidates = [ctx.editor, process.env.EDITOR, "nvim", "vim", "nano", "vi"].filter((e): e is string => !!e);
+      const candidates = [
+        ctx.editor,
+        process.env.VISUAL,
+        process.env.EDITOR,
+        ...(process.platform === "win32" ? ["code", "notepad"] : ["nvim", "vim", "nano", "vi"]),
+      ].filter((e): e is string => !!e);
       let editor: string | null = null;
 
       for (const candidate of candidates) {
@@ -356,7 +362,7 @@ export async function runGenerationLoop(
       }
 
       if (!editor) {
-        console.error(pc.red("Error: No suitable editor found. Please set $EDITOR or install nvim/vim/nano/vi."));
+        console.error(pc.red("Error: No suitable editor found. Please set the EDITOR environment variable."));
         continue;
       }
 

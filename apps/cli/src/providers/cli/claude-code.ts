@@ -1,4 +1,3 @@
-import { $ } from "bun";
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
 
 /**
@@ -52,11 +51,6 @@ export const claudeCodeAdapter: CLIProviderAdapter = {
   },
 
   async checkAvailable(): Promise<boolean> {
-    try {
-      await $`which claude`.quiet();
-      return true;
-    } catch {
-      return false;
-    }
+    return !!(await Bun.which("claude"));
   },
 };
