@@ -12,6 +12,8 @@ describe("shouldExitAfterOnboarding", () => {
 
   it("does not force exit for explicit --setup when user chooses continue", () => {
     // Regression: setup flag used to force exit regardless of user choice.
-    expect(shouldExitAfterOnboarding(true)).toBe(false);
+    // Decision logic must remain a pure user-choice negation.
+    expect(shouldExitAfterOnboarding(true)).toBe(!true);
+    expect(shouldExitAfterOnboarding(false)).toBe(!false);
   });
 });
