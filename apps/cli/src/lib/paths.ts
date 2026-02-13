@@ -6,6 +6,7 @@ const isWindows = process.platform === "win32";
 // ── Base Directories ────────────────────────────────────────────────
 // macOS/Linux: $XDG_CONFIG_HOME/ai-git  (default ~/.config/ai-git)
 //              $XDG_CACHE_HOME/ai-git   (default ~/.cache/ai-git)
+//              $XDG_STATE_HOME/ai-git   (default ~/.local/state/ai-git)
 // Windows:     %APPDATA%\ai-git         (fallback: ~/AppData/Roaming)
 //              %LOCALAPPDATA%\ai-git    (fallback: ~/AppData/Local)
 
@@ -37,8 +38,30 @@ export function resolveCacheDir(): string {
   return path.join(xdgCache, "ai-git");
 }
 
+/**
+ * Compute the state directory at call time (testable via env manipulation).
+ * For persistent application state that isn't config or cache.
+ */
+export function resolveStateDir(): string {
+  if (isWindows) {
+    // Windows doesn't have XDG_STATE_HOME; use LOCALAPPDATA alongside cache
+    return path.join(
+      process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"),
+      "ai-git",
+      "state",
+    );
+  }
+  const xdgState = process.env.XDG_STATE_HOME || path.join(os.homedir(), ".local", "state");
+  return path.join(xdgState, "ai-git");
+}
+
 export const CONFIG_DIR = resolveConfigDir();
 export const CACHE_DIR = resolveCacheDir();
+export const STATE_DIR = resolveStateDir();
+
+// ── State Files ─────────────────────────────────────────────────────
+
+export const INSTALL_METHOD_FILE = path.join(STATE_DIR, "install-method");
 
 // ── Config Files ────────────────────────────────────────────────────
 

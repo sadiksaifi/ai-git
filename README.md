@@ -15,11 +15,25 @@ A CLI tool that leverages AI to automatically generate semantically correct, con
 
 ## Installation
 
-### Homebrew (Recommended)
+### npm (Recommended)
+
+```bash
+npm install -g @ai-git/cli
+```
+
+> Also works with `bun`, `pnpm`, and `yarn`.
+
+### Homebrew (macOS)
 
 ```bash
 brew tap sadiksaifi/tap
 brew install ai-git
+```
+
+### Shell Script (macOS/Linux)
+
+```bash
+curl -fsSL https://ai-git.xyz/install | bash
 ```
 
 ### Build from Source
@@ -28,9 +42,7 @@ brew install ai-git
 git clone https://github.com/sadiksaifi/ai-git.git
 cd ai-git
 bun install
-cd apps/ai-git/
-bun compile
-mv dist/ai-git ~/.local/bin/
+bun run build
 ```
 
 ## Quick Start
@@ -47,6 +59,7 @@ Settings are saved to `~/.config/ai-git/config.json`
 
 > **Reconfigure:** `ai-git --setup`
 > **Project config:** `ai-git --init` to create `.ai-git.json` in your project root
+> **Self-update:** `ai-git upgrade`
 
 ## Usage
 
