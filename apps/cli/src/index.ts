@@ -34,6 +34,7 @@ import {
   startUpdateCheck,
   showUpdateNotification,
 } from "./lib/update-check.ts";
+import { runUpgrade } from "./lib/upgrade.ts";
 import { FLAGS } from "./lib/flags.ts";
 import { assertConfiguredModelAllowed } from "./providers/api/models/index.ts";
 
@@ -74,6 +75,16 @@ export interface CLIOptions {
   version: boolean;
   help: boolean;
 }
+
+// ==============================================================================
+// SUBCOMMANDS
+// ==============================================================================
+
+cli
+  .command("upgrade", "Upgrade ai-git to the latest version")
+  .action(async () => {
+    await runUpgrade(VERSION);
+  });
 
 // ==============================================================================
 // MAIN LOGIC

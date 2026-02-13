@@ -2,6 +2,7 @@ import { semver } from "bun";
 import { log } from "@clack/prompts";
 import pc from "picocolors";
 import { CACHE_DIR, UPDATE_CACHE_FILE } from "./paths.ts";
+import { detectInstallMethod } from "./install-method.ts";
 
 // ==============================================================================
 // TYPES
@@ -34,7 +35,7 @@ export interface UpdateCheckResult {
 /**
  * GitHub Releases API response shape (partial - only fields we need)
  */
-interface GitHubRelease {
+export interface GitHubRelease {
   tag_name: string;
 }
 
@@ -42,15 +43,18 @@ interface GitHubRelease {
 // CONSTANTS
 // ==============================================================================
 
-/** Cache TTL: 30 minutes in milliseconds */
-const CACHE_TTL_MS = 30 * 60 * 1000;
+/** Cache TTL: 6 hours in milliseconds */
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
 /** Fetch timeout: 3 seconds */
 const FETCH_TIMEOUT_MS = 3000;
 
+/** GitHub repository (owner/name) */
+export const GITHUB_REPO = "sadiksaifi/ai-git";
+
 /** GitHub API endpoint */
 const GITHUB_RELEASES_URL =
-  "https://api.github.com/repos/sadiksaifi/ai-git/releases/latest";
+  `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
 
 // ==============================================================================
 // VERSION COMPARISON
@@ -60,7 +64,7 @@ const GITHUB_RELEASES_URL =
  * Check if latestVersion is newer than currentVersion.
  * Uses Bun's built-in semver module.
  */
-function isNewerVersion(currentVersion: string, latestVersion: string): boolean {
+export function isNewerVersion(currentVersion: string, latestVersion: string): boolean {
   // Strip 'v' prefix and '-dev.X' suffix if present
   // This treats dev versions as their base version (e.g., 2.0.3-dev.2 -> 2.0.3)
   const current = currentVersion.replace(/^v/, "").replace(/-dev\.\d+$/, "");
@@ -124,7 +128,7 @@ function isCacheValid(cache: UpdateCache, currentVersion: string): boolean {
  * Fetch the latest release from GitHub API.
  * Returns null on any error (timeout, network, parse).
  */
-async function fetchLatestRelease(): Promise<GitHubRelease | null> {
+export async function fetchLatestRelease(): Promise<GitHubRelease | null> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -228,18 +232,34 @@ export function startUpdateCheck(
 }
 
 /**
+ * Get the update instruction string based on install method.
+ */
+function getUpdateInstruction(): string {
+  const method = detectInstallMethod();
+  switch (method) {
+    case "brew":
+      return "Run: brew upgrade ai-git";
+    case "npm":
+      return "Run: npm update -g @ai-git/cli";
+    case "curl":
+      return "Run: ai-git upgrade";
+    case "source":
+      return "Pull latest and rebuild: git pull && bun install && bun run build";
+    case "unknown":
+    default:
+      return "Run: ai-git upgrade  |  Visit: https://github.com/sadiksaifi/ai-git/releases/latest";
+  }
+}
+
+/**
  * Display update notification if an update is available.
  * Uses @clack/prompts for consistent CLI aesthetics.
  */
 export function showUpdateNotification(result: UpdateCheckResult): void {
   if (!result.updateAvailable || !result.latestVersion) return;
 
-	log.warn(
-		pc.yellow(`Update available: ${result.currentVersion} -> ${result.latestVersion}\n`) +
-		pc.dim(
-			process.platform === "darwin"
-				? "Run: brew upgrade ai-git"
-				: "Download and extract: https://github.com/sadiksaifi/ai-git/releases/latest"
-		)
-	);
+  log.warn(
+    pc.yellow(`Update available: ${result.currentVersion} -> ${result.latestVersion}\n`) +
+    pc.dim(getUpdateInstruction())
+  );
 }

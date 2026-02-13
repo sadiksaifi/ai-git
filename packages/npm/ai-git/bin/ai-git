@@ -1,0 +1,39 @@
+#!/usr/bin/env node
+
+const { execFileSync } = require("child_process");
+const path = require("path");
+const os = require("os");
+
+const PLATFORMS = {
+  darwin: { arm64: "@ai-git/darwin-arm64", x64: "@ai-git/darwin-x64" },
+  linux: { arm64: "@ai-git/linux-arm64", x64: "@ai-git/linux-x64" },
+  win32: { x64: "@ai-git/win32-x64" },
+};
+
+const platformPkgs = PLATFORMS[os.platform()];
+if (!platformPkgs) {
+  console.error(`Unsupported platform: ${os.platform()}-${os.arch()}`);
+  process.exit(1);
+}
+
+const pkg = platformPkgs[os.arch()];
+if (!pkg) {
+  console.error(`Unsupported architecture: ${os.platform()}-${os.arch()}`);
+  process.exit(1);
+}
+
+const ext = os.platform() === "win32" ? ".exe" : "";
+const bin = path.join(
+  path.dirname(require.resolve(`${pkg}/package.json`)),
+  "bin",
+  `ai-git${ext}`,
+);
+
+try {
+  execFileSync(bin, process.argv.slice(2), { stdio: "inherit" });
+} catch (e) {
+  if (e && typeof e === "object" && "status" in e) {
+    process.exit(e.status);
+  }
+  throw e;
+}

@@ -1,0 +1,13 @@
+{
+  "name": "@ai-git/win32-x64",
+  "version": "0.0.0",
+  "description": "ai-git binary for Windows x64",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sadiksaifi/ai-git"
+  },
+  "os": ["win32"],
+  "cpu": ["x64"],
+  "files": ["bin/"]
+}
