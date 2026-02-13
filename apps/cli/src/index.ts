@@ -28,6 +28,7 @@ import { handleStaging } from "./lib/staging.ts";
 import { runGenerationLoop } from "./lib/generation.ts";
 import { handlePush } from "./lib/push.ts";
 import { runOnboarding } from "./lib/onboarding/index.ts";
+import { shouldExitAfterOnboarding } from "./lib/onboarding/continuation.ts";
 import { showWelcomeScreen, type WelcomeOptions } from "./lib/ui/welcome.ts";
 import { runSetupWizard } from "./lib/setup.ts";
 import {
@@ -270,8 +271,8 @@ cli
         process.exit(1);
       }
 
-      // If --setup was explicitly requested, or user doesn't want to continue, exit
-      if (options.setup || !onboardingResult.continueToRun) {
+      // Honor the post-setup choice for both first run and explicit --setup.
+      if (shouldExitAfterOnboarding(onboardingResult.continueToRun)) {
         process.exit(0);
       }
     }
