@@ -27,7 +27,11 @@ import { checkGitInstalled, checkInsideRepo } from "./lib/git.ts";
 import { handleStaging } from "./lib/staging.ts";
 import { runGenerationLoop } from "./lib/generation.ts";
 import { handlePush } from "./lib/push.ts";
-import { runOnboarding } from "./lib/onboarding/index.ts";
+import {
+  askTryNow,
+  runOnboarding,
+  shouldExitAfterOnboarding,
+} from "./lib/onboarding/index.ts";
 import { showWelcomeScreen, type WelcomeOptions } from "./lib/ui/welcome.ts";
 import { runSetupWizard } from "./lib/setup.ts";
 import {
@@ -206,7 +210,12 @@ cli
 
         await runSetupWizard(undefined, "project");
       }
-      process.exit(0);
+
+      const continueToRun = await askTryNow();
+      if (shouldExitAfterOnboarding(continueToRun)) {
+        outro(pc.green("You're all set!"));
+        process.exit(0);
+      }
     }
 
     // Handle --dangerously-auto-approve
@@ -270,8 +279,8 @@ cli
         process.exit(1);
       }
 
-      // If --setup was explicitly requested, or user doesn't want to continue, exit
-      if (options.setup || !onboardingResult.continueToRun) {
+      // Honor the post-setup choice for both first run and explicit --setup.
+      if (shouldExitAfterOnboarding(onboardingResult.continueToRun)) {
         process.exit(0);
       }
     }
