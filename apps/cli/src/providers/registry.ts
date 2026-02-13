@@ -92,6 +92,13 @@ export const PROVIDERS: ProviderDefinition[] = [
     dynamicModels: true,
     models: [], // Populated dynamically via fetchModels()
   },
+  {
+    id: "cerebras",
+    name: "Cerebras",
+    mode: "api",
+    dynamicModels: true,
+    models: [], // Populated dynamically via fetchModels()
+  },
 ];
 
 // ==============================================================================

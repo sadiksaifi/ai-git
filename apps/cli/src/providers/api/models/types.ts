@@ -8,7 +8,8 @@ export type SupportedAPIProviderId =
   | "anthropic"
   | "openai"
   | "google-ai-studio"
-  | "openrouter";
+  | "openrouter"
+  | "cerebras";
 
 export type ModelTier = "default" | "fast" | "reasoning" | "legacy" | "other";
 

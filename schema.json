@@ -26,7 +26,8 @@
         "openrouter",
         "openai",
         "google-ai-studio",
-        "anthropic"
+        "anthropic",
+        "cerebras"
       ],
       "description": "AI provider to use for generating commit messages.",
       "examples": [
@@ -36,7 +37,8 @@
         "openrouter",
         "openai",
         "google-ai-studio",
-        "anthropic"
+        "anthropic",
+        "cerebras"
       ]
     },
     "model": {
@@ -270,6 +272,23 @@
           "model": {
             "type": "string",
             "description": "Anthropic API model ID (e.g., 'claude-opus-4-6'). Models are fetched dynamically."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": {
+            "const": "cerebras"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "Cerebras model ID (e.g., 'llama-3.3-70b'). Models are fetched dynamically."
           }
         }
       }
