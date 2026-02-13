@@ -11,7 +11,8 @@ export {
   type RecommendationPolicy,
 } from "./ranking.ts";
 export { assertConfiguredModelAllowed } from "./validation.ts";
-export { MODELS_DEV_API_URL, getModelsDevCacheFilePath, isCatalogFresh } from "./models-dev-client.ts";
+export { MODELS_DEV_API_URL, isCatalogFresh } from "./models-dev-client.ts";
+export { getModelsDevCacheFilePath } from "../../../lib/paths.ts";
 export type {
   CatalogModelDefinition,
   CatalogProviderId,

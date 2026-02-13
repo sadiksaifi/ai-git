@@ -1,7 +1,7 @@
 import * as path from "node:path";
-import * as os from "node:os";
 import { getProviderById } from "./providers/registry.ts";
 import { getRepoRoot } from "./lib/git.ts";
+import { CONFIG_DIR, CONFIG_FILE } from "./lib/paths.ts";
 
 // ==============================================================================
 // CONFIG FILE MANAGEMENT
@@ -73,15 +73,7 @@ export interface ResolvedConfig {
   editor?: string;
 }
 
-/**
- * Path to the config directory.
- */
-export const CONFIG_DIR = path.join(os.homedir(), ".config", "ai-git");
-
-/**
- * Path to the config file.
- */
-export const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
+export { CONFIG_DIR, CONFIG_FILE };
 
 /**
  * Get the path to the project config file (.ai-git.json).

@@ -1,15 +1,8 @@
-import * as path from "node:path";
-import * as os from "node:os";
 import pc from "picocolors";
 
 // ==============================================================================
 // SHARED UTILITIES & CONSTANTS
 // ==============================================================================
-
-/**
- * Temporary file path for editing commit messages.
- */
-export const TEMP_MSG_FILE = path.join(os.tmpdir(), "ai-git-msg.txt");
 
 /**
  * Lock files to exclude from git diff.

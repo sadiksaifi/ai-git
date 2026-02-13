@@ -1,4 +1,3 @@
-import * as os from "node:os";
 import * as path from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { normalizeModelKey } from "./provider-rules.ts";
@@ -31,17 +30,8 @@ interface ModelsDevRawProvider {
   models?: Record<string, ModelsDevRawModel>;
 }
 
-function getCacheDir(): string {
-  return path.join(os.homedir(), ".cache", "ai-git");
-}
-
-export function getModelsDevCacheFilePath(): string {
-  const override = process.env.AI_GIT_MODELS_DEV_CACHE_FILE;
-  if (override) {
-    return override;
-  }
-  return path.join(getCacheDir(), "models-dev-catalog.json");
-}
+import { getModelsDevCacheFilePath } from "../../../lib/paths.ts";
+export { getModelsDevCacheFilePath };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
