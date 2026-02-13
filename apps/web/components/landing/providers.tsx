@@ -37,6 +37,11 @@ const providers = [
     type: "API",
     description: "Gemini models via API",
   },
+  {
+    name: "Cerebras",
+    type: "API",
+    description: "Fast inference for open models via API",
+  },
 ];
 
 export function Providers() {
