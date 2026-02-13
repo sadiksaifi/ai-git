@@ -16,7 +16,9 @@ describe("BunSecretsManager", () => {
   const account = "test-secret";
 
   afterAll(async () => {
-    // Cleanup
+    // Cleanup - skip if secrets unavailable on platform
+    const available = await manager.isAvailable();
+    if (!available) return;
     await manager.deleteSecret(service, account);
   });
 
