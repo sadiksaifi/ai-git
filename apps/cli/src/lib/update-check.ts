@@ -239,7 +239,7 @@ export function showUpdateNotification(result: UpdateCheckResult): void {
 		pc.dim(
 			process.platform === "darwin"
 				? "Run: brew upgrade ai-git"
-				: "Download: https://github.com/sadiksaifi/ai-git/releases/latest"
+				: "Download and extract: https://github.com/sadiksaifi/ai-git/releases/latest"
 		)
 	);
 }

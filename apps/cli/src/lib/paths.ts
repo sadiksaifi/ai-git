@@ -4,16 +4,41 @@ import * as os from "node:os";
 const isWindows = process.platform === "win32";
 
 // ── Base Directories ────────────────────────────────────────────────
-// macOS/Linux: ~/.config/ai-git, ~/.cache/ai-git
-// Windows:     %APPDATA%\ai-git, %LOCALAPPDATA%\ai-git
+// macOS/Linux: $XDG_CONFIG_HOME/ai-git  (default ~/.config/ai-git)
+//              $XDG_CACHE_HOME/ai-git   (default ~/.cache/ai-git)
+// Windows:     %APPDATA%\ai-git         (fallback: ~/AppData/Roaming)
+//              %LOCALAPPDATA%\ai-git    (fallback: ~/AppData/Local)
 
-export const CONFIG_DIR = isWindows
-  ? path.join(process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"), "ai-git")
-  : path.join(os.homedir(), ".config", "ai-git");
+/**
+ * Compute the config directory at call time (testable via env manipulation).
+ */
+export function resolveConfigDir(): string {
+  if (isWindows) {
+    return path.join(
+      process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming"),
+      "ai-git",
+    );
+  }
+  const xdgConfig = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config");
+  return path.join(xdgConfig, "ai-git");
+}
 
-export const CACHE_DIR = isWindows
-  ? path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"), "ai-git")
-  : path.join(os.homedir(), ".cache", "ai-git");
+/**
+ * Compute the cache directory at call time (testable via env manipulation).
+ */
+export function resolveCacheDir(): string {
+  if (isWindows) {
+    return path.join(
+      process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"),
+      "ai-git",
+    );
+  }
+  const xdgCache = process.env.XDG_CACHE_HOME || path.join(os.homedir(), ".cache");
+  return path.join(xdgCache, "ai-git");
+}
+
+export const CONFIG_DIR = resolveConfigDir();
+export const CACHE_DIR = resolveCacheDir();
 
 // ── Config Files ────────────────────────────────────────────────────
 

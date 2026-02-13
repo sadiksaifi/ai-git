@@ -11,6 +11,8 @@ import {
   getModelsDevCacheFilePath,
   SECRETS_FILE,
   TEMP_MSG_FILE,
+  resolveConfigDir,
+  resolveCacheDir,
 } from "./paths.ts";
 
 const isWindows = process.platform === "win32";
@@ -34,6 +36,90 @@ describe("paths", () => {
 
       it("CACHE_DIR uses ~/.cache/ai-git on Unix", () => {
         expect(CACHE_DIR).toBe(path.join(os.homedir(), ".cache", "ai-git"));
+      });
+    }
+  });
+
+  describe("resolver functions", () => {
+    if (isWindows) {
+      const originalAppdata = process.env.APPDATA;
+      const originalLocalAppdata = process.env.LOCALAPPDATA;
+
+      afterEach(() => {
+        if (originalAppdata === undefined) {
+          delete process.env.APPDATA;
+        } else {
+          process.env.APPDATA = originalAppdata;
+        }
+        if (originalLocalAppdata === undefined) {
+          delete process.env.LOCALAPPDATA;
+        } else {
+          process.env.LOCALAPPDATA = originalLocalAppdata;
+        }
+      });
+
+      it("resolveConfigDir uses APPDATA when set", () => {
+        process.env.APPDATA = "C:\\Users\\test\\AppData\\Roaming";
+        expect(resolveConfigDir()).toBe("C:\\Users\\test\\AppData\\Roaming\\ai-git");
+      });
+
+      it("resolveConfigDir falls back to homedir when APPDATA is unset", () => {
+        delete process.env.APPDATA;
+        expect(resolveConfigDir()).toBe(
+          path.join(os.homedir(), "AppData", "Roaming", "ai-git"),
+        );
+      });
+
+      it("resolveCacheDir uses LOCALAPPDATA when set", () => {
+        process.env.LOCALAPPDATA = "C:\\Users\\test\\AppData\\Local";
+        expect(resolveCacheDir()).toBe("C:\\Users\\test\\AppData\\Local\\ai-git");
+      });
+
+      it("resolveCacheDir falls back to homedir when LOCALAPPDATA is unset", () => {
+        delete process.env.LOCALAPPDATA;
+        expect(resolveCacheDir()).toBe(
+          path.join(os.homedir(), "AppData", "Local", "ai-git"),
+        );
+      });
+    } else {
+      const originalXdgConfig = process.env.XDG_CONFIG_HOME;
+      const originalXdgCache = process.env.XDG_CACHE_HOME;
+
+      afterEach(() => {
+        if (originalXdgConfig === undefined) {
+          delete process.env.XDG_CONFIG_HOME;
+        } else {
+          process.env.XDG_CONFIG_HOME = originalXdgConfig;
+        }
+        if (originalXdgCache === undefined) {
+          delete process.env.XDG_CACHE_HOME;
+        } else {
+          process.env.XDG_CACHE_HOME = originalXdgCache;
+        }
+      });
+
+      it("resolveConfigDir respects XDG_CONFIG_HOME", () => {
+        process.env.XDG_CONFIG_HOME = "/tmp/xdg-config";
+        expect(resolveConfigDir()).toBe("/tmp/xdg-config/ai-git");
+      });
+
+      it("resolveConfigDir falls back to ~/.config when XDG_CONFIG_HOME is unset", () => {
+        delete process.env.XDG_CONFIG_HOME;
+        expect(resolveConfigDir()).toBe(
+          path.join(os.homedir(), ".config", "ai-git"),
+        );
+      });
+
+      it("resolveCacheDir respects XDG_CACHE_HOME", () => {
+        process.env.XDG_CACHE_HOME = "/tmp/xdg-cache";
+        expect(resolveCacheDir()).toBe("/tmp/xdg-cache/ai-git");
+      });
+
+      it("resolveCacheDir falls back to ~/.cache when XDG_CACHE_HOME is unset", () => {
+        delete process.env.XDG_CACHE_HOME;
+        expect(resolveCacheDir()).toBe(
+          path.join(os.homedir(), ".cache", "ai-git"),
+        );
       });
     }
   });

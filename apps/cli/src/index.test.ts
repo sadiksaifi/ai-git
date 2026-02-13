@@ -103,6 +103,8 @@ async function runCLI(
     env: {
       ...process.env,
       HOME: options.homeDir,
+      XDG_CONFIG_HOME: path.join(options.homeDir, ".config"),
+      XDG_CACHE_HOME: path.join(options.homeDir, ".cache"),
       AI_GIT_DISABLE_UPDATE_CHECK: "1",
       NO_COLOR: "1",
       CI: "1",
