@@ -10,7 +10,7 @@ A CLI tool that leverages AI to automatically generate semantically correct, con
 - 📝 **Conventional Commits** - Strictly adheres to [v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification
 - 🎨 **Interactive TUI** - Beautiful prompts for staging, editing, and confirming
 - 🪙 **Token Efficient** - Uses [TOON](https://toonformat.dev/) to minimize prompt size and cost
-- 🔌 **Multiple Providers** - Claude Code, Gemini CLI, Codex, OpenRouter, OpenAI, Anthropic, Google AI Studio
+- 🔌 **Multiple Providers** - Claude Code, Gemini CLI, Codex, OpenRouter, OpenAI, Anthropic, Google AI Studio, Cerebras
 - 🔐 **Secure** - API keys stored in keychain, never in config files
 
 ## Installation
@@ -73,7 +73,7 @@ Usage:
 Generate a commit message using AI
 
 Options:
-  -P, --provider <id>         AI provider (claude-code, gemini-cli, codex, openrouter, openai, anthropic, google-ai-studio)
+  -P, --provider <id>         AI provider (claude-code, gemini-cli, codex, openrouter, openai, anthropic, google-ai-studio, cerebras)
   -M, --model <id>            Model ID (e.g., haiku, gpt-4o-mini, anthropic/claude-3.5-haiku)
   -a, --stage-all             Automatically stage all changes
   -c, --commit                Automatically commit (skip editor/confirmation)
@@ -124,6 +124,7 @@ ai-git --dry-run -a
 | OpenAI | `openai` | API | [Get API Key](https://platform.openai.com/api-keys) |
 | Google AI Studio | `google-ai-studio` | API | [Get API Key](https://aistudio.google.com/app/apikey) |
 | Anthropic | `anthropic` | API | [Get API Key](https://console.anthropic.com/settings/keys) |
+| Cerebras | `cerebras` | API | [Get API Key](https://cloud.cerebras.ai/) |
 
 Configure with `ai-git --setup`
 

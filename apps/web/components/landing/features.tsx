@@ -38,7 +38,7 @@ const features = [
     icon: SettingsIcon,
     title: "Multiple Providers",
     description:
-      "Claude Code, Gemini CLI, Codex, OpenRouter, OpenAI, Anthropic, and more.",
+      "Claude Code, Gemini CLI, Codex, OpenRouter, OpenAI, Anthropic, Google AI Studio, and Cerebras.",
   },
   {
     icon: ShieldIcon,

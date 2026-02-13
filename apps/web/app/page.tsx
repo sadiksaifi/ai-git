@@ -15,7 +15,7 @@ const jsonLd = {
   applicationCategory: "DeveloperApplication",
   operatingSystem: "macOS, Linux, Windows",
   description:
-    "AI-powered CLI tool that generates semantically correct, Conventional Commits-compliant git commit messages. Supports multiple AI providers including Claude Code, Gemini CLI, Codex, OpenRouter, OpenAI, and Anthropic.",
+    "AI-powered CLI tool that generates semantically correct, Conventional Commits-compliant git commit messages. Supports multiple AI providers including Claude Code, Gemini CLI, Codex, OpenRouter, OpenAI, Anthropic, Google AI Studio, and Cerebras.",
   url: siteUrl,
   author: {
     "@type": "Person",
