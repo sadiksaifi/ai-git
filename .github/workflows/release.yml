@@ -195,14 +195,27 @@ jobs:
             chmod +x "packages/npm/${platform}/bin/ai-git"
           done
 
-          # Windows
+          # Windows — verify binary is named ai-git.exe after extraction
           mkdir -p packages/npm/win32-x64/bin
           unzip -o /tmp/artifacts/ai-git-windows-x64.zip -d packages/npm/win32-x64/bin
+          test -f packages/npm/win32-x64/bin/ai-git.exe || { echo "ERROR: ai-git.exe not found after extraction"; exit 1; }
 
           # Update versions in all package.json files
           for pkg in packages/npm/*/package.json; do
             sed -i "s/\"version\": \"0.0.0\"/\"version\": \"${VERSION}\"/" "$pkg"
           done
+
+      - name: Validate all packages (dry-run)
+        run: |
+          for pkg in darwin-arm64 darwin-x64 linux-arm64 linux-x64 win32-x64; do
+            echo "Validating @ai-git/${pkg}..."
+            cd "packages/npm/${pkg}"
+            npm publish --provenance --access public --dry-run
+            cd "${{ github.workspace }}"
+          done
+          echo "Validating @ai-git/cli..."
+          cd packages/npm/ai-git
+          npm publish --provenance --access public --dry-run
 
       - name: Publish platform packages
         run: |
