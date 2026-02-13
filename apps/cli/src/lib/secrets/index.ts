@@ -1,4 +1,5 @@
-import { MacOSSecretsManager } from "./macos.ts";
+import { BunSecretsManager } from "./bun-secrets.ts";
+import { EncryptedFileSecretsManager } from "./encrypted-file.ts";
 import {
   type SecretsManager,
   API_KEY_SERVICE,
@@ -12,39 +13,35 @@ export { type SecretsManager, API_KEY_SERVICE, getApiKeyAccount };
 // PLATFORM DETECTION
 // ==============================================================================
 
-/** Singleton instance of the secrets manager */
-let secretsManagerInstance: SecretsManager | null = null;
+/** Cached singleton promise for the secrets manager */
+let secretsManagerPromise: Promise<SecretsManager> | null = null;
 
 /**
  * Get the platform-appropriate secrets manager.
  *
- * Currently only macOS is supported. Linux and Windows support is planned.
- *
- * @throws Error if the current platform is not supported
+ * Probes Bun.secrets (native keychain) first, then falls back to
+ * AES-256-GCM encrypted file storage for headless environments.
+ * The result is cached as a singleton.
  */
-export function getSecretsManager(): SecretsManager {
-  if (secretsManagerInstance) {
-    return secretsManagerInstance;
+export async function getSecretsManager(): Promise<SecretsManager> {
+  if (!secretsManagerPromise) {
+    secretsManagerPromise = (async () => {
+      const bun = new BunSecretsManager();
+      if (await bun.isAvailable()) {
+        return bun;
+      }
+      return new EncryptedFileSecretsManager();
+    })();
   }
-
-  if (process.platform === "darwin") {
-    secretsManagerInstance = new MacOSSecretsManager();
-    return secretsManagerInstance;
-  }
-
-  // Linux and Windows support coming soon
-  throw new Error(
-    "API mode is currently only available on macOS. " +
-      "Support for Linux and Windows is coming soon.\n\n" +
-      "For now, please use CLI mode with an installed AI CLI tool."
-  );
+  return secretsManagerPromise;
 }
 
 /**
  * Check if secrets management is available on this platform.
+ * Always returns true — encrypted file fallback ensures availability.
  */
 export function isSecretsAvailable(): boolean {
-  return process.platform === "darwin";
+  return true;
 }
 
 // ==============================================================================
@@ -60,7 +57,7 @@ export async function setApiKey(
   providerId: string,
   apiKey: string
 ): Promise<void> {
-  const manager = getSecretsManager();
+  const manager = await getSecretsManager();
   await manager.setSecret(API_KEY_SERVICE, getApiKeyAccount(providerId), apiKey);
 }
 
@@ -70,7 +67,7 @@ export async function setApiKey(
  * @returns The API key, or null if not found
  */
 export async function getApiKey(providerId: string): Promise<string | null> {
-  const manager = getSecretsManager();
+  const manager = await getSecretsManager();
   return manager.getSecret(API_KEY_SERVICE, getApiKeyAccount(providerId));
 }
 
@@ -80,7 +77,7 @@ export async function getApiKey(providerId: string): Promise<string | null> {
  * @returns true if deleted, false if not found
  */
 export async function deleteApiKey(providerId: string): Promise<boolean> {
-  const manager = getSecretsManager();
+  const manager = await getSecretsManager();
   return manager.deleteSecret(API_KEY_SERVICE, getApiKeyAccount(providerId));
 }
 

@@ -7,7 +7,7 @@ import pc from "picocolors";
 import type { UserConfig } from "../../config.ts";
 import { getProviderById } from "../../providers/registry.ts";
 import { getAdapter } from "../../providers/index.ts";
-import { isSecretsAvailable, hasApiKey } from "../secrets/index.ts";
+import { hasApiKey } from "../secrets/index.ts";
 import { ERROR_MESSAGES, INSTALL_INFO } from "./constants.ts";
 import {
   getCatalogModelMetadata,
@@ -94,24 +94,15 @@ export async function diagnoseConfig(
           }
         }
       } else if (provider.mode === "api") {
-        // Check platform support
-        if (!isSecretsAvailable()) {
+        // Check API key
+        const keyExists = await hasApiKey(config.provider);
+        if (!keyExists) {
+          const err = ERROR_MESSAGES.apiKeyMissing(provider.name);
           errors.push({
-            code: "PLATFORM_NOT_SUPPORTED",
-            message: ERROR_MESSAGES.platformNotSupported.message,
-            suggestion: ERROR_MESSAGES.platformNotSupported.hint,
+            code: "API_KEY_MISSING",
+            message: err.message,
+            suggestion: err.suggestion,
           });
-        } else {
-          // Check API key
-          const keyExists = await hasApiKey(config.provider);
-          if (!keyExists) {
-            const err = ERROR_MESSAGES.apiKeyMissing(provider.name);
-            errors.push({
-              code: "API_KEY_MISSING",
-              message: err.message,
-              suggestion: err.suggestion,
-            });
-          }
         }
       }
     }
