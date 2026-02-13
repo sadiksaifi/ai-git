@@ -47,8 +47,17 @@ while [ $# -gt 0 ]; do
       MODIFY_PATH=false
       shift
       ;;
+    --help)
+      echo "Usage: install.sh [OPTIONS]"
+      echo ""
+      echo "Options:"
+      echo "  --version <ver>    Install a specific version (e.g., --version v2.5.0)"
+      echo "  --no-modify-path   Skip PATH modification in shell config"
+      echo "  --help             Show this help message"
+      exit 0
+      ;;
     *)
-      error "unknown option: $1"
+      error "unknown option: $1 (use --help for usage)"
       exit 1
       ;;
   esac
@@ -155,7 +164,7 @@ download_and_install() {
 
   # Write install method marker
   mkdir -p "$STATE_DIR"
-  echo "curl" > "${STATE_DIR}/install-method"
+  printf '%s\n' "curl" > "${STATE_DIR}/install-method"
 }
 
 # ==============================================================================

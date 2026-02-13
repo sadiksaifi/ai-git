@@ -43,15 +43,18 @@ export interface GitHubRelease {
 // CONSTANTS
 // ==============================================================================
 
-/** Cache TTL: 30 minutes in milliseconds */
-const CACHE_TTL_MS = 30 * 60 * 1000;
+/** Cache TTL: 6 hours in milliseconds */
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
 /** Fetch timeout: 3 seconds */
 const FETCH_TIMEOUT_MS = 3000;
 
+/** GitHub repository (owner/name) */
+export const GITHUB_REPO = "sadiksaifi/ai-git";
+
 /** GitHub API endpoint */
 const GITHUB_RELEASES_URL =
-  "https://api.github.com/repos/sadiksaifi/ai-git/releases/latest";
+  `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
 
 // ==============================================================================
 // VERSION COMPARISON

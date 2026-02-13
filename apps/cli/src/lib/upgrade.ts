@@ -5,14 +5,14 @@ import { $ } from "bun";
 import { log, spinner } from "@clack/prompts";
 import pc from "picocolors";
 import { detectInstallMethod } from "./install-method.ts";
-import { fetchLatestRelease, isNewerVersion } from "./update-check.ts";
+import { fetchLatestRelease, isNewerVersion, GITHUB_REPO } from "./update-check.ts";
 
 // ==============================================================================
 // CONSTANTS
 // ==============================================================================
 
 const GITHUB_RELEASE_BASE =
-  "https://github.com/sadiksaifi/ai-git/releases/download";
+  `https://github.com/${GITHUB_REPO}/releases/download`;
 
 // ==============================================================================
 // PLATFORM DETECTION
@@ -186,8 +186,22 @@ async function selfUpdate(currentVersion: string): Promise<void> {
     // Ensure target directory exists
     fs.mkdirSync(path.dirname(targetPath), { recursive: true });
 
+    // Check write permission before attempting replace
+    try {
+      fs.accessSync(path.dirname(targetPath), fs.constants.W_OK);
+    } catch {
+      s.stop(
+        pc.red(
+          `Permission denied: cannot write to ${path.dirname(targetPath)}.\n` +
+          pc.dim(`Try: sudo ai-git upgrade`),
+        ),
+      );
+      process.exit(1);
+    }
+
     // Copy to temp location next to target, then rename (atomic on same filesystem)
-    const tmpTarget = `${targetPath}.tmp`;
+    // Use unique name to avoid conflicts with concurrent upgrades
+    const tmpTarget = `${targetPath}.tmp.${process.pid}`;
     fs.copyFileSync(extractedBin, tmpTarget);
     fs.chmodSync(tmpTarget, 0o755);
     fs.renameSync(tmpTarget, targetPath);

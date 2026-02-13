@@ -22,8 +22,10 @@ function writeMarker() {
     }
     fs.mkdirSync(stateDir, { recursive: true });
     fs.writeFileSync(path.join(stateDir, "install-method"), "npm");
-  } catch {
-    // Non-critical — silent fail
+  } catch (err) {
+    if (process.env.npm_config_loglevel !== "silent") {
+      console.warn(`ai-git: Could not write install method marker: ${err.message}`);
+    }
   }
 }
 
