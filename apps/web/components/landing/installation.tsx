@@ -19,11 +19,20 @@ export function Installation() {
         </div>
 
         {/* Installation Tabs */}
-        <Tabs defaultValue="homebrew" className="w-full">
-          <TabsList className="mx-auto mb-8 grid w-fit grid-cols-2">
+        <Tabs defaultValue="npm" className="w-full">
+          <TabsList className="mx-auto mb-8 grid w-fit grid-cols-2 sm:grid-cols-4">
+            <TabsTrigger value="npm">npm</TabsTrigger>
             <TabsTrigger value="homebrew">Homebrew</TabsTrigger>
-            <TabsTrigger value="source">Build from Source</TabsTrigger>
+            <TabsTrigger value="shell">Shell</TabsTrigger>
+            <TabsTrigger value="source">Source</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="npm" className="space-y-4">
+            <CodeBlock code="npm install -g @ai-git/cli" language="bash" />
+            <p className="text-center text-sm text-muted-foreground">
+              Works with bun, pnpm, yarn too
+            </p>
+          </TabsContent>
 
           <TabsContent value="homebrew" className="space-y-4">
             <CodeBlock
@@ -32,7 +41,17 @@ brew install ai-git`}
               language="bash"
             />
             <p className="text-center text-sm text-muted-foreground">
-              Recommended for macOS users
+              macOS
+            </p>
+          </TabsContent>
+
+          <TabsContent value="shell" className="space-y-4">
+            <CodeBlock
+              code="curl -fsSL https://ai-git.xyz/install | bash"
+              language="bash"
+            />
+            <p className="text-center text-sm text-muted-foreground">
+              macOS, Linux, WSL
             </p>
           </TabsContent>
 

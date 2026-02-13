@@ -65,6 +65,10 @@ jobs:
           cd dist
           zip ai-git-windows-x64.zip ai-git.exe
 
+      - name: Generate checksums
+        working-directory: apps/cli/dist
+        run: shasum -a 256 *.tar.gz *.zip > checksums.txt
+
       - name: Generate Changelog
         id: changelog
         run: |
@@ -97,6 +101,7 @@ jobs:
             apps/cli/dist/ai-git-linux-x64.tar.gz
             apps/cli/dist/ai-git-linux-arm64.tar.gz
             apps/cli/dist/ai-git-windows-x64.zip
+            apps/cli/dist/checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -142,3 +147,72 @@ jobs:
             git commit -m "release: ai-git version ${VERSION}" -m "Release: https://github.com/${{ github.repository }}/releases/tag/${VERSION}"
             git push origin main
           fi
+
+  publish-npm:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install latest npm
+        run: npm install -g npm@latest
+
+      - name: Download release artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=${{ github.ref_name }}
+          mkdir -p /tmp/artifacts
+          cd /tmp/artifacts
+          gh release download "$VERSION" \
+            -R ${{ github.repository }} \
+            -p "ai-git-darwin-arm64.tar.gz" \
+            -p "ai-git-darwin-x64.tar.gz" \
+            -p "ai-git-linux-arm64.tar.gz" \
+            -p "ai-git-linux-x64.tar.gz" \
+            -p "ai-git-windows-x64.zip"
+
+      - name: Place binaries in platform packages
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+
+          # Extract and place each platform binary
+          for platform in darwin-arm64 darwin-x64 linux-arm64 linux-x64; do
+            mkdir -p "packages/npm/${platform}/bin"
+            tar -xzf "/tmp/artifacts/ai-git-${platform}.tar.gz" -C "packages/npm/${platform}/bin"
+            chmod +x "packages/npm/${platform}/bin/ai-git"
+          done
+
+          # Windows
+          mkdir -p packages/npm/win32-x64/bin
+          unzip -o /tmp/artifacts/ai-git-windows-x64.zip -d packages/npm/win32-x64/bin
+
+          # Update versions in all package.json files
+          for pkg in packages/npm/*/package.json; do
+            sed -i "s/\"version\": \"0.0.0\"/\"version\": \"${VERSION}\"/" "$pkg"
+          done
+
+      - name: Publish platform packages
+        run: |
+          for pkg in darwin-arm64 darwin-x64 linux-arm64 linux-x64 win32-x64; do
+            echo "Publishing @ai-git/${pkg}..."
+            cd "packages/npm/${pkg}"
+            npm publish --provenance --access public
+            cd "${{ github.workspace }}"
+          done
+
+      - name: Publish main package (@ai-git/cli)
+        working-directory: packages/npm/ai-git
+        run: npm publish --provenance --access public
