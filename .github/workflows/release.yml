@@ -200,9 +200,9 @@ jobs:
           unzip -o /tmp/artifacts/ai-git-windows-x64.zip -d packages/npm/win32-x64/bin
           test -f packages/npm/win32-x64/bin/ai-git.exe || { echo "ERROR: ai-git.exe not found after extraction"; exit 1; }
 
-          # Update versions in all package.json files
+          # Update all 0.0.0 versions (package version + optionalDependencies)
           for pkg in packages/npm/*/package.json; do
-            sed -i "s/\"version\": \"0.0.0\"/\"version\": \"${VERSION}\"/" "$pkg"
+            sed -i "s/\"0.0.0\"/\"${VERSION}\"/g" "$pkg"
           done
 
       - name: Validate all packages (dry-run)

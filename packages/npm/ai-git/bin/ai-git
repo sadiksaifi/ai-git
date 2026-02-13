@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const { execFileSync } = require("child_process");
+const fs = require("fs");
 const path = require("path");
 const os = require("os");
 
@@ -12,13 +13,13 @@ const PLATFORMS = {
 
 const platformPkgs = PLATFORMS[os.platform()];
 if (!platformPkgs) {
-  console.error(`Unsupported platform: ${os.platform()}-${os.arch()}`);
+  console.error(`ai-git: unsupported platform: ${os.platform()}-${os.arch()}`);
   process.exit(1);
 }
 
 const pkg = platformPkgs[os.arch()];
 if (!pkg) {
-  console.error(`Unsupported architecture: ${os.platform()}-${os.arch()}`);
+  console.error(`ai-git: unsupported architecture: ${os.platform()}-${os.arch()}`);
   process.exit(1);
 }
 
@@ -29,10 +30,19 @@ const bin = path.join(
   `ai-git${ext}`,
 );
 
+if (!fs.existsSync(bin)) {
+  console.error(
+    `ai-git: binary not found at ${bin}\n` +
+    `The platform package (${pkg}) may not contain a binary yet.\n` +
+    `Try reinstalling: npm install -g @ai-git/cli`
+  );
+  process.exit(1);
+}
+
 try {
   execFileSync(bin, process.argv.slice(2), { stdio: "inherit" });
 } catch (e) {
-  if (e && typeof e === "object" && "status" in e) {
+  if (e && typeof e === "object" && "status" in e && e.status !== null) {
     process.exit(e.status);
   }
   throw e;
