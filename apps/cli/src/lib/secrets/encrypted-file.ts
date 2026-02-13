@@ -106,7 +106,11 @@ async function readStore(secretsPath: string): Promise<SecretsFile> {
       data.salt = "";
     }
     return data;
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[ai-git] Warning: failed to read secrets file at ${secretsPath} — starting fresh.`,
+      err instanceof Error ? err.message : err
+    );
     return { version: 1, salt: "", secrets: {} };
   }
 }
