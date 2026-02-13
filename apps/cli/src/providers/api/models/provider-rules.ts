@@ -216,10 +216,10 @@ export const PROVIDER_MODEL_RULES: Record<SupportedAPIProviderId, ProviderModelR
   },
   cerebras: {
     includePatterns: [
-      /^llama/i,
-      /^qwen/i,
-      /^gpt-oss/i,
-      /^zai-glm/i,
+      /^llama[\d.-]/i,   // llama3.1-8b, llama-3.3-70b
+      /^qwen-/i,         // qwen-3-32b, qwen-3-235b-...
+      /^gpt-oss-/i,      // gpt-oss-120b
+      /^zai-glm-/i,      // zai-glm-4.6, zai-glm-4.7
     ],
     excludePatterns: [
       /embedding/i,
@@ -229,10 +229,9 @@ export const PROVIDER_MODEL_RULES: Record<SupportedAPIProviderId, ProviderModelR
       /vision/i,
     ],
     dedupeKey: (modelId: string) => {
-      // Normalize Cerebras model IDs by removing version suffixes
+      // Normalize Cerebras model IDs: collapse variant + date suffixes to base model
       return stripDateSuffix(modelId)
-        .replace(/-instruct-\d+$/i, "-instruct")
-        .replace(/-thinking-\d+$/i, "-thinking");
+        .replace(/-(instruct|thinking)(-\d+)?$/i, "");
     },
     resolveCatalogProvider: () => null,  // Not in catalog
     resolveTier: (ctx: ProviderModelRuleContext) => {
@@ -249,7 +248,7 @@ export const PROVIDER_MODEL_RULES: Record<SupportedAPIProviderId, ProviderModelR
       }
 
       // Large models as default
-      if (/70b|120b|235b/.test(id)) {
+      if (/70b|120b|235b|32b/.test(id)) {
         return "default";
       }
 

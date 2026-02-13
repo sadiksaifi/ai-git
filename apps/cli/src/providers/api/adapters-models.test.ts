@@ -6,6 +6,7 @@ import { anthropicAdapter } from "./anthropic.ts";
 import { openAIAdapter } from "./openai.ts";
 import { googleAiStudioAdapter } from "./google-ai-studio.ts";
 import { openRouterAdapter } from "./openrouter.ts";
+import { cerebrasAdapter } from "./cerebras.ts";
 import { clearModelCatalogForTests } from "./models/index.ts";
 
 const originalFetch = globalThis.fetch;
@@ -218,12 +219,50 @@ describe("API adapters use shared model ranking", () => {
     ]);
   });
 
+  it("cerebras adapter ranks and dedupes models", async () => {
+    globalThis.fetch = (async () => {
+      return new Response(
+        JSON.stringify({
+          data: [
+            { id: "llama-3.3-70b", object: "model", created: 1, owned_by: "cerebras" },
+            { id: "llama3.1-8b", object: "model", created: 1, owned_by: "cerebras" },
+            { id: "qwen-3-235b-a22b-thinking-2507", object: "model", created: 1, owned_by: "cerebras" },
+            { id: "qwen-3-235b-a22b-instruct-2507", object: "model", created: 1, owned_by: "cerebras" },
+            { id: "qwen-3-32b", object: "model", created: 1, owned_by: "cerebras" },
+            { id: "some-embedding-model", object: "model", created: 1, owned_by: "cerebras" },
+          ],
+        }),
+        { status: 200 }
+      );
+    }) as unknown as typeof fetch;
+
+    const models = await cerebrasAdapter.fetchModels("test-key");
+    const ids = models.map((m) => m.id);
+
+    // embedding excluded by include patterns (doesn't match llama/qwen/gpt-oss/zai-glm)
+    expect(ids).not.toContain("some-embedding-model");
+
+    // thinking/instruct deduped to one entry (same dedupeKey)
+    const qwen235 = ids.filter((id) => id.includes("235b"));
+    expect(qwen235).toHaveLength(1);
+
+    // tier ordering: default (70b, 32b, 235b-*) > fast (8b)
+    const idx70b = ids.indexOf("llama-3.3-70b");
+    const idx8b = ids.indexOf("llama3.1-8b");
+    expect(idx70b).toBeLessThan(idx8b);
+
+    // qwen-3-32b is default tier (not "other")
+    const idx32b = ids.indexOf("qwen-3-32b");
+    expect(idx32b).toBeLessThan(idx8b);
+  });
+
   it("no adapter keeps local MODEL_PRIORITY maps", () => {
     const files = [
       "anthropic.ts",
       "openai.ts",
       "google-ai-studio.ts",
       "openrouter.ts",
+      "cerebras.ts",
     ];
 
     for (const file of files) {
