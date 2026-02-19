@@ -30,16 +30,33 @@ export const PROVIDERS: ProviderDefinition[] = [
     mode: "cli",
     binary: "codex",
     models: [
-      { id: "gpt-5.3-codex", name: "GPT-5.3 Codex", isDefault: true },
-      { id: "gpt-5.2-codex", name: "GPT-5.2 Codex" },
-      { id: "gpt-5.1-codex-max", name: "GPT-5.1 Codex Max" },
-      { id: "gpt-5.1-codex-mini", name: "GPT-5.1 Codex Mini" },
-      { id: "gpt-5.2", name: "GPT-5.2" },
-      { id: "gpt-5.1", name: "GPT-5.1" },
-      { id: "gpt-5.1-codex", name: "GPT-5.1 Codex" },
-      { id: "gpt-5-codex", name: "GPT-5 Codex" },
-      { id: "gpt-5-codex-mini", name: "GPT-5 Codex Mini" },
-      { id: "gpt-5", name: "GPT-5" },
+      // gpt-5.3-codex (xhigh, high, medium, low)
+      { id: "gpt-5.3-codex-xhigh", name: "GPT-5.3 Codex (xhigh)" },
+      { id: "gpt-5.3-codex-high", name: "GPT-5.3 Codex (high)" },
+      { id: "gpt-5.3-codex-medium", name: "GPT-5.3 Codex (medium)" },
+      { id: "gpt-5.3-codex-low", name: "GPT-5.3 Codex (low)", isDefault: true },
+      // gpt-5.2-codex (xhigh, high, medium, low)
+      { id: "gpt-5.2-codex-xhigh", name: "GPT-5.2 Codex (xhigh)" },
+      { id: "gpt-5.2-codex-high", name: "GPT-5.2 Codex (high)" },
+      { id: "gpt-5.2-codex-medium", name: "GPT-5.2 Codex (medium)" },
+      { id: "gpt-5.2-codex-low", name: "GPT-5.2 Codex (low)" },
+      // gpt-5.2 (xhigh, high, medium, low)
+      { id: "gpt-5.2-xhigh", name: "GPT-5.2 (xhigh)" },
+      { id: "gpt-5.2-high", name: "GPT-5.2 (high)" },
+      { id: "gpt-5.2-medium", name: "GPT-5.2 (medium)" },
+      { id: "gpt-5.2-low", name: "GPT-5.2 (low)" },
+      // gpt-5.1-codex (high, medium, low)
+      { id: "gpt-5.1-codex-high", name: "GPT-5.1 Codex (high)" },
+      { id: "gpt-5.1-codex-medium", name: "GPT-5.1 Codex (medium)" },
+      { id: "gpt-5.1-codex-low", name: "GPT-5.1 Codex (low)" },
+      // gpt-5.1-codex-max (high, medium, low)
+      { id: "gpt-5.1-codex-max-high", name: "GPT-5.1 Codex Max (high)" },
+      { id: "gpt-5.1-codex-max-medium", name: "GPT-5.1 Codex Max (medium)" },
+      { id: "gpt-5.1-codex-max-low", name: "GPT-5.1 Codex Max (low)" },
+      // gpt-5.1-codex-mini (high, medium, low)
+      { id: "gpt-5.1-codex-mini-high", name: "GPT-5.1 Codex Mini (high)" },
+      { id: "gpt-5.1-codex-mini-medium", name: "GPT-5.1 Codex Mini (medium)" },
+      { id: "gpt-5.1-codex-mini-low", name: "GPT-5.1 Codex Mini (low)" },
     ],
   },
   {
