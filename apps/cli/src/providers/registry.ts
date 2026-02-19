@@ -13,22 +13,11 @@ export const PROVIDERS: ProviderDefinition[] = [
   // CLI PROVIDERS
   // ==============================================================================
   {
-    id: "claude-code",
-    name: "Claude Code",
-    mode: "cli",
-    binary: "claude",
-    isDefault: true,
-    models: [
-      { id: "sonnet", name: "Claude Sonnet", isDefault: true },
-      { id: "haiku", name: "Claude Haiku" },
-      { id: "opus", name: "Claude Opus" },
-    ],
-  },
-  {
     id: "codex",
     name: "Codex",
     mode: "cli",
     binary: "codex",
+    isDefault: true,
     models: [
       // gpt-5.3-codex (xhigh, high, medium, low)
       { id: "gpt-5.3-codex-xhigh", name: "GPT-5.3 Codex (xhigh)" },
@@ -57,6 +46,17 @@ export const PROVIDERS: ProviderDefinition[] = [
       { id: "gpt-5.1-codex-mini-high", name: "GPT-5.1 Codex Mini (high)" },
       { id: "gpt-5.1-codex-mini-medium", name: "GPT-5.1 Codex Mini (medium)" },
       { id: "gpt-5.1-codex-mini-low", name: "GPT-5.1 Codex Mini (low)" },
+    ],
+  },
+  {
+    id: "claude-code",
+    name: "Claude Code",
+    mode: "cli",
+    binary: "claude",
+    models: [
+      { id: "sonnet", name: "Claude Sonnet", isDefault: true },
+      { id: "haiku", name: "Claude Haiku" },
+      { id: "opus", name: "Claude Opus" },
     ],
   },
   {
