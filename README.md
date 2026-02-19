@@ -74,7 +74,7 @@ Generate a commit message using AI
 
 Options:
   -P, --provider <id>         AI provider (claude-code, gemini-cli, codex, openrouter, openai, anthropic, google-ai-studio, cerebras)
-  -M, --model <id>            Model ID (e.g., haiku, gpt-4o-mini, anthropic/claude-3.5-haiku)
+  -M, --model <id>            Model ID (e.g., haiku, gpt-5.3-codex-low, anthropic/claude-sonnet-4-6)
   -a, --stage-all             Automatically stage all changes
   -c, --commit                Automatically commit (skip editor/confirmation)
   -p, --push                  Automatically push after commit
@@ -97,11 +97,11 @@ ai-git
 # Override provider for this run
 ai-git --provider gemini-cli --model gemini-3-flash-preview
 
-# Use Codex
-ai-git --provider codex --model gpt-5.3-codex
+# Use Codex with reasoning effort baked in
+ai-git --provider codex --model gpt-5.3-codex-low
 
 # Use OpenRouter
-ai-git --provider openrouter --model anthropic/claude-3.5-haiku
+ai-git --provider openrouter --model anthropic/claude-sonnet-4-6
 
 # Exclude files/directories from staging
 ai-git -a --exclude "tests/" --exclude "*.test.ts"
@@ -155,7 +155,7 @@ AI Git uses a **three-tier configuration system**:
 {
   "$schema": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
   "provider": "openrouter",
-  "model": "anthropic/claude-3.5-haiku"
+  "model": "anthropic/claude-sonnet-4-6"
 }
 ```
 

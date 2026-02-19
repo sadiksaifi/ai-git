@@ -182,6 +182,14 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         lastUpdated: "2025-09-29",
         reasoning: true,
         toolCall: true
+      },
+      "claude-sonnet-4-6": {
+        id: "claude-sonnet-4-6",
+        name: "Claude Sonnet 4.6",
+        releaseDate: "2026-02-17",
+        lastUpdated: "2026-02-17",
+        reasoning: true,
+        toolCall: true
       }
     }
   },
