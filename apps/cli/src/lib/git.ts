@@ -246,6 +246,50 @@ export async function push(): Promise<void> {
   await $`git push`.quiet();
 }
 
+export interface RemoteSyncStatus {
+  hasUpstream: boolean;
+  remoteAhead: boolean;
+  localAhead: boolean;
+}
+
+/**
+ * Check if the remote has new commits compared to the current branch.
+ */
+export async function getRemoteSyncStatus(): Promise<RemoteSyncStatus> {
+  try {
+    await $`git rev-parse --abbrev-ref --symbolic-full-name @{upstream}`.quiet();
+  } catch {
+    return {
+      hasUpstream: false,
+      remoteAhead: false,
+      localAhead: false,
+    };
+  }
+
+  try {
+    await $`git fetch --quiet`.quiet();
+  } catch {
+    // Continue with current remote-tracking refs if fetch fails.
+  }
+
+  try {
+    const output = (await $`git rev-list --left-right --count @{upstream}...HEAD`.text()).trim();
+    const [remoteAheadCount = "0", localAheadCount = "0"] = output.split(/\s+/);
+
+    return {
+      hasUpstream: true,
+      remoteAhead: Number(remoteAheadCount) > 0,
+      localAhead: Number(localAheadCount) > 0,
+    };
+  } catch {
+    return {
+      hasUpstream: true,
+      remoteAhead: false,
+      localAhead: false,
+    };
+  }
+}
+
 /**
  * Add a remote and push.
  */
