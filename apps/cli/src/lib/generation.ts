@@ -73,6 +73,8 @@ export interface GenerationContext {
   promptCustomization?: PromptCustomization;
   /** Preferred editor from config */
   editor?: string;
+  /** Milliseconds before showing slow-generation warning. Default: 30 000. 0 = disabled. */
+  slowWarningThresholdMs?: number;
 }
 
 export interface GenerationResult {
@@ -188,10 +190,23 @@ export async function runGenerationLoop(
 
       // Call AI
       let rawMsg = "";
+      const slowThresholdMs = ctx.slowWarningThresholdMs ?? 30_000;
+      let slowWarningTimer: ReturnType<typeof setTimeout> | undefined;
+
       try {
+        if (slowThresholdMs > 0) {
+          slowWarningTimer = setTimeout(() => {
+            s.message(
+              `Still generating with ${modelName}... Speed depends on your selected provider and model.`
+            );
+          }, slowThresholdMs);
+        }
+
         rawMsg = await adapter.invoke({ model, system: systemPromptStr, prompt: userPrompt });
+        clearTimeout(slowWarningTimer);
         s.stop("Message generated");
       } catch (e) {
+        clearTimeout(slowWarningTimer);
         s.stop("Generation failed");
         console.error("");
         let errorMessage = String(e);
