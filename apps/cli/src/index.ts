@@ -485,6 +485,7 @@ cli
       // Pass prompt customization from config file (if any)
       promptCustomization: resolvedConfig.prompt,
       editor: resolvedConfig.editor,
+      slowWarningThresholdMs: resolvedConfig.slowWarningThresholdMs,
     });
 
     // Handle dry run (already processed in generation loop)

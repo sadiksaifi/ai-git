@@ -57,6 +57,8 @@ export interface UserConfig {
   prompt?: PromptCustomization;
   /** Preferred editor command */
   editor?: string;
+  /** Milliseconds before showing slow-generation warning. Default 5 000. Set to 0 to disable. */
+  slowWarningThresholdMs?: number;
 }
 
 /**
@@ -72,6 +74,8 @@ export interface ResolvedConfig {
   };
   prompt?: PromptCustomization;
   editor?: string;
+  /** Resolved slow-warning threshold in ms (defaults to 5 000). */
+  slowWarningThresholdMs: number;
 }
 
 export { CONFIG_DIR, CONFIG_FILE };
@@ -249,6 +253,13 @@ const DEFAULT_WORKFLOW_OPTIONS = {
 };
 
 /**
+ * Default slow-warning threshold in milliseconds.
+ * Shows a spinner warning when AI generation exceeds this duration.
+ * Set to 0 to disable.
+ */
+export const DEFAULT_SLOW_WARNING_THRESHOLD_MS = 5_000;
+
+/**
  * Resolve configuration by merging CLI options with user config.
  * Priority: CLI flags > Project config file > User config file
  *
@@ -286,6 +297,7 @@ export async function resolveConfigAsync(
     defaults: { ...DEFAULT_WORKFLOW_OPTIONS, ...mergedConfig.defaults },
     prompt: mergedConfig.prompt,
     editor: mergedConfig.editor,
+    slowWarningThresholdMs: mergedConfig.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS,
   };
 
   // Apply CLI options (highest priority - overrides config file)
@@ -297,6 +309,9 @@ export async function resolveConfigAsync(
   }
   if (cliOptions.defaults !== undefined) {
     resolved.defaults = { ...resolved.defaults, ...cliOptions.defaults };
+  }
+  if (cliOptions.slowWarningThresholdMs !== undefined) {
+    resolved.slowWarningThresholdMs = cliOptions.slowWarningThresholdMs;
   }
 
   return resolved;

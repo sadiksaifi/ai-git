@@ -8,7 +8,7 @@ import {
 } from "@clack/prompts";
 import pc from "picocolors";
 import { buildSystemPrompt, buildUserPrompt } from "../prompt.ts";
-import type { PromptCustomization } from "../config.ts";
+import { DEFAULT_SLOW_WARNING_THRESHOLD_MS, type PromptCustomization } from "../config.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
 import { getStagedDiff, getBranchName, setBranchName, commit, getRecentCommits, getStagedFileList, type CommitResult } from "./git.ts";
 import { validateCommitMessage, buildRetryContext } from "./validation.ts";
@@ -73,12 +73,36 @@ export interface GenerationContext {
   promptCustomization?: PromptCustomization;
   /** Preferred editor from config */
   editor?: string;
+  /** Milliseconds before showing slow-generation warning. Default: 5 000. 0 = disabled. */
+  slowWarningThresholdMs?: number;
 }
 
 export interface GenerationResult {
   message: string;
   committed: boolean;
   aborted: boolean;
+}
+
+/**
+ * Create a timer that fires a warning callback after `thresholdMs`.
+ * Returns a cleanup function that cancels the timer.
+ * If thresholdMs <= 0, no timer is created and cleanup is a no-op.
+ */
+export function createSlowWarningTimer(
+  thresholdMs: number,
+  onSlow: () => void,
+): () => void {
+  if (thresholdMs <= 0) return () => {};
+  const timer = setTimeout(onSlow, thresholdMs);
+  return () => clearTimeout(timer);
+}
+
+/**
+ * Resolve the slow-warning threshold from a GenerationContext,
+ * falling back to DEFAULT_SLOW_WARNING_THRESHOLD_MS.
+ */
+export function resolveSlowWarningThreshold(ctx: GenerationContext): number {
+  return ctx.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS;
 }
 
 /**
@@ -127,6 +151,7 @@ export async function runGenerationLoop(
 
   // Flag to skip AI generation (used after manual edit)
   let skipGeneration = false;
+  const slowThresholdMs = resolveSlowWarningThreshold(ctx);
 
   while (loop) {
     let cleanMsg = lastGeneratedMessage;
@@ -188,10 +213,19 @@ export async function runGenerationLoop(
 
       // Call AI
       let rawMsg = "";
+
+      const cancelSlowWarning = createSlowWarningTimer(slowThresholdMs, () => {
+        s.message(
+          pc.yellow(`Still generating with ${modelName}... Speed depends on your selected provider and model.`)
+        );
+      });
+
       try {
         rawMsg = await adapter.invoke({ model, system: systemPromptStr, prompt: userPrompt });
+        cancelSlowWarning();
         s.stop("Message generated");
       } catch (e) {
+        cancelSlowWarning();
         s.stop("Generation failed");
         console.error("");
         let errorMessage = String(e);

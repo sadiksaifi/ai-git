@@ -38,6 +38,10 @@ import {
   getModelCatalog,
 } from "../../providers/api/models/index.ts";
 
+const SPEED_HINT = pc.dim(
+  "Generation speed varies by provider and model — some models may be slow."
+);
+
 // ==============================================================================
 // TYPES
 // ==============================================================================
@@ -243,6 +247,7 @@ async function setupCLIFlow(
   // Minimal success message
   const modelName = providerDef.models.find((m) => m.id === model)?.name ?? model;
   log.success(`${pc.cyan(providerDef.name)} → ${pc.cyan(modelName)}`);
+  log.info(SPEED_HINT);
 
   return { config, completed: true };
 }
@@ -376,6 +381,7 @@ async function setupAPIFlow(
   // Minimal success message
   const modelName = models.find((m) => m.id === model)?.name ?? model;
   log.success(`${pc.cyan(providerDef.name)} → ${pc.cyan(modelName)}`);
+  log.info(SPEED_HINT);
 
   return { config, completed: true };
 }
