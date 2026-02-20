@@ -2,6 +2,7 @@ import * as path from "node:path";
 import { getProviderById } from "./providers/registry.ts";
 import { getRepoRoot } from "./lib/git.ts";
 import { CONFIG_DIR, CONFIG_FILE } from "./lib/paths.ts";
+import { migrateConfig } from "./lib/migration.ts";
 
 // ==============================================================================
 // CONFIG FILE MANAGEMENT
@@ -96,9 +97,15 @@ export async function loadUserConfig(): Promise<UserConfig | undefined> {
       return undefined;
     }
     const content = await file.text();
-    return JSON.parse(content) as UserConfig;
+    const raw = JSON.parse(content);
+
+    const { config, changed } = migrateConfig(raw);
+    if (changed) {
+      await saveUserConfig(config);
+    }
+
+    return config;
   } catch {
-    // Config file doesn't exist or is invalid JSON
     return undefined;
   }
 }
@@ -116,9 +123,15 @@ export async function loadProjectConfig(): Promise<UserConfig | undefined> {
       return undefined;
     }
     const content = await file.text();
-    return JSON.parse(content) as UserConfig;
+    const raw = JSON.parse(content);
+
+    const { config, changed } = migrateConfig(raw);
+    if (changed) {
+      await saveProjectConfig(config);
+    }
+
+    return config;
   } catch {
-    // Config file doesn't exist or is invalid JSON
     return undefined;
   }
 }
@@ -132,20 +145,16 @@ const CONFIG_SCHEMA_URL =
 /**
  * Save user configuration to the config file.
  * Includes $schema for editor autocomplete/validation support.
- * Removes legacy 'mode' property if present (migration).
  */
 export async function saveUserConfig(config: UserConfig): Promise<void> {
   // Ensure config directory exists
   const { mkdir } = await import("node:fs/promises");
   await mkdir(CONFIG_DIR, { recursive: true });
 
-  // Remove legacy 'mode' property if present (migration)
-  const { mode: _legacyMode, ...cleanConfig } = config as UserConfig & { mode?: unknown };
-
   // Add $schema at the top for editor support
   const configWithSchema = {
     $schema: CONFIG_SCHEMA_URL,
-    ...cleanConfig,
+    ...config,
   };
 
   await Bun.write(CONFIG_FILE, JSON.stringify(configWithSchema, null, 2));
@@ -154,16 +163,12 @@ export async function saveUserConfig(config: UserConfig): Promise<void> {
 /**
  * Save project configuration to the project config file.
  * Includes $schema for editor autocomplete/validation support.
- * Removes legacy 'mode' property if present (migration).
  */
 export async function saveProjectConfig(config: UserConfig): Promise<void> {
-  // Remove legacy 'mode' property if present (migration)
-  const { mode: _legacyMode, ...cleanConfig } = config as UserConfig & { mode?: unknown };
-
   // Add $schema at the top for editor support
   const configWithSchema = {
     $schema: CONFIG_SCHEMA_URL,
-    ...cleanConfig,
+    ...config,
   };
 
   const configPath = await getProjectConfigPath();
