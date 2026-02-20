@@ -130,7 +130,7 @@ export async function getRecentCommits(n: number = 5): Promise<string[]> {
  */
 export async function getStagedFileList(): Promise<string> {
   try {
-    return (await $`git diff --staged --name-status`.text()).trim();
+    return (await $`git diff --staged --name-status -- . ${LOCKFILES}`.text()).trim();
   } catch {
     return "";
   }
