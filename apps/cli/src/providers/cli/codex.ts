@@ -26,16 +26,18 @@ function parseModelId(virtualId: string): {
  * at the `developer` authority level (high priority, below system prompt).
  *
  * CLI Pattern:
- *   codex --model <base> --sandbox read-only -a never \
- *     --disable shell_tool -c model_reasoning_effort=<effort> \
- *     -c 'developer_instructions=<system>' -c 'web_search="disabled"' exec --ephemeral "<prompt>"
+ *   codex --model <base> -a never --disable shell_tool \
+ *     -c model_reasoning_effort=<effort> -c 'developer_instructions=<system>' \
+ *     -c 'web_search="disabled"' exec --sandbox read-only --ephemeral "<prompt>"
  *
- * All flags are top-level options (before the subcommand):
- * - `--sandbox read-only` enforces OS-level read-only filesystem
+ * Top-level options (before exec):
  * - `-a never` prevents interactive approval prompts
  * - `--disable shell_tool` removes shell tool from model's available tools
  * - `-c web_search="disabled"` disables web search
- * - `exec --ephemeral` runs non-interactively without persisting session files
+ *
+ * Exec subcommand options:
+ * - `--sandbox read-only` enforces OS-level read-only filesystem
+ * - `--ephemeral` skips session persistence
  */
 export const codexAdapter: CLIProviderAdapter = {
   providerId: "codex",
@@ -48,13 +50,13 @@ export const codexAdapter: CLIProviderAdapter = {
       [
         "codex",
         "--model", baseModel,
-        "--sandbox", "read-only",
         "-a", "never",
         "--disable", "shell_tool",
         "-c", `model_reasoning_effort=${effort}`,
         "-c", `developer_instructions=${system}`,
         "-c", `web_search="disabled"`,
         "exec",
+        "--sandbox", "read-only",
         "--ephemeral",
         prompt,
       ],
