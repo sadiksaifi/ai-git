@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { parseClaudeModelId } from "./claude-code.ts";
+import { getProviderById, getModelIds } from "../registry.ts";
 
 describe("parseClaudeModelId", () => {
   it("should parse sonnet-low", () => {
@@ -134,5 +135,41 @@ describe("claudeCodeAdapter.invoke", () => {
     expect(cmd).not.toContain("--effort");
     const modelIndex = cmd.indexOf("--model");
     expect(cmd[modelIndex + 1]).toBe("haiku");
+  });
+});
+
+describe("claude-code registry", () => {
+  it("should include effort variants for sonnet", () => {
+    const modelIds = getModelIds("claude-code");
+    expect(modelIds).toContain("sonnet-low");
+    expect(modelIds).toContain("sonnet-medium");
+    expect(modelIds).toContain("sonnet-high");
+  });
+
+  it("should include effort variants for opus", () => {
+    const modelIds = getModelIds("claude-code");
+    expect(modelIds).toContain("opus-low");
+    expect(modelIds).toContain("opus-medium");
+    expect(modelIds).toContain("opus-high");
+  });
+
+  it("should keep backward-compatible plain model IDs", () => {
+    const modelIds = getModelIds("claude-code");
+    expect(modelIds).toContain("sonnet");
+    expect(modelIds).toContain("haiku");
+    expect(modelIds).toContain("opus");
+  });
+
+  it("should NOT include effort variants for haiku", () => {
+    const modelIds = getModelIds("claude-code");
+    expect(modelIds).not.toContain("haiku-low");
+    expect(modelIds).not.toContain("haiku-medium");
+    expect(modelIds).not.toContain("haiku-high");
+  });
+
+  it("should have sonnet-low as the default model", () => {
+    const provider = getProviderById("claude-code");
+    const defaultModel = provider?.models.find((m) => m.isDefault);
+    expect(defaultModel?.id).toBe("sonnet-low");
   });
 });
