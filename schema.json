@@ -118,8 +118,8 @@
     },
     "slowWarningThresholdMs": {
       "type": "number",
-      "description": "Milliseconds to wait before showing a slow-generation warning. Set to 0 to disable. Default: 30000.",
-      "default": 30000,
+      "description": "Milliseconds to wait before showing a slow-generation warning. Set to 0 to disable. Default: 5000.",
+      "default": 5000,
       "minimum": 0
     },
     "api": {

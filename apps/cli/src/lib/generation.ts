@@ -73,7 +73,7 @@ export interface GenerationContext {
   promptCustomization?: PromptCustomization;
   /** Preferred editor from config */
   editor?: string;
-  /** Milliseconds before showing slow-generation warning. Default: 30 000. 0 = disabled. */
+  /** Milliseconds before showing slow-generation warning. Default: 5 000. 0 = disabled. */
   slowWarningThresholdMs?: number;
 }
 
@@ -190,7 +190,7 @@ export async function runGenerationLoop(
 
       // Call AI
       let rawMsg = "";
-      const slowThresholdMs = ctx.slowWarningThresholdMs ?? 30_000;
+      const slowThresholdMs = ctx.slowWarningThresholdMs ?? 5_000;
       let slowWarningTimer: ReturnType<typeof setTimeout> | undefined;
 
       try {

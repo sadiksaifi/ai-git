@@ -57,7 +57,7 @@ export interface UserConfig {
   prompt?: PromptCustomization;
   /** Preferred editor command */
   editor?: string;
-  /** Milliseconds before showing slow-generation warning. Default 30 000. Set to 0 to disable. */
+  /** Milliseconds before showing slow-generation warning. Default 5 000. Set to 0 to disable. */
   slowWarningThresholdMs?: number;
 }
 
@@ -74,7 +74,7 @@ export interface ResolvedConfig {
   };
   prompt?: PromptCustomization;
   editor?: string;
-  /** Resolved slow-warning threshold in ms (defaults to 30 000). */
+  /** Resolved slow-warning threshold in ms (defaults to 5 000). */
   slowWarningThresholdMs: number;
 }
 
@@ -290,7 +290,7 @@ export async function resolveConfigAsync(
     defaults: { ...DEFAULT_WORKFLOW_OPTIONS, ...mergedConfig.defaults },
     prompt: mergedConfig.prompt,
     editor: mergedConfig.editor,
-    slowWarningThresholdMs: mergedConfig.slowWarningThresholdMs ?? 30_000,
+    slowWarningThresholdMs: mergedConfig.slowWarningThresholdMs ?? 5_000,
   };
 
   // Apply CLI options (highest priority - overrides config file)
