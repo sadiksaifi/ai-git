@@ -98,6 +98,14 @@ export function createSlowWarningTimer(
 }
 
 /**
+ * Resolve the slow-warning threshold from a GenerationContext,
+ * falling back to DEFAULT_SLOW_WARNING_THRESHOLD_MS.
+ */
+export function resolveSlowWarningThreshold(ctx: GenerationContext): number {
+  return ctx.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS;
+}
+
+/**
  * Run the AI generation loop.
  * Generates commit messages, validates them, and handles user interactions.
  */
@@ -143,7 +151,7 @@ export async function runGenerationLoop(
 
   // Flag to skip AI generation (used after manual edit)
   let skipGeneration = false;
-  const slowThresholdMs = ctx.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS;
+  const slowThresholdMs = resolveSlowWarningThreshold(ctx);
 
   while (loop) {
     let cleanMsg = lastGeneratedMessage;

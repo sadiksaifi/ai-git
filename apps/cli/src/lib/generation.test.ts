@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import { DEFAULT_SLOW_WARNING_THRESHOLD_MS } from "../config.ts";
-import { createSlowWarningTimer, type GenerationContext } from "./generation.ts";
+import { createSlowWarningTimer, resolveSlowWarningThreshold, type GenerationContext } from "./generation.ts";
 
 describe("GenerationContext slow warning", () => {
   test("DEFAULT_SLOW_WARNING_THRESHOLD_MS is a positive number", () => {
@@ -10,21 +10,19 @@ describe("GenerationContext slow warning", () => {
 
   test("slowWarningThresholdMs defaults to DEFAULT_SLOW_WARNING_THRESHOLD_MS when undefined", () => {
     const ctx: Partial<GenerationContext> = {};
-    const threshold = ctx.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS;
-    expect(threshold).toBe(5_000);
+    expect(resolveSlowWarningThreshold(ctx as GenerationContext)).toBe(DEFAULT_SLOW_WARNING_THRESHOLD_MS);
   });
 
   test("slowWarningThresholdMs of 0 disables the warning", () => {
     const ctx: Partial<GenerationContext> = { slowWarningThresholdMs: 0 };
-    const threshold = ctx.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS;
+    const threshold = resolveSlowWarningThreshold(ctx as GenerationContext);
     expect(threshold).toBe(0);
     expect(threshold > 0).toBe(false);
   });
 
   test("custom slowWarningThresholdMs overrides default", () => {
     const ctx: Partial<GenerationContext> = { slowWarningThresholdMs: 10_000 };
-    const threshold = ctx.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS;
-    expect(threshold).toBe(10_000);
+    expect(resolveSlowWarningThreshold(ctx as GenerationContext)).toBe(10_000);
   });
 });
 
