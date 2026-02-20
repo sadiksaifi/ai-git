@@ -253,6 +253,13 @@ const DEFAULT_WORKFLOW_OPTIONS = {
 };
 
 /**
+ * Default slow-warning threshold in milliseconds.
+ * Shows a spinner warning when AI generation exceeds this duration.
+ * Set to 0 to disable.
+ */
+export const DEFAULT_SLOW_WARNING_THRESHOLD_MS = 5_000;
+
+/**
  * Resolve configuration by merging CLI options with user config.
  * Priority: CLI flags > Project config file > User config file
  *
@@ -290,7 +297,7 @@ export async function resolveConfigAsync(
     defaults: { ...DEFAULT_WORKFLOW_OPTIONS, ...mergedConfig.defaults },
     prompt: mergedConfig.prompt,
     editor: mergedConfig.editor,
-    slowWarningThresholdMs: mergedConfig.slowWarningThresholdMs ?? 5_000,
+    slowWarningThresholdMs: mergedConfig.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS,
   };
 
   // Apply CLI options (highest priority - overrides config file)

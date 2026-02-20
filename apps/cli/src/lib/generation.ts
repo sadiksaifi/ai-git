@@ -8,7 +8,7 @@ import {
 } from "@clack/prompts";
 import pc from "picocolors";
 import { buildSystemPrompt, buildUserPrompt } from "../prompt.ts";
-import type { PromptCustomization } from "../config.ts";
+import { DEFAULT_SLOW_WARNING_THRESHOLD_MS, type PromptCustomization } from "../config.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
 import { getStagedDiff, getBranchName, setBranchName, commit, getRecentCommits, getStagedFileList, type CommitResult } from "./git.ts";
 import { validateCommitMessage, buildRetryContext } from "./validation.ts";
@@ -190,7 +190,7 @@ export async function runGenerationLoop(
 
       // Call AI
       let rawMsg = "";
-      const slowThresholdMs = ctx.slowWarningThresholdMs ?? 5_000;
+      const slowThresholdMs = ctx.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS;
       let slowWarningTimer: ReturnType<typeof setTimeout> | undefined;
 
       try {
