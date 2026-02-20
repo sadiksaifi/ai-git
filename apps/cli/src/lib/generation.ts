@@ -132,7 +132,6 @@ export async function runGenerationLoop(
   let generationErrors: string[] = [];
   let userRefinements: string[] = [];
   let lastGeneratedMessage: string = "";
-  let skipGeneration = false;
 
   // Get branch name ONCE before the loop (fixes Issue #6)
   let branchName = await getBranchName();
@@ -169,12 +168,6 @@ export async function runGenerationLoop(
     switch (state.type) {
       // ── GENERATE ──────────────────────────────────────────────
       case "generate": {
-        if (skipGeneration) {
-          skipGeneration = false;
-          state = { type: "prompt", message: lastGeneratedMessage, validationFailed: false, warnings: [] };
-          break;
-        }
-
         const s = spinner();
         s.start(`Analyzing changes with ${modelName}...`);
 
@@ -479,7 +472,7 @@ export async function runGenerationLoop(
 
         if (!editor) {
           console.error(pc.red("Error: No suitable editor found. Please set the EDITOR environment variable."));
-          state = { type: "prompt", message: state.message, validationFailed: false, warnings: [] };
+          state = { type: "validate", message: state.message };
           break;
         }
 
@@ -493,8 +486,7 @@ export async function runGenerationLoop(
         const finalMsg = await Bun.file(TEMP_MSG_FILE).text();
         if (finalMsg.trim()) {
           lastGeneratedMessage = finalMsg.trim();
-          skipGeneration = true;
-          state = { type: "generate" };
+          state = { type: "validate", message: finalMsg.trim() };
         } else {
           state = { type: "done", result: { message: "", committed: false, aborted: true } };
         }
