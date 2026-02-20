@@ -17,7 +17,6 @@ describe("GenerationContext slow warning", () => {
     const ctx: Partial<GenerationContext> = { slowWarningThresholdMs: 0 };
     const threshold = resolveSlowWarningThreshold(ctx as GenerationContext);
     expect(threshold).toBe(0);
-    expect(threshold > 0).toBe(false);
   });
 
   test("custom slowWarningThresholdMs overrides default", () => {
