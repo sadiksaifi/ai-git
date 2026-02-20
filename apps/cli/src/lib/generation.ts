@@ -11,7 +11,7 @@ import { buildSystemPrompt, buildUserPrompt } from "../prompt.ts";
 import { DEFAULT_SLOW_WARNING_THRESHOLD_MS, type PromptCustomization } from "../config.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
 import { getStagedDiff, getBranchName, setBranchName, commit, getRecentCommits, getStagedFileList, type CommitResult } from "./git.ts";
-import { validateCommitMessage, buildRetryContext } from "./validation.ts";
+import { validateCommitMessage, buildRetryContext, type ValidationError } from "./validation.ts";
 import { wrapText } from "./utils.ts";
 import { TEMP_MSG_FILE } from "./paths.ts";
 
@@ -82,6 +82,16 @@ export interface GenerationResult {
   committed: boolean;
   aborted: boolean;
 }
+
+/** State machine states for the generation loop */
+export type GenerationState =
+  | { type: "generate" }
+  | { type: "validate"; message: string }
+  | { type: "auto_retry"; message: string; errors: string[] }
+  | { type: "prompt"; message: string; validationFailed: boolean; warnings: ValidationError[] }
+  | { type: "retry"; message: string }
+  | { type: "edit"; message: string }
+  | { type: "done"; result: GenerationResult };
 
 /**
  * Create a timer that fires a warning callback after `thresholdMs`.

@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import { DEFAULT_SLOW_WARNING_THRESHOLD_MS } from "../config.ts";
-import { createSlowWarningTimer, resolveSlowWarningThreshold, type GenerationContext } from "./generation.ts";
+import { createSlowWarningTimer, resolveSlowWarningThreshold, type GenerationContext, type GenerationState } from "./generation.ts";
 
 describe("GenerationContext slow warning", () => {
   test("DEFAULT_SLOW_WARNING_THRESHOLD_MS is a positive number", () => {
@@ -63,5 +63,21 @@ describe("createSlowWarningTimer", () => {
     cleanup();
     cleanup(); // second call should not throw
     cleanup();
+  });
+});
+
+describe("GenerationState type", () => {
+  test("state types are well-formed discriminated union", () => {
+    // Type-level test: ensure all state variants compile
+    const states: GenerationState[] = [
+      { type: "generate" },
+      { type: "validate", message: "feat: test" },
+      { type: "auto_retry", message: "feat: test", errors: ["too long"] },
+      { type: "prompt", message: "feat: test", validationFailed: false, warnings: [] },
+      { type: "retry", message: "feat: test" },
+      { type: "edit", message: "feat: test" },
+      { type: "done", result: { message: "feat: test", committed: true, aborted: false } },
+    ];
+    expect(states).toHaveLength(7);
   });
 });
