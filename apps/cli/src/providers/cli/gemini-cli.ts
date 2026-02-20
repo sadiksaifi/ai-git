@@ -14,11 +14,10 @@ import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
  *
  * CLI Pattern:
  *   GEMINI_SYSTEM_MD=/tmp/ai-git-system-xxx.md \
- *     gemini --model <model> --output-format text --approval-mode plan -p "<prompt>"
+ *     gemini --model <model> --output-format text -p "<prompt>"
  *
  * - `-p <prompt>` runs in non-interactive (headless) mode with the given prompt
  * - `--output-format text` ensures clean text output
- * - `--approval-mode plan` locks down to read-only (no file edits, no shell commands)
  * - GEMINI_SYSTEM_MD replaces the entire default system prompt
  */
 export const geminiCliAdapter: CLIProviderAdapter = {
@@ -41,7 +40,6 @@ export const geminiCliAdapter: CLIProviderAdapter = {
           "gemini",
           "--model", model,
           "--output-format", "text",
-          "--approval-mode", "plan",
           "-p", prompt,
         ],
         {
