@@ -56,7 +56,7 @@ export function validateCommitMessage(msg: string): ValidationResult {
   }
 
   // Critical: No markdown
-  if (/```/.test(msg) || /\*\*/.test(msg)) {
+  if (/```/.test(msg) || /\*\*[^*]+\*\*/.test(msg)) {
     errors.push({
       rule: "no-markdown",
       severity: "critical",
