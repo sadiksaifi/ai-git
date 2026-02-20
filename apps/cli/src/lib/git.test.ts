@@ -17,10 +17,9 @@ describe("getRecentCommits", () => {
     expect(commits.length).toBeLessThanOrEqual(2);
   });
 
-  test("returns empty array on error", async () => {
-    // Should not throw, just return empty
+  test("returns empty array for n=0", async () => {
     const commits = await getRecentCommits(0);
-    expect(Array.isArray(commits)).toBe(true);
+    expect(commits).toEqual([]);
   });
 });
 
