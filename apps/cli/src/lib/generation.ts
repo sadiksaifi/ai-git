@@ -197,7 +197,7 @@ export async function runGenerationLoop(
         if (slowThresholdMs > 0) {
           slowWarningTimer = setTimeout(() => {
             s.message(
-              `Still generating with ${modelName}... Speed depends on your selected provider and model.`
+              pc.yellow(`Still generating with ${modelName}... Speed depends on your selected provider and model.`)
             );
           }, slowThresholdMs);
         }
