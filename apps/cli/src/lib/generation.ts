@@ -118,7 +118,7 @@ export function resolveSlowWarningThreshold(ctx: GenerationContext): number {
 /** Log a commit error with appropriate formatting based on error type. */
 function logCommitError(err: unknown): void {
   if (err && typeof err === "object" && "stderr" in err) {
-    console.error(pc.dim(String((err as any).stderr).trim()));
+    console.error(pc.dim(String((err as { stderr: unknown }).stderr).trim()));
   } else if (err instanceof Error) {
     console.error(pc.dim(err.message));
   } else {
@@ -488,16 +488,21 @@ export async function runGenerationLoop(
         });
         await editProc.exited;
 
-        const finalMsg = await Bun.file(TEMP_MSG_FILE).text();
-        if (finalMsg.trim()) {
-          lastGeneratedMessage = finalMsg.trim();
+        const trimmedMsg = (await Bun.file(TEMP_MSG_FILE).text()).trim();
+        if (trimmedMsg) {
+          lastGeneratedMessage = trimmedMsg;
           editedManually = true;
           autoRetries = 3; // prevent auto-retry from discarding a manual edit
-          state = { type: "validate", message: finalMsg.trim() };
+          state = { type: "validate", message: trimmedMsg };
         } else {
           state = { type: "done", result: { message: "", committed: false, aborted: true } };
         }
         break;
+      }
+
+      default: {
+        const _exhaustive: never = state;
+        throw new Error(`Unhandled state: ${(_exhaustive as GenerationState).type}`);
       }
     }
   }
