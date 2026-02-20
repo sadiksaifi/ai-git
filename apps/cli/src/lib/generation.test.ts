@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import { DEFAULT_SLOW_WARNING_THRESHOLD_MS } from "../config.ts";
-import type { GenerationContext } from "./generation.ts";
+import { createSlowWarningTimer, type GenerationContext } from "./generation.ts";
 
 describe("GenerationContext slow warning", () => {
   test("DEFAULT_SLOW_WARNING_THRESHOLD_MS is a positive number", () => {
@@ -17,9 +17,7 @@ describe("GenerationContext slow warning", () => {
   test("slowWarningThresholdMs of 0 disables the warning", () => {
     const ctx: Partial<GenerationContext> = { slowWarningThresholdMs: 0 };
     const threshold = ctx.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS;
-    // 0 is falsy but should be respected as "disabled"
     expect(threshold).toBe(0);
-    // The generation code checks `slowThresholdMs > 0` before setting the timer
     expect(threshold > 0).toBe(false);
   });
 
@@ -28,31 +26,45 @@ describe("GenerationContext slow warning", () => {
     const threshold = ctx.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS;
     expect(threshold).toBe(10_000);
   });
+});
 
-  test("timer fires after threshold and can be cleared", async () => {
-    let warningFired = false;
-    const threshold = 50; // 50ms for test speed
-
-    const timer = setTimeout(() => {
-      warningFired = true;
-    }, threshold);
-
-    // Clear before it fires
-    clearTimeout(timer);
-    await new Promise((r) => setTimeout(r, threshold + 20));
-    expect(warningFired).toBe(false);
+describe("createSlowWarningTimer", () => {
+  test("returns no-op cleanup when threshold is 0", async () => {
+    let called = false;
+    const cleanup = createSlowWarningTimer(0, () => { called = true; });
+    await new Promise((r) => setTimeout(r, 30));
+    cleanup();
+    expect(called).toBe(false);
   });
 
-  test("timer fires if not cleared", async () => {
-    let warningFired = false;
-    const threshold = 50;
+  test("returns no-op cleanup when threshold is negative", async () => {
+    let called = false;
+    const cleanup = createSlowWarningTimer(-1, () => { called = true; });
+    await new Promise((r) => setTimeout(r, 30));
+    cleanup();
+    expect(called).toBe(false);
+  });
 
-    const timer = setTimeout(() => {
-      warningFired = true;
-    }, threshold);
+  test("fires callback after threshold elapses", async () => {
+    let called = false;
+    const cleanup = createSlowWarningTimer(50, () => { called = true; });
+    await new Promise((r) => setTimeout(r, 80));
+    expect(called).toBe(true);
+    cleanup(); // safe to call after fire
+  });
 
-    await new Promise((r) => setTimeout(r, threshold + 20));
-    expect(warningFired).toBe(true);
-    clearTimeout(timer); // cleanup
+  test("cleanup prevents callback from firing", async () => {
+    let called = false;
+    const cleanup = createSlowWarningTimer(50, () => { called = true; });
+    cleanup(); // cancel before threshold
+    await new Promise((r) => setTimeout(r, 80));
+    expect(called).toBe(false);
+  });
+
+  test("cleanup is idempotent", () => {
+    const cleanup = createSlowWarningTimer(5000, () => {});
+    cleanup();
+    cleanup(); // second call should not throw
+    cleanup();
   });
 });

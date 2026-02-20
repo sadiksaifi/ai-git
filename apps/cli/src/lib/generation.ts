@@ -84,6 +84,20 @@ export interface GenerationResult {
 }
 
 /**
+ * Create a timer that fires a warning callback after `thresholdMs`.
+ * Returns a cleanup function that cancels the timer.
+ * If thresholdMs <= 0, no timer is created and cleanup is a no-op.
+ */
+export function createSlowWarningTimer(
+  thresholdMs: number,
+  onSlow: () => void,
+): () => void {
+  if (thresholdMs <= 0) return () => {};
+  const timer = setTimeout(onSlow, thresholdMs);
+  return () => clearTimeout(timer);
+}
+
+/**
  * Run the AI generation loop.
  * Generates commit messages, validates them, and handles user interactions.
  */
@@ -191,22 +205,19 @@ export async function runGenerationLoop(
 
       // Call AI
       let rawMsg = "";
-      let slowWarningTimer: ReturnType<typeof setTimeout> | undefined;
+
+      const cancelSlowWarning = createSlowWarningTimer(slowThresholdMs, () => {
+        s.message(
+          pc.yellow(`Still generating with ${modelName}... Speed depends on your selected provider and model.`)
+        );
+      });
 
       try {
-        if (slowThresholdMs > 0) {
-          slowWarningTimer = setTimeout(() => {
-            s.message(
-              pc.yellow(`Still generating with ${modelName}... Speed depends on your selected provider and model.`)
-            );
-          }, slowThresholdMs);
-        }
-
         rawMsg = await adapter.invoke({ model, system: systemPromptStr, prompt: userPrompt });
-        clearTimeout(slowWarningTimer);
+        cancelSlowWarning();
         s.stop("Message generated");
       } catch (e) {
-        clearTimeout(slowWarningTimer);
+        cancelSlowWarning();
         s.stop("Generation failed");
         console.error("");
         let errorMessage = String(e);
