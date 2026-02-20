@@ -126,9 +126,7 @@ export async function loadUserConfig(): Promise<UserConfig | undefined> {
         // best-effort: backup failure shouldn't block config load
       }
       saveUserConfig(config).catch(() => {});
-      if (backupPath) {
-        pendingMigrationNotice = { changes, backupPath };
-      }
+      pendingMigrationNotice = { changes, backupPath: backupPath || undefined };
     }
 
     return config;

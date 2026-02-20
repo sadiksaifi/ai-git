@@ -93,7 +93,7 @@ export const migrations: ConfigMigration[] = [
 /** Data needed to display a deferred migration notice. */
 export interface MigrationNotice {
   changes: string[];
-  backupPath: string;
+  backupPath?: string;
 }
 
 export interface MigrationResult {
@@ -138,15 +138,16 @@ export async function backupConfigFile(configPath: string): Promise<string> {
 
 /**
  * Display a migration notice to the user.
- * Shows what changed and where the backup was saved.
+ * Shows what changed and where the backup was saved (if available).
  * Reusable for any future migration that modifies user files.
  *
  * @param changes - Human-readable list of migrations applied
- * @param backupPath - Path to the backup file created
+ * @param backupPath - Path to the backup file created (omitted if backup failed)
  */
-export function showMigrationNotice(changes: string[], backupPath: string): void {
+export function showMigrationNotice(changes: string[], backupPath?: string): void {
   const bullets = changes.map((c) => `  ${pc.yellow("•")} ${c}`).join("\n");
-  log.warn(
-    `Config migrated:\n${bullets}\n  Backup saved to ${pc.dim(backupPath)}`
-  );
+  const backupLine = backupPath
+    ? `\n  Backup saved to ${pc.dim(backupPath)}`
+    : "";
+  log.warn(`Config migrated:\n${bullets}${backupLine}`);
 }
