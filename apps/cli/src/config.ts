@@ -310,6 +310,9 @@ export async function resolveConfigAsync(
   if (cliOptions.defaults !== undefined) {
     resolved.defaults = { ...resolved.defaults, ...cliOptions.defaults };
   }
+  if (cliOptions.slowWarningThresholdMs !== undefined) {
+    resolved.slowWarningThresholdMs = cliOptions.slowWarningThresholdMs;
+  }
 
   return resolved;
 }
