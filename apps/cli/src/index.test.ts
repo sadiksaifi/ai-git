@@ -346,5 +346,6 @@ describe("ai-git CLI", () => {
     // Config validation should fail because haiku-high is not in the registry,
     // triggering the setup wizard instead of proceeding normally
     expect(result.stdout).toContain("Select AI provider");
+    expect(result.exitCode).toBe(0);
   });
 });

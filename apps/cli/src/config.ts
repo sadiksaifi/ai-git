@@ -125,10 +125,10 @@ export async function loadProjectConfig(): Promise<UserConfig | undefined> {
     const content = await file.text();
     const raw = JSON.parse(content);
 
-    const { config, changed } = migrateConfig(raw);
-    if (changed) {
-      await saveProjectConfig(config);
-    }
+    // Migrate in-memory only — don't auto-save project configs since
+    // .ai-git.json is typically committed and auto-rewriting would
+    // produce unexpected diffs for team members.
+    const { config } = migrateConfig(raw);
 
     return config;
   } catch {
