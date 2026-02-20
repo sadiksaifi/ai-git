@@ -10,7 +10,9 @@ import type { Mode } from "../types.ts";
 export interface InvokeOptions {
   /** Model identifier to use */
   model: string;
-  /** The prompt/input text to send to the AI */
+  /** System instructions (rules, role, examples) */
+  system: string;
+  /** User content (context, diff, refinement instructions) */
   prompt: string;
 }
 

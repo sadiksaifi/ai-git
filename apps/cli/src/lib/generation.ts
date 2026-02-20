@@ -7,11 +7,11 @@ import {
   log,
 } from "@clack/prompts";
 import pc from "picocolors";
-import { encode } from "@toon-format/toon";
-import { buildSystemPrompt } from "../prompt.ts";
+import { buildSystemPrompt, buildUserPrompt } from "../prompt.ts";
 import type { PromptCustomization } from "../config.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
-import { getStagedDiff, getBranchName, setBranchName, commit, type CommitResult } from "./git.ts";
+import { getStagedDiff, getBranchName, setBranchName, commit, getRecentCommits, getStagedFileList, type CommitResult } from "./git.ts";
+import { validateCommitMessage, buildRetryContext } from "./validation.ts";
 import { wrapText } from "./utils.ts";
 import { TEMP_MSG_FILE } from "./paths.ts";
 
@@ -91,7 +91,7 @@ export async function runGenerationLoop(
   const { adapter, model, modelName, options, promptCustomization } = ctx;
 
   // Build the system prompt with any user customizations
-  const systemPrompt = buildSystemPrompt(promptCustomization);
+  const systemPromptStr = buildSystemPrompt(promptCustomization);
 
   let loop = true;
   let autoRetries = 0;
@@ -137,56 +137,59 @@ export async function runGenerationLoop(
 
       s.start(`Analyzing changes with ${modelName}...`);
 
-      // Get staged diff
-      const diffOutput = await getStagedDiff();
+      // Gather context
+      const [diffOutput, recentCommits, stagedFileList] = await Promise.all([
+        getStagedDiff(),
+        getRecentCommits(5),
+        getStagedFileList(),
+      ]);
 
-      // Build dynamic context
-      let dynamicContext = "";
-      if (branchName) {
-        dynamicContext += `# CURRENT BRANCH NAME\n${branchName}\n\n`;
-      }
-      if (options.hint) {
-        dynamicContext += `# USER HINT\n${options.hint}\n\n`;
-      }
-      if (generationErrors.length > 0) {
-        dynamicContext += `# PREVIOUS FAILED ATTEMPTS ERRORS\n${generationErrors.join(
-          "\n"
-        )}\n\nYOU MUST FIX THIS. Shorten the header by:\n- Use shorter scope (auth not authentication)\n- Use shorter verbs (add not implement)\n- Move details to body\n- Drop unnecessary words\n\n`;
+      // Build error context if retrying
+      let errorContext: string | undefined;
+      if (generationErrors.length > 0 && lastGeneratedMessage) {
+        const lastResult = validateCommitMessage(lastGeneratedMessage);
+        errorContext = buildRetryContext(lastResult.errors, lastGeneratedMessage);
       }
 
-      // Inject refinements if available
-      if (lastGeneratedMessage && userRefinements.length > 0) {
-        dynamicContext += `# PREVIOUS GENERATED MESSAGE\n${lastGeneratedMessage}\n\n`;
-        dynamicContext += `# USER REFINEMENT INSTRUCTIONS\n${userRefinements.join(
-          "\n"
-        )}\n\nIMPORTANT: You must still strictly adhere to the Conventional Commits schema and the 50-character header limit. If the user asks for a longer header, ignore that part of the request and keep it under 50 characters.\n\n`;
-      }
-
-      const fullInput = `${encode(
-        systemPrompt
-      )}\n\n${dynamicContext}\n# GIT DIFF OUTPUT\n${diffOutput}`;
+      // Build user prompt with all dynamic context
+      const userPrompt = buildUserPrompt({
+        branchName: branchName!,
+        hint: options.hint,
+        recentCommits,
+        stagedFileList,
+        errors: errorContext,
+        refinements: lastGeneratedMessage && userRefinements.length > 0
+          ? { lastMessage: lastGeneratedMessage, instructions: userRefinements }
+          : undefined,
+        diff: diffOutput,
+      });
 
       // Handle dry run
       if (options.dryRun) {
         s.stop("Dry run complete");
-        
+
         const width = process.stdout.columns || 80;
         const border = pc.dim("─".repeat(width));
-        
+
         console.log("");
-        console.log(pc.bgCyan(pc.black(" DRY RUN: FULL AI PROMPT ")));
+        console.log(pc.bgCyan(pc.black(" DRY RUN: SYSTEM PROMPT ")));
         console.log(border);
-        console.log(wrapText(fullInput, width));
+        console.log(wrapText(systemPromptStr, width));
         console.log(border);
         console.log("");
-        
+        console.log(pc.bgCyan(pc.black(" DRY RUN: USER PROMPT ")));
+        console.log(border);
+        console.log(wrapText(userPrompt, width));
+        console.log(border);
+        console.log("");
+
         return { message: "", committed: false, aborted: false };
       }
 
       // Call AI
       let rawMsg = "";
       try {
-        rawMsg = await adapter.invoke({ model, prompt: fullInput });
+        rawMsg = await adapter.invoke({ model, system: systemPromptStr, prompt: userPrompt });
         s.stop("Message generated");
       } catch (e) {
         s.stop("Generation failed");
@@ -205,7 +208,6 @@ export async function runGenerationLoop(
           console.error(pc.yellow("This usually means the model ID is incorrect or you don't have access to it."));
           console.error(pc.dim(`Try running 'ai-git --setup' to select a different model.`));
         } else if (isApiMode) {
-          // For API providers, clearly indicate the error is from the provider
           console.error(pc.red(`${providerName} API Error:`));
           console.error(pc.yellow(errorMessage));
           console.error("");
@@ -231,28 +233,45 @@ export async function runGenerationLoop(
         process.exit(1);
       }
 
-      // Validation: Check Header Length
-      const headerLine = cleanMsg.split("\n")[0] || "";
-      if (headerLine.length > 50) {
+      // Multi-stage validation
+      const validationResult = validateCommitMessage(cleanMsg);
+
+      // Handle critical errors (auto-retry)
+      if (!validationResult.valid) {
         if (autoRetries < 3) {
           autoRetries++;
-          const err = `Header too long (${headerLine.length} chars). Max 50.`;
-          generationErrors.push(err);
+          const criticalErrors = validationResult.errors
+            .filter((e) => e.severity === "critical")
+            .map((e) => e.message);
+          lastGeneratedMessage = cleanMsg;
+          generationErrors = criticalErrors;
           log.warn(
             pc.yellow(
-              `Generated header too long (${headerLine.length} chars). Retrying (${autoRetries}/3)...`
+              `Validation failed: ${criticalErrors.join("; ")}. Retrying (${autoRetries}/3)...`
             )
           );
           continue;
         } else {
           log.warn(
             pc.yellow(
-              `Warning: Header exceeds 50 chars (${headerLine.length}). Auto-fix retries exhausted.`
+              `Validation issues persist after 3 retries. Showing result with warnings.`
             )
           );
         }
-      } else {
-        // Reset on success
+      }
+
+      // Show important/minor warnings
+      const warnings = validationResult.errors.filter(
+        (e) => e.severity === "important" || e.severity === "minor"
+      );
+      if (warnings.length > 0) {
+        for (const w of warnings) {
+          log.warn(pc.yellow(`${w.severity}: ${w.message} — ${w.suggestion}`));
+        }
+      }
+
+      // Reset on success
+      if (validationResult.valid) {
         autoRetries = 0;
         generationErrors = [];
       }

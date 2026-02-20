@@ -22,26 +22,42 @@ function parseModelId(virtualId: string): {
  * Codex CLI adapter.
  * Handles invocation of the `codex` CLI tool.
  *
- * Virtual model IDs encode reasoning effort (e.g. "gpt-5.3-codex-high").
- * The adapter parses the ID, then invokes:
- *   codex --model <base> -c model_reasoning_effort=<effort> --yolo exec <prompt>
+ * System prompt injection uses `-c developer_instructions=...` which injects
+ * at the `developer` authority level (high priority, below system prompt).
+ *
+ * CLI Pattern:
+ *   codex --model <base> -a never --disable shell_tool \
+ *     -c model_reasoning_effort=<effort> -c 'developer_instructions=<system>' \
+ *     -c 'web_search="disabled"' exec --sandbox read-only --ephemeral "<prompt>"
+ *
+ * Top-level options (before exec):
+ * - `-a never` prevents interactive approval prompts
+ * - `--disable shell_tool` removes shell tool from model's available tools
+ * - `-c web_search="disabled"` disables web search
+ *
+ * Exec subcommand options:
+ * - `--sandbox read-only` enforces OS-level read-only filesystem
+ * - `--ephemeral` skips session persistence
  */
 export const codexAdapter: CLIProviderAdapter = {
   providerId: "codex",
   mode: "cli",
   binary: "codex",
 
-  async invoke({ model, prompt }: InvokeOptions): Promise<string> {
+  async invoke({ model, system, prompt }: InvokeOptions): Promise<string> {
     const { model: baseModel, effort } = parseModelId(model);
     const proc = Bun.spawn(
       [
         "codex",
-        "--model",
-        baseModel,
-        "-c",
-        `model_reasoning_effort=${effort}`,
-        "--yolo",
+        "--model", baseModel,
+        "-a", "never",
+        "--disable", "shell_tool",
+        "-c", `model_reasoning_effort=${effort}`,
+        "-c", `developer_instructions=${system}`,
+        "-c", `web_search="disabled"`,
         "exec",
+        "--sandbox", "read-only",
+        "--ephemeral",
         prompt,
       ],
       {

@@ -74,6 +74,14 @@ function getModelDisplayName(modelId: string): string {
 }
 
 /**
+ * Check if a model ID is a reasoning model that doesn't support temperature.
+ * Covers o-series (o1, o3, o4) and GPT-5 family (hybrid reasoning).
+ */
+function isReasoningModel(modelId: string): boolean {
+  return /^(o1|o3|o4|gpt-5)/.test(modelId);
+}
+
+/**
  * OpenAI API adapter using Vercel AI SDK.
  */
 export const openAIAdapter: APIProviderAdapter = {
@@ -81,16 +89,25 @@ export const openAIAdapter: APIProviderAdapter = {
   mode: "api",
   baseUrl: BASE_URL,
 
-  async invoke({ model, prompt }: InvokeOptions): Promise<string> {
+  async invoke({ model, system, prompt }: InvokeOptions): Promise<string> {
     const apiKey = await getApiKey("openai");
 
-    const openai = createOpenAI({
-      apiKey,
-    });
+    const openai = createOpenAI({ apiKey });
 
     const { text } = await generateText({
       model: openai(model),
+      system,
       prompt,
+      maxOutputTokens: 1024,
+      timeout: 60_000,
+      maxRetries: 2,
+      ...(isReasoningModel(model) ? {} : { temperature: 0 }),
+      providerOptions: {
+        openai: {
+          ...(isReasoningModel(model) ? { reasoningEffort: "low" as const } : {}),
+          store: false,
+        },
+      },
     });
 
     return text;

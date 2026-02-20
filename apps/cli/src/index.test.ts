@@ -191,9 +191,10 @@ describe("ai-git CLI", () => {
       pathEnv: noProviderPath,
     });
 
-    expect(result.stdout).toContain("DRY RUN: FULL AI PROMPT");
+    expect(result.stdout).toContain("DRY RUN: SYSTEM PROMPT");
+    expect(result.stdout).toContain("DRY RUN: USER PROMPT");
     expect(result.stdout).toContain(
-      'Role: Git Commit Message Generator (Conventional Commits v1.0.0)'
+      'You generate git commit messages following Conventional Commits v1.0.0.'
     );
     expect(result.stderr).not.toContain("CLI is not installed");
     expect(result.exitCode).toBe(0);

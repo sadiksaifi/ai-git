@@ -1,35 +1,80 @@
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { randomBytes } from "node:crypto";
+import { unlink } from "node:fs/promises";
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
 
 /**
  * Gemini CLI adapter.
  * Handles invocation of the `gemini` CLI tool.
  *
- * CLI Pattern: gemini --model <model> <input>
+ * System prompt injection uses GEMINI_SYSTEM_MD environment variable
+ * pointing to a temporary file. This is the only mechanism that places
+ * content in the actual system message (not conversation context).
+ *
+ * CLI Pattern:
+ *   GEMINI_SYSTEM_MD=/tmp/ai-git-system-xxx.md \
+ *     gemini --model <model> --output-format text --sandbox -e none -p "<prompt>"
+ *
+ * - `-p <prompt>` runs in non-interactive (headless) mode with the given prompt
+ * - `--output-format text` ensures clean text output
+ * - `--sandbox` enables sandboxed execution for tool isolation
+ * - `-e none` disables all extensions (pure text generation)
+ * - No `--allowed-tools` means no tools auto-approved; headless mode can't
+ *   prompt for confirmation, so tools are effectively blocked
+ * - GEMINI_SYSTEM_MD replaces the entire default system prompt
  */
 export const geminiCliAdapter: CLIProviderAdapter = {
   providerId: "gemini-cli",
   mode: "cli",
   binary: "gemini",
 
-  async invoke({ model, prompt }: InvokeOptions): Promise<string> {
-    const proc = Bun.spawn(["gemini", "--model", model, prompt], {
-      stdout: "pipe",
-      stderr: "pipe",
-    });
+  async invoke({ model, system, prompt }: InvokeOptions): Promise<string> {
+    // Write system prompt to temp file for GEMINI_SYSTEM_MD
+    const tmpFile = join(
+      tmpdir(),
+      `ai-git-system-${Date.now()}-${randomBytes(4).toString("hex")}.md`
+    );
 
-    const [stdout, stderr] = await Promise.all([
-      new Response(proc.stdout).text(),
-      new Response(proc.stderr).text(),
-    ]);
+    try {
+      await Bun.write(tmpFile, system);
 
-    const exitCode = await proc.exited;
+      const proc = Bun.spawn(
+        [
+          "gemini",
+          "--model", model,
+          "--output-format", "text",
+          "--sandbox",
+          "-e", "none",
+          "-p", prompt,
+        ],
+        {
+          stdout: "pipe",
+          stderr: "pipe",
+          env: {
+            ...process.env,
+            GEMINI_SYSTEM_MD: tmpFile,
+          },
+        }
+      );
 
-    if (exitCode !== 0) {
-      const errorMessage = stderr.trim() || stdout.trim() || "Unknown error";
-      throw new Error(`Gemini CLI error (exit code ${exitCode}):\n${errorMessage}`);
+      const [stdout, stderr] = await Promise.all([
+        new Response(proc.stdout).text(),
+        new Response(proc.stderr).text(),
+      ]);
+
+      const exitCode = await proc.exited;
+
+      if (exitCode !== 0) {
+        const errorMessage = stderr.trim() || stdout.trim() || "Unknown error";
+        throw new Error(`Gemini CLI error (exit code ${exitCode}):\n${errorMessage}`);
+      }
+
+      return stdout;
+    } finally {
+      // Cleanup temp file — silently ignore errors
+      await unlink(tmpFile).catch(() => {});
     }
-
-    return stdout;
   },
 
   async checkAvailable(): Promise<boolean> {

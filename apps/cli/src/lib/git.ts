@@ -112,6 +112,31 @@ export async function getStagedDiff(): Promise<string> {
 }
 
 /**
+ * Get last N commit subjects for style context.
+ * Returns empty array if no commits exist or on error.
+ */
+export async function getRecentCommits(n: number = 5): Promise<string[]> {
+  try {
+    const output = await $`git log -${n} --format=%s`.text();
+    return output.trim().split("\n").filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Get compact staged file list with status (A/M/D/R).
+ * Returns empty string if nothing is staged.
+ */
+export async function getStagedFileList(): Promise<string> {
+  try {
+    return (await $`git diff --staged --name-status -- . ${LOCKFILES}`.text()).trim();
+  } catch {
+    return "";
+  }
+}
+
+/**
  * Stage specific files.
  */
 export async function stageFiles(files: string[]): Promise<void> {

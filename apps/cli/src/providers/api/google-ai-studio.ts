@@ -44,16 +44,31 @@ export const googleAiStudioAdapter: APIProviderAdapter = {
   mode: "api",
   baseUrl: BASE_URL,
 
-  async invoke({ model, prompt }: InvokeOptions): Promise<string> {
+  async invoke({ model, system, prompt }: InvokeOptions): Promise<string> {
     const apiKey = await getApiKey("google-ai-studio");
 
-    const google = createGoogleGenerativeAI({
-      apiKey,
-    });
+    const google = createGoogleGenerativeAI({ apiKey });
 
     const { text } = await generateText({
       model: google(model),
+      system,
       prompt,
+      temperature: 0,
+      maxOutputTokens: 1024,
+      timeout: 60_000,
+      maxRetries: 2,
+      // Disable safety filters — code diffs frequently trigger false positives
+      // (e.g. security fix descriptions flagged as "dangerous content")
+      providerOptions: {
+        google: {
+          safetySettings: [
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+          ],
+        },
+      },
     });
 
     return text;

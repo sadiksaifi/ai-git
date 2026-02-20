@@ -55,16 +55,19 @@ export const anthropicAdapter: APIProviderAdapter = {
   mode: "api",
   baseUrl: BASE_URL,
 
-  async invoke({ model, prompt }: InvokeOptions): Promise<string> {
+  async invoke({ model, system, prompt }: InvokeOptions): Promise<string> {
     const apiKey = await getApiKey("anthropic");
 
-    const anthropic = createAnthropic({
-      apiKey,
-    });
+    const anthropic = createAnthropic({ apiKey });
 
     const { text } = await generateText({
       model: anthropic(model),
+      system,
       prompt,
+      temperature: 0,
+      maxOutputTokens: 1024,
+      timeout: 60_000,
+      maxRetries: 2,
     });
 
     return text;
