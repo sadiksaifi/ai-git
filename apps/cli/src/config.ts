@@ -2,6 +2,7 @@ import * as path from "node:path";
 import { getProviderById } from "./providers/registry.ts";
 import { getRepoRoot } from "./lib/git.ts";
 import { CONFIG_DIR, CONFIG_FILE } from "./lib/paths.ts";
+import { migrateConfig, backupConfigFile, showMigrationNotice, type MigrationNotice } from "./lib/migration.ts";
 
 // ==============================================================================
 // CONFIG FILE MANAGEMENT
@@ -84,9 +85,27 @@ export async function getProjectConfigPath(): Promise<string> {
   return path.join(repoRoot || process.cwd(), ".ai-git.json");
 }
 
+/** Pending migration notice to display after the welcome screen. */
+let pendingMigrationNotice: MigrationNotice | null = null;
+
+/**
+ * Show any pending migration notice and clear it.
+ * Call this after the welcome screen renders so `console.clear()` doesn't wipe it.
+ */
+export function flushMigrationNotice(): void {
+  if (pendingMigrationNotice) {
+    showMigrationNotice(pendingMigrationNotice.changes, pendingMigrationNotice.backupPath);
+    pendingMigrationNotice = null;
+  }
+}
+
 /**
  * Load user configuration from the config file.
  * Returns undefined if the file doesn't exist or is invalid.
+ *
+ * If migration is needed, a backup is created and the config is saved.
+ * The migration notice is deferred — call `flushMigrationNotice()` after
+ * the welcome screen to display it.
  */
 export async function loadUserConfig(): Promise<UserConfig | undefined> {
   try {
@@ -96,9 +115,22 @@ export async function loadUserConfig(): Promise<UserConfig | undefined> {
       return undefined;
     }
     const content = await file.text();
-    return JSON.parse(content) as UserConfig;
+    const raw = JSON.parse(content);
+
+    const { config, changed, changes } = migrateConfig(raw);
+    if (changed) {
+      let backupPath = "";
+      try {
+        backupPath = await backupConfigFile(CONFIG_FILE);
+      } catch {
+        // best-effort: backup failure shouldn't block config load
+      }
+      saveUserConfig(config).catch(() => {});
+      pendingMigrationNotice = { changes, backupPath: backupPath || undefined };
+    }
+
+    return config;
   } catch {
-    // Config file doesn't exist or is invalid JSON
     return undefined;
   }
 }
@@ -116,9 +148,15 @@ export async function loadProjectConfig(): Promise<UserConfig | undefined> {
       return undefined;
     }
     const content = await file.text();
-    return JSON.parse(content) as UserConfig;
+    const raw = JSON.parse(content);
+
+    // Migrate in-memory only — don't auto-save project configs since
+    // .ai-git.json is typically committed and auto-rewriting would
+    // produce unexpected diffs for team members.
+    const { config } = migrateConfig(raw);
+
+    return config;
   } catch {
-    // Config file doesn't exist or is invalid JSON
     return undefined;
   }
 }
@@ -132,20 +170,16 @@ const CONFIG_SCHEMA_URL =
 /**
  * Save user configuration to the config file.
  * Includes $schema for editor autocomplete/validation support.
- * Removes legacy 'mode' property if present (migration).
  */
 export async function saveUserConfig(config: UserConfig): Promise<void> {
   // Ensure config directory exists
   const { mkdir } = await import("node:fs/promises");
   await mkdir(CONFIG_DIR, { recursive: true });
 
-  // Remove legacy 'mode' property if present (migration)
-  const { mode: _legacyMode, ...cleanConfig } = config as UserConfig & { mode?: unknown };
-
   // Add $schema at the top for editor support
   const configWithSchema = {
+    ...config,
     $schema: CONFIG_SCHEMA_URL,
-    ...cleanConfig,
   };
 
   await Bun.write(CONFIG_FILE, JSON.stringify(configWithSchema, null, 2));
@@ -154,16 +188,12 @@ export async function saveUserConfig(config: UserConfig): Promise<void> {
 /**
  * Save project configuration to the project config file.
  * Includes $schema for editor autocomplete/validation support.
- * Removes legacy 'mode' property if present (migration).
  */
 export async function saveProjectConfig(config: UserConfig): Promise<void> {
-  // Remove legacy 'mode' property if present (migration)
-  const { mode: _legacyMode, ...cleanConfig } = config as UserConfig & { mode?: unknown };
-
   // Add $schema at the top for editor support
   const configWithSchema = {
+    ...config,
     $schema: CONFIG_SCHEMA_URL,
-    ...cleanConfig,
   };
 
   const configPath = await getProjectConfigPath();

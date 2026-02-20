@@ -1,5 +1,23 @@
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
 
+export type ClaudeEffortLevel = "low" | "medium" | "high";
+
+/**
+ * Parse a virtual Claude model ID into its base model and optional effort level.
+ * e.g. "sonnet-high" → { model: "sonnet", effort: "high" }
+ * Falls back to using the full ID as model with no effort.
+ */
+export function parseClaudeModelId(virtualId: string): {
+  model: string;
+  effort?: ClaudeEffortLevel;
+} {
+  const match = virtualId.match(/^(.+)-(low|medium|high)$/);
+  if (match?.[1] && match[2]) {
+    return { model: match[1], effort: match[2] as ClaudeEffortLevel };
+  }
+  return { model: virtualId };
+}
+
 /**
  * Claude Code CLI adapter.
  * Handles invocation of the `claude` CLI tool.
@@ -22,23 +40,29 @@ export const claudeCodeAdapter: CLIProviderAdapter = {
   binary: "claude",
 
   async invoke({ model, system, prompt }: InvokeOptions): Promise<string> {
-    const proc = Bun.spawn(
-      [
-        "claude",
-        "-p",
-        "--model", model,
-        "--system-prompt", system,
-        "--tools", "",
-        "--no-session-persistence",
-        "--disable-slash-commands",
-        "--strict-mcp-config",
-        prompt,
-      ],
-      {
-        stdout: "pipe",
-        stderr: "pipe",
-      }
-    );
+    const { model: baseModel, effort } = parseClaudeModelId(model);
+
+    const args = [
+      "claude",
+      "-p",
+      "--model", baseModel,
+      "--system-prompt", system,
+      "--tools", "",
+      "--no-session-persistence",
+      "--disable-slash-commands",
+      "--strict-mcp-config",
+    ];
+
+    if (effort) {
+      args.push("--effort", effort);
+    }
+
+    args.push(prompt);
+
+    const proc = Bun.spawn(args, {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
 
     const [stdout, stderr] = await Promise.all([
       new Response(proc.stdout).text(),

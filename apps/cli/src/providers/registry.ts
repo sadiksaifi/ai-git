@@ -54,9 +54,16 @@ export const PROVIDERS: ProviderDefinition[] = [
     mode: "cli",
     binary: "claude",
     models: [
-      { id: "sonnet", name: "Claude Sonnet", isDefault: true },
+      // sonnet (low, medium, high)
+      { id: "sonnet-low", name: "Claude Sonnet (low)", isDefault: true },
+      { id: "sonnet-medium", name: "Claude Sonnet (medium)" },
+      { id: "sonnet-high", name: "Claude Sonnet (high)" },
+      // opus (low, medium, high)
+      { id: "opus-low", name: "Claude Opus (low)" },
+      { id: "opus-medium", name: "Claude Opus (medium)" },
+      { id: "opus-high", name: "Claude Opus (high)" },
+      // doesn't have an effort level
       { id: "haiku", name: "Claude Haiku" },
-      { id: "opus", name: "Claude Opus" },
     ],
   },
   {

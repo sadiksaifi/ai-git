@@ -151,8 +151,8 @@ async function main(): Promise<void> {
 
   const staticCliExamples = [
     "haiku",
-    "sonnet",
-    "opus",
+    "sonnet-low",
+    "opus-low",
     "gemini-3-flash-preview",
     "gpt-5.3-codex",
     "gpt-5.2-codex",

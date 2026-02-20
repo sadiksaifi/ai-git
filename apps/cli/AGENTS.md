@@ -106,6 +106,19 @@ Current coverage includes:
 5. Refresh and commit snapshot data with `bun run sync:model-catalog` when needed
 6. Update `schema.json` for config validation
 
+## Config Migrations
+
+Config migrations live in `src/lib/migration.ts` as a declarative registry.
+Each migration is a self-contained `ConfigMigration` object in the `migrations` array.
+
+To add a new migration:
+
+1. Append a `ConfigMigration` object to the `migrations` array in `src/lib/migration.ts`
+2. Add tests in `src/lib/migration.test.ts`
+
+Migrations must be idempotent (return `null` if they don't apply).
+Backup + user notification is handled automatically by the migration engine in `config.ts`.
+
 ## Config Priority
 
 CLI flags > Project config (`.ai-git.json`) > Global config (`~/.config/ai-git/config.json`) > Built-in defaults
