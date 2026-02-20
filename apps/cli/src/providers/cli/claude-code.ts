@@ -4,30 +4,30 @@ import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
  * Claude Code CLI adapter.
  * Handles invocation of the `claude` CLI tool.
  *
- * CLI Pattern: claude -p --model <model> --system-prompt "<system>" "<prompt>"
- * - `-p` (--print) enables non-interactive mode
- * - `--model` specifies the model to use
- * - `--system-prompt` sets the system instructions
- * - Main prompt is passed as positional argument
+ * CLI Pattern:
+ *   claude -p --model <model> --system-prompt "<system>" --tools "" --no-session-persistence "<prompt>"
+ *
+ * - `-p` enables non-interactive mode
+ * - `--system-prompt` replaces the entire default system prompt with our rules
+ * - `--tools ""` disables all built-in tools (pure text generation)
+ * - `--no-session-persistence` skips writing session files
+ * - Positional argument is the user content (context + diff)
  */
 export const claudeCodeAdapter: CLIProviderAdapter = {
   providerId: "claude-code",
   mode: "cli",
   binary: "claude",
 
-  async invoke({ model, prompt }: InvokeOptions): Promise<string> {
-    // Claude Code CLI uses -p for non-interactive output
-    // Pass the entire input as system prompt to ensure it follows instructions
-    // The main prompt just asks to generate the message
+  async invoke({ model, system, prompt }: InvokeOptions): Promise<string> {
     const proc = Bun.spawn(
       [
         "claude",
         "-p",
-        "--model",
-        model,
-        "--system-prompt",
+        "--model", model,
+        "--system-prompt", system,
+        "--tools", "",
+        "--no-session-persistence",
         prompt,
-        "Generate the commit message now. Output ONLY the commit message, nothing else.",
       ],
       {
         stdout: "pipe",
