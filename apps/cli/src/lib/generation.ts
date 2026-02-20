@@ -436,7 +436,7 @@ export async function runGenerationLoop(
           break;
         }
 
-        const trimmed = (instruction as string).trim();
+        const trimmed = ((instruction as string) ?? "").trim();
         if (trimmed) {
           userRefinements.push(trimmed);
         } else {
