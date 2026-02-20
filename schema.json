@@ -45,9 +45,10 @@
       "type": "string",
       "description": "Model ID to use for the selected provider.",
       "examples": [
+        "sonnet-low",
+        "sonnet-high",
+        "opus-low",
         "haiku",
-        "sonnet",
-        "opus",
         "gemini-3-flash-preview",
         "gpt-5.3-codex-low",
         "gpt-5.2-codex-high",
@@ -148,11 +149,15 @@
         "properties": {
           "model": {
             "enum": [
-              "haiku",
-              "sonnet",
-              "opus"
+              "sonnet-low",
+              "sonnet-medium",
+              "sonnet-high",
+              "opus-low",
+              "opus-medium",
+              "opus-high",
+              "haiku"
             ],
-            "description": "Claude CLI model to use. 'haiku' is recommended for speed and cost."
+            "description": "Claude Code virtual model ID. Effort levels: low, medium, high. Format: '<base>-<effort>'. 'sonnet-low' is recommended for speed and cost. 'haiku' has no effort levels."
           }
         }
       }
