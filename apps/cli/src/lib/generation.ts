@@ -140,6 +140,7 @@ export async function runGenerationLoop(
 
   // Mutable context for the state machine
   let autoRetries = 0;
+  let editedManually = false;
   let generationErrors: string[] = [];
   let userRefinements: string[] = [];
   let lastGeneratedMessage: string = "";
@@ -305,8 +306,13 @@ export async function runGenerationLoop(
           } else {
             // Retries exhausted — show failure UI
             log.warn(
-              pc.yellow("Maximum validation retries reached (3/3)")
+              pc.yellow(
+                editedManually
+                  ? "Validation failed on manually edited message"
+                  : "Maximum validation retries reached (3/3)"
+              )
             );
+            editedManually = false;
             const allErrors = validationResult.errors;
             for (const err of allErrors) {
               log.warn(pc.yellow(`${err.severity}: ${err.message} — ${err.suggestion}`));
@@ -316,6 +322,7 @@ export async function runGenerationLoop(
         } else {
           // Valid — reset counters
           autoRetries = 0;
+          editedManually = false;
           generationErrors = [];
 
           // Show non-critical warnings if any
@@ -442,6 +449,7 @@ export async function runGenerationLoop(
 
         // Reset retry counter for fresh attempts
         autoRetries = 0;
+        editedManually = false;
         generationErrors = [];
         state = { type: "generate" };
         break;
@@ -483,6 +491,7 @@ export async function runGenerationLoop(
         const finalMsg = await Bun.file(TEMP_MSG_FILE).text();
         if (finalMsg.trim()) {
           lastGeneratedMessage = finalMsg.trim();
+          editedManually = true;
           autoRetries = 3; // prevent auto-retry from discarding a manual edit
           state = { type: "validate", message: finalMsg.trim() };
         } else {
