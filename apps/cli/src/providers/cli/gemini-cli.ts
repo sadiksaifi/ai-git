@@ -14,10 +14,14 @@ import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
  *
  * CLI Pattern:
  *   GEMINI_SYSTEM_MD=/tmp/ai-git-system-xxx.md \
- *     gemini --model <model> --output-format text -p "<prompt>"
+ *     gemini --model <model> --output-format text --sandbox -e none -p "<prompt>"
  *
  * - `-p <prompt>` runs in non-interactive (headless) mode with the given prompt
  * - `--output-format text` ensures clean text output
+ * - `--sandbox` enables sandboxed execution for tool isolation
+ * - `-e none` disables all extensions (pure text generation)
+ * - No `--allowed-tools` means no tools auto-approved; headless mode can't
+ *   prompt for confirmation, so tools are effectively blocked
  * - GEMINI_SYSTEM_MD replaces the entire default system prompt
  */
 export const geminiCliAdapter: CLIProviderAdapter = {
@@ -40,6 +44,8 @@ export const geminiCliAdapter: CLIProviderAdapter = {
           "gemini",
           "--model", model,
           "--output-format", "text",
+          "--sandbox",
+          "-e", "none",
           "-p", prompt,
         ],
         {
