@@ -117,7 +117,7 @@ export async function getStagedDiff(): Promise<string> {
  */
 export async function getRecentCommits(n: number = 5): Promise<string[]> {
   try {
-    const output = await $`git log --oneline -${n} --format=%s`.text();
+    const output = await $`git log -${n} --format=%s`.text();
     return output.trim().split("\n").filter(Boolean);
   } catch {
     return [];

@@ -78,7 +78,7 @@ export const cerebrasAdapter: APIProviderAdapter = {
       model: cerebras(model),
       system,
       prompt,
-      temperature: 0.3,
+      temperature: 0,
       maxOutputTokens: 1024,
       timeout: 60_000,
       maxRetries: 2,

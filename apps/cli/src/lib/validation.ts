@@ -97,7 +97,7 @@ export function validateCommitMessage(msg: string): ValidationResult {
   }
 
   // Important: Breaking change consistency
-  const hasExclamation = /^.*?!:/.test(header);
+  const hasExclamation = /^[\w]+(?:\([^)]*\))?!:/.test(header);
   const hasFooter = /^BREAKING CHANGE:/m.test(msg);
   if (hasExclamation !== hasFooter && (hasExclamation || hasFooter)) {
     errors.push({

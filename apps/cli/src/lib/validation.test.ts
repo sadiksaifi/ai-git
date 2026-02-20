@@ -99,6 +99,12 @@ describe("validateCommitMessage", () => {
     expect(result.valid).toBe(true);
   });
 
+  // No false positive on ! in subject
+  test("does not flag ! in subject as breaking change", () => {
+    const result = validateCommitMessage("fix: handle !important flag");
+    expect(result.errors.some((e) => e.rule === "breaking-change-consistency")).toBe(false);
+  });
+
   // Breaking change consistency
   test("warns when ! in header but no BREAKING CHANGE footer", () => {
     const result = validateCommitMessage("feat(api)!: remove v1 endpoints");

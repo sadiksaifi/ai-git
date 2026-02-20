@@ -53,10 +53,12 @@ export const googleAiStudioAdapter: APIProviderAdapter = {
       model: google(model),
       system,
       prompt,
-      temperature: 0.3,
+      temperature: 0,
       maxOutputTokens: 1024,
       timeout: 60_000,
       maxRetries: 2,
+      // Disable safety filters — code diffs frequently trigger false positives
+      // (e.g. security fix descriptions flagged as "dangerous content")
       providerOptions: {
         google: {
           safetySettings: [

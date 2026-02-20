@@ -54,6 +54,7 @@ export const openRouterAdapter: APIProviderAdapter = {
       model: openrouter(model),
       system,
       prompt,
+      temperature: 0,
       maxOutputTokens: 1024,
       timeout: 60_000,
       maxRetries: 2,
