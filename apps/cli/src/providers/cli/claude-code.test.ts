@@ -99,7 +99,7 @@ describe("claudeCodeAdapter.invoke", () => {
     });
 
     expect(spawnCalls).toHaveLength(1);
-    const cmd = spawnCalls[0].cmd;
+    const cmd = spawnCalls[0]!.cmd;
     expect(cmd).toContain("--effort");
     expect(cmd).toContain("high");
     // Base model should be "sonnet", not "sonnet-high"
@@ -116,7 +116,7 @@ describe("claudeCodeAdapter.invoke", () => {
     });
 
     expect(spawnCalls).toHaveLength(1);
-    const cmd = spawnCalls[0].cmd;
+    const cmd = spawnCalls[0]!.cmd;
     expect(cmd).not.toContain("--effort");
     const modelIndex = cmd.indexOf("--model");
     expect(cmd[modelIndex + 1]).toBe("sonnet");
@@ -131,7 +131,7 @@ describe("claudeCodeAdapter.invoke", () => {
     });
 
     expect(spawnCalls).toHaveLength(1);
-    const cmd = spawnCalls[0].cmd;
+    const cmd = spawnCalls[0]!.cmd;
     expect(cmd).not.toContain("--effort");
     const modelIndex = cmd.indexOf("--model");
     expect(cmd[modelIndex + 1]).toBe("haiku");
