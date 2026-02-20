@@ -149,8 +149,6 @@ export async function runGenerationLoop(
       if (generationErrors.length > 0 && lastGeneratedMessage) {
         const lastResult = validateCommitMessage(lastGeneratedMessage);
         errorContext = buildRetryContext(lastResult.errors, lastGeneratedMessage);
-      } else if (generationErrors.length > 0) {
-        errorContext = `# PREVIOUS ERRORS\n${generationErrors.join("\n")}\n`;
       }
 
       // Build user prompt with all dynamic context
