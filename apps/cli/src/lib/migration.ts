@@ -3,14 +3,93 @@ import { log } from "@clack/prompts";
 import pc from "picocolors";
 import type { UserConfig } from "../config.ts";
 
+// ─── MIGRATION REGISTRY ──────────────────────────────────────────────
+
 /**
- * Claude Code models that support effort levels.
- * Plain IDs for these models are migrated to their default effort variant.
+ * A single config migration step.
+ *
+ * Migrations MUST be idempotent — they check whether they apply and
+ * return `null` when the config is already in the expected state.
+ * The `migrate` function receives a shallow-cloned config object and
+ * mutates it in place for simplicity.
+ *
+ * @example
+ * ```ts
+ * {
+ *   id: "rename-editor-field",
+ *   description: "Rename 'editor' to 'editorCommand'",
+ *   migrate(config) {
+ *     if ("editor" in config && !("editorCommand" in config)) {
+ *       config.editorCommand = config.editor;
+ *       delete config.editor;
+ *       return "Renamed 'editor' → 'editorCommand'";
+ *     }
+ *     return null;
+ *   },
+ * }
+ * ```
  */
-const CLAUDE_EFFORT_MODEL_MIGRATION: Record<string, string> = {
-  sonnet: "sonnet-low",
-  opus: "opus-low",
-};
+export interface ConfigMigration {
+  /** Unique identifier for this migration (for logging/debugging). */
+  id: string;
+  /** Human-readable summary shown in migration notices. */
+  description: string;
+  /**
+   * Apply the migration to a config object (mutated in place).
+   * @param config - Shallow clone of the raw parsed config
+   * @returns A human-readable change description if applied, or `null` if skipped.
+   */
+  migrate(config: Record<string, unknown>): string | null;
+}
+
+/**
+ * Ordered list of config migrations.
+ * Migrations run sequentially — earlier ones may affect later ones.
+ *
+ * ## Adding a new migration
+ *
+ * 1. Append a new {@link ConfigMigration} object to this array
+ * 2. Add tests in `migration.test.ts`
+ * 3. That's it — `migrateConfig()` picks it up automatically
+ *
+ * Keep each migration self-contained: inline any lookup data
+ * (maps, constants) so the migration object tells the full story.
+ */
+export const migrations: ConfigMigration[] = [
+  {
+    id: "strip-legacy-mode",
+    description: "Remove legacy 'mode' property",
+    migrate(config) {
+      if ("mode" in config) {
+        delete config.mode;
+        return "Removed legacy 'mode' property";
+      }
+      return null;
+    },
+  },
+  {
+    id: "claude-effort-model-defaults",
+    description: "Migrate plain claude-code model IDs to effort defaults",
+    migrate(config) {
+      const MODEL_MAP: Record<string, string> = {
+        sonnet: "sonnet-low",
+        opus: "opus-low",
+      };
+      if (
+        config.provider === "claude-code" &&
+        typeof config.model === "string" &&
+        config.model in MODEL_MAP
+      ) {
+        const old = config.model;
+        config.model = MODEL_MAP[config.model];
+        return `Migrated model '${old}' → '${config.model}'`;
+      }
+      return null;
+    },
+  },
+];
+
+// ─── MIGRATION ENGINE ─────────────────────────────────────────────────
 
 /** Data needed to display a deferred migration notice. */
 export interface MigrationNotice {
@@ -27,35 +106,22 @@ export interface MigrationResult {
 
 /**
  * Migrate a raw config object to the current format.
- * Runs at config load time to ensure existing configs stay valid.
+ * Runs each registered migration in order, collecting human-readable
+ * change descriptions for any that applied.
  *
- * Migrations:
- * 1. Strip legacy 'mode' property
- * 2. Migrate plain claude-code model IDs to effort defaults (sonnet → sonnet-low)
+ * @param raw - The raw parsed config (will not be mutated; a clone is used)
  */
 export function migrateConfig(raw: Record<string, unknown>): MigrationResult {
-  const changes: string[] = [];
   const config = { ...raw };
-
-  // Migration 1: Strip legacy 'mode' property
-  if ("mode" in config) {
-    delete config.mode;
-    changes.push("Removed legacy 'mode' property");
+  const changes: string[] = [];
+  for (const m of migrations) {
+    const change = m.migrate(config);
+    if (change !== null) changes.push(change);
   }
-
-  // Migration 2: Migrate plain claude-code model IDs to effort defaults
-  if (
-    config.provider === "claude-code" &&
-    typeof config.model === "string" &&
-    config.model in CLAUDE_EFFORT_MODEL_MIGRATION
-  ) {
-    const oldModel = config.model;
-    config.model = CLAUDE_EFFORT_MODEL_MIGRATION[config.model];
-    changes.push(`Migrated model '${oldModel}' → '${config.model}'`);
-  }
-
   return { config: config as UserConfig, changed: changes.length > 0, changes };
 }
+
+// ─── UTILITIES ────────────────────────────────────────────────────────
 
 /**
  * Create a timestamped backup of a config file before migration.

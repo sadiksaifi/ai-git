@@ -1,5 +1,22 @@
 import { describe, it, expect } from "bun:test";
-import { migrateConfig, type MigrationResult } from "./migration.ts";
+import { migrateConfig, migrations, type MigrationResult } from "./migration.ts";
+
+describe("migrations registry", () => {
+  it("should have unique IDs", () => {
+    const ids = migrations.map((m) => m.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("every migration should have id, description, and migrate", () => {
+    for (const m of migrations) {
+      expect(typeof m.id).toBe("string");
+      expect(m.id.length).toBeGreaterThan(0);
+      expect(typeof m.description).toBe("string");
+      expect(m.description.length).toBeGreaterThan(0);
+      expect(typeof m.migrate).toBe("function");
+    }
+  });
+});
 
 describe("migrateConfig", () => {
   it("should strip legacy 'mode' property", () => {
