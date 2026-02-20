@@ -119,9 +119,16 @@ export async function loadUserConfig(): Promise<UserConfig | undefined> {
 
     const { config, changed, changes } = migrateConfig(raw);
     if (changed) {
-      const backupPath = await backupConfigFile(CONFIG_FILE);
+      let backupPath = "";
+      try {
+        backupPath = await backupConfigFile(CONFIG_FILE);
+      } catch {
+        // best-effort: backup failure shouldn't block config load
+      }
       saveUserConfig(config).catch(() => {});
-      pendingMigrationNotice = { changes, backupPath };
+      if (backupPath) {
+        pendingMigrationNotice = { changes, backupPath };
+      }
     }
 
     return config;
