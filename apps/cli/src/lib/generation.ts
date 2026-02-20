@@ -11,7 +11,7 @@ import { buildSystemPrompt, buildUserPrompt } from "../prompt.ts";
 import { DEFAULT_SLOW_WARNING_THRESHOLD_MS, type PromptCustomization } from "../config.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
 import { getStagedDiff, getBranchName, setBranchName, commit, getRecentCommits, getStagedFileList, type CommitResult } from "./git.ts";
-import { validateCommitMessage, buildRetryContext } from "./validation.ts";
+import { validateCommitMessage, buildRetryContext, type ValidationError } from "./validation.ts";
 import { wrapText } from "./utils.ts";
 import { TEMP_MSG_FILE } from "./paths.ts";
 
@@ -83,6 +83,16 @@ export interface GenerationResult {
   aborted: boolean;
 }
 
+/** State machine states for the generation loop */
+export type GenerationState =
+  | { type: "generate" }
+  | { type: "validate"; message: string }
+  | { type: "auto_retry"; message: string; errors: string[] }
+  | { type: "prompt"; message: string; validationFailed: boolean; warnings: ValidationError[] }
+  | { type: "retry"; message: string }
+  | { type: "edit"; message: string }
+  | { type: "done"; result: GenerationResult };
+
 /**
  * Create a timer that fires a warning callback after `thresholdMs`.
  * Returns a cleanup function that cancels the timer.
@@ -105,6 +115,17 @@ export function resolveSlowWarningThreshold(ctx: GenerationContext): number {
   return ctx.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS;
 }
 
+/** Log a commit error with appropriate formatting based on error type. */
+function logCommitError(err: unknown): void {
+  if (err && typeof err === "object" && "stderr" in err) {
+    console.error(pc.dim(String((err as { stderr: unknown }).stderr).trim()));
+  } else if (err instanceof Error) {
+    console.error(pc.dim(err.message));
+  } else {
+    console.error(pc.dim(String(err)));
+  }
+}
+
 /**
  * Run the AI generation loop.
  * Generates commit messages, validates them, and handles user interactions.
@@ -117,8 +138,9 @@ export async function runGenerationLoop(
   // Build the system prompt with any user customizations
   const systemPromptStr = buildSystemPrompt(promptCustomization);
 
-  let loop = true;
+  // Mutable context for the state machine
   let autoRetries = 0;
+  let editedManually = false;
   let generationErrors: string[] = [];
   let userRefinements: string[] = [];
   let lastGeneratedMessage: string = "";
@@ -149,294 +171,341 @@ export async function runGenerationLoop(
     await setBranchName(branchName);
   }
 
-  // Flag to skip AI generation (used after manual edit)
-  let skipGeneration = false;
   const slowThresholdMs = resolveSlowWarningThreshold(ctx);
 
-  while (loop) {
-    let cleanMsg = lastGeneratedMessage;
+  // --- State machine ---
+  let state: GenerationState = { type: "generate" };
 
-    // Only call AI if we need to generate/regenerate
-    if (!skipGeneration) {
-      const s = spinner();
+  while (state.type !== "done") {
+    switch (state.type) {
+      // ── GENERATE ──────────────────────────────────────────────
+      case "generate": {
+        const s = spinner();
+        s.start(`Analyzing changes with ${modelName}...`);
 
-      s.start(`Analyzing changes with ${modelName}...`);
+        // Gather context
+        const [diffOutput, recentCommits, stagedFileList] = await Promise.all([
+          getStagedDiff(),
+          getRecentCommits(5),
+          getStagedFileList(),
+        ]);
 
-      // Gather context
-      const [diffOutput, recentCommits, stagedFileList] = await Promise.all([
-        getStagedDiff(),
-        getRecentCommits(5),
-        getStagedFileList(),
-      ]);
-
-      // Build error context if retrying
-      let errorContext: string | undefined;
-      if (generationErrors.length > 0 && lastGeneratedMessage) {
-        const lastResult = validateCommitMessage(lastGeneratedMessage);
-        errorContext = buildRetryContext(lastResult.errors, lastGeneratedMessage);
-      }
-
-      // Build user prompt with all dynamic context
-      const userPrompt = buildUserPrompt({
-        branchName: branchName!,
-        hint: options.hint,
-        recentCommits,
-        stagedFileList,
-        errors: errorContext,
-        refinements: lastGeneratedMessage && userRefinements.length > 0
-          ? { lastMessage: lastGeneratedMessage, instructions: userRefinements }
-          : undefined,
-        diff: diffOutput,
-      });
-
-      // Handle dry run
-      if (options.dryRun) {
-        s.stop("Dry run complete");
-
-        const width = process.stdout.columns || 80;
-        const border = pc.dim("─".repeat(width));
-
-        console.log("");
-        console.log(pc.bgCyan(pc.black(" DRY RUN: SYSTEM PROMPT ")));
-        console.log(border);
-        console.log(wrapText(systemPromptStr, width));
-        console.log(border);
-        console.log("");
-        console.log(pc.bgCyan(pc.black(" DRY RUN: USER PROMPT ")));
-        console.log(border);
-        console.log(wrapText(userPrompt, width));
-        console.log(border);
-        console.log("");
-
-        return { message: "", committed: false, aborted: false };
-      }
-
-      // Call AI
-      let rawMsg = "";
-
-      const cancelSlowWarning = createSlowWarningTimer(slowThresholdMs, () => {
-        s.message(
-          pc.yellow(`Still generating with ${modelName}... Speed depends on your selected provider and model.`)
-        );
-      });
-
-      try {
-        rawMsg = await adapter.invoke({ model, system: systemPromptStr, prompt: userPrompt });
-        cancelSlowWarning();
-        s.stop("Message generated");
-      } catch (e) {
-        cancelSlowWarning();
-        s.stop("Generation failed");
-        console.error("");
-        let errorMessage = String(e);
-        if (e instanceof Error) {
-          errorMessage = e.message;
+        // Build error context if retrying
+        let errorContext: string | undefined;
+        if (generationErrors.length > 0 && lastGeneratedMessage) {
+          const lastResult = validateCommitMessage(lastGeneratedMessage);
+          errorContext = buildRetryContext(lastResult.errors, lastGeneratedMessage);
         }
 
-        // Determine if this is an API provider error
-        const isApiMode = adapter.mode === "api";
-        const providerName = isApiMode ? adapter.providerId.charAt(0).toUpperCase() + adapter.providerId.slice(1) : "AI";
+        // Build user prompt with all dynamic context
+        const userPrompt = buildUserPrompt({
+          branchName: branchName!,
+          hint: options.hint,
+          recentCommits,
+          stagedFileList,
+          errors: errorContext,
+          refinements: lastGeneratedMessage && userRefinements.length > 0
+            ? { lastMessage: lastGeneratedMessage, instructions: userRefinements }
+            : undefined,
+          diff: diffOutput,
+        });
 
-        if (errorMessage.includes("Requested entity was not found")) {
-          console.error(pc.red(`Error: The model '${model}' was not found.`));
-          console.error(pc.yellow("This usually means the model ID is incorrect or you don't have access to it."));
-          console.error(pc.dim(`Try running 'ai-git --setup' to select a different model.`));
-        } else if (isApiMode) {
-          console.error(pc.red(`${providerName} API Error:`));
-          console.error(pc.yellow(errorMessage));
-          console.error("");
-          console.error(pc.dim("This error is from the API provider, not ai-git."));
-          console.error(pc.dim("You may need to:"));
-          console.error(pc.dim("  - Check your API key and account settings"));
-          console.error(pc.dim("  - Try a different model (run: ai-git --setup)"));
-          console.error(pc.dim("  - Check the provider's status page or documentation"));
-        } else {
-          console.error(pc.red(errorMessage));
-        }
-        process.exit(1);
-      }
+        // Handle dry run
+        if (options.dryRun) {
+          s.stop("Dry run complete");
 
-      // Cleanup message
-      cleanMsg = rawMsg
-        .replace(/^```.*/gm, "") // Remove code blocks
-        .replace(/```$/gm, "")
-        .trim();
+          const width = process.stdout.columns || 80;
+          const border = pc.dim("─".repeat(width));
 
-      if (!cleanMsg) {
-        console.error(pc.red("Error: AI returned empty message."));
-        process.exit(1);
-      }
+          console.log("");
+          console.log(pc.bgCyan(pc.black(" DRY RUN: SYSTEM PROMPT ")));
+          console.log(border);
+          console.log(wrapText(systemPromptStr, width));
+          console.log(border);
+          console.log("");
+          console.log(pc.bgCyan(pc.black(" DRY RUN: USER PROMPT ")));
+          console.log(border);
+          console.log(wrapText(userPrompt, width));
+          console.log(border);
+          console.log("");
 
-      // Multi-stage validation
-      const validationResult = validateCommitMessage(cleanMsg);
-
-      // Handle critical errors (auto-retry)
-      if (!validationResult.valid) {
-        if (autoRetries < 3) {
-          autoRetries++;
-          const criticalErrors = validationResult.errors
-            .filter((e) => e.severity === "critical")
-            .map((e) => e.message);
-          lastGeneratedMessage = cleanMsg;
-          generationErrors = criticalErrors;
-          log.warn(
-            pc.yellow(
-              `Validation failed: ${criticalErrors.join("; ")}. Retrying (${autoRetries}/3)...`
-            )
-          );
-          continue;
-        } else {
-          log.warn(
-            pc.yellow(
-              `Validation issues persist after 3 retries. Showing result with warnings.`
-            )
-          );
-        }
-      }
-
-      // Show important/minor warnings
-      const warnings = validationResult.errors.filter(
-        (e) => e.severity === "important" || e.severity === "minor"
-      );
-      if (warnings.length > 0) {
-        for (const w of warnings) {
-          log.warn(pc.yellow(`${w.severity}: ${w.message} — ${w.suggestion}`));
-        }
-      }
-
-      // Reset on success
-      if (validationResult.valid) {
-        autoRetries = 0;
-        generationErrors = [];
-      }
-
-      lastGeneratedMessage = cleanMsg;
-    }
-
-    // Reset skip flag for next iteration
-    skipGeneration = false;
-
-    // Commit logic
-    if (options.commit) {
-      try {
-        const result = await commit(cleanMsg);
-        showCommitResult(result);
-        return { message: cleanMsg, committed: true, aborted: false };
-      } catch (err) {
-        log.error(pc.red("Git commit failed."));
-        if (err && typeof err === "object" && "stderr" in err) {
-          console.error(pc.dim(String((err as any).stderr).trim()));
-        } else if (err instanceof Error) {
-          console.error(pc.dim(err.message));
-        } else {
-          console.error(pc.dim(String(err)));
-        }
-        return { message: cleanMsg, committed: false, aborted: true };
-      }
-    }
-
-    // Interactive flow
-    note(cleanMsg, "Generated Commit Message");
-
-    const action = await select({
-      message: "Action",
-      options: [
-        { value: "commit", label: "Commit" },
-        { value: "edit", label: "Edit" },
-        { value: "edit-ai", label: "Refine with AI" },
-        { value: "regenerate", label: "Regenerate" },
-        { value: "cancel", label: "Cancel" },
-      ],
-    });
-
-    if (isCancel(action) || action === "cancel") {
-      return { message: "", committed: false, aborted: true };
-    }
-
-    if (action === "edit-ai") {
-      const instruction = await text({
-        message: "Enter instructions for AI refinement:",
-        placeholder: "e.g. 'Make it more enthusiastic' or 'Fix the typo'",
-        validate: (value) => {
-          if (!value) return "Please enter an instruction.";
-        },
-      });
-
-      if (isCancel(instruction)) {
-        return { message: "", committed: false, aborted: true };
-      }
-
-      userRefinements.push(instruction as string);
-      continue;
-    }
-
-    if (action === "regenerate") {
-      autoRetries = 0;
-      generationErrors = [];
-      userRefinements = [];
-      continue;
-    }
-
-    if (action === "commit") {
-      try {
-        const result = await commit(cleanMsg);
-        showCommitResult(result);
-        return { message: cleanMsg, committed: true, aborted: false };
-      } catch (err) {
-        log.error(pc.red("Git commit failed."));
-        if (err && typeof err === "object" && "stderr" in err) {
-          console.error(pc.dim(String((err as any).stderr).trim()));
-        } else if (err instanceof Error) {
-          console.error(pc.dim(err.message));
-        } else {
-          console.error(pc.dim(String(err)));
-        }
-        continue;
-      }
-    }
-
-    if (action === "edit") {
-      // Edit Flow - opens editor and returns to menu (fixes Issue #5)
-      await Bun.write(TEMP_MSG_FILE, cleanMsg);
-      
-      const candidates = [
-        ctx.editor,
-        process.env.VISUAL,
-        process.env.EDITOR,
-        ...(process.platform === "win32" ? ["code", "notepad"] : ["nvim", "vim", "nano", "vi"]),
-      ].filter((e): e is string => !!e);
-      let editor: string | null = null;
-
-      for (const candidate of candidates) {
-        if (await Bun.which(candidate)) {
-          editor = candidate;
+          state = { type: "done", result: { message: "", committed: false, aborted: false } };
           break;
         }
+
+        // Call AI
+        let rawMsg = "";
+
+        const cancelSlowWarning = createSlowWarningTimer(slowThresholdMs, () => {
+          s.message(
+            pc.yellow(`Still generating with ${modelName}... Speed depends on your selected provider and model.`)
+          );
+        });
+
+        try {
+          rawMsg = await adapter.invoke({ model, system: systemPromptStr, prompt: userPrompt });
+          cancelSlowWarning();
+          s.stop("Message generated");
+        } catch (e) {
+          cancelSlowWarning();
+          s.stop("Generation failed");
+          console.error("");
+          let errorMessage = String(e);
+          if (e instanceof Error) {
+            errorMessage = e.message;
+          }
+
+          // Determine if this is an API provider error
+          const isApiMode = adapter.mode === "api";
+          const providerName = isApiMode ? adapter.providerId.charAt(0).toUpperCase() + adapter.providerId.slice(1) : "AI";
+
+          if (errorMessage.includes("Requested entity was not found")) {
+            console.error(pc.red(`Error: The model '${model}' was not found.`));
+            console.error(pc.yellow("This usually means the model ID is incorrect or you don't have access to it."));
+            console.error(pc.dim(`Try running 'ai-git --setup' to select a different model.`));
+          } else if (isApiMode) {
+            console.error(pc.red(`${providerName} API Error:`));
+            console.error(pc.yellow(errorMessage));
+            console.error("");
+            console.error(pc.dim("This error is from the API provider, not ai-git."));
+            console.error(pc.dim("You may need to:"));
+            console.error(pc.dim("  - Check your API key and account settings"));
+            console.error(pc.dim("  - Try a different model (run: ai-git --setup)"));
+            console.error(pc.dim("  - Check the provider's status page or documentation"));
+          } else {
+            console.error(pc.red(errorMessage));
+          }
+          process.exit(1);
+        }
+
+        // Cleanup message
+        const cleanMsg = rawMsg
+          .replace(/^```.*/gm, "") // Remove code blocks
+          .replace(/```$/gm, "")
+          .trim();
+
+        if (!cleanMsg) {
+          console.error(pc.red("Error: AI returned empty message."));
+          process.exit(1);
+        }
+
+        state = { type: "validate", message: cleanMsg };
+        break;
       }
 
-      if (!editor) {
-        console.error(pc.red("Error: No suitable editor found. Please set the EDITOR environment variable."));
-        continue;
+      // ── VALIDATE ──────────────────────────────────────────────
+      case "validate": {
+        const validationResult = validateCommitMessage(state.message);
+
+        if (!validationResult.valid) {
+          if (autoRetries < 3) {
+            const criticalErrors = validationResult.errors
+              .filter((e) => e.severity === "critical")
+              .map((e) => e.message);
+            state = { type: "auto_retry", message: state.message, errors: criticalErrors };
+          } else {
+            // Retries exhausted — show failure UI
+            log.warn(
+              pc.yellow(
+                editedManually
+                  ? "Validation failed on manually edited message"
+                  : "Maximum validation retries reached (3/3)"
+              )
+            );
+            editedManually = false;
+            const allErrors = validationResult.errors;
+            for (const err of allErrors) {
+              log.warn(pc.yellow(`${err.severity}: ${err.message} — ${err.suggestion}`));
+            }
+            state = { type: "prompt", message: state.message, validationFailed: true, warnings: allErrors };
+          }
+        } else {
+          // Valid — reset counters
+          autoRetries = 0;
+          editedManually = false;
+          generationErrors = [];
+
+          // Show non-critical warnings if any
+          const warnings = validationResult.errors.filter(
+            (e) => e.severity === "important" || e.severity === "minor"
+          );
+          if (warnings.length > 0) {
+            for (const w of warnings) {
+              log.warn(pc.yellow(`${w.severity}: ${w.message} — ${w.suggestion}`));
+            }
+          }
+
+          state = { type: "prompt", message: state.message, validationFailed: false, warnings };
+        }
+        break;
       }
 
-      const editProc = Bun.spawn([editor, TEMP_MSG_FILE], {
-        stdin: "inherit",
-        stdout: "inherit",
-        stderr: "inherit",
-      });
-      await editProc.exited;
+      // ── AUTO_RETRY ────────────────────────────────────────────
+      case "auto_retry": {
+        autoRetries++;
+        lastGeneratedMessage = state.message;
+        generationErrors = state.errors;
+        log.warn(
+          pc.yellow(
+            `Validation failed: ${state.errors.join("; ")}. Retrying (${autoRetries}/3)...`
+          )
+        );
+        state = { type: "generate" };
+        break;
+      }
 
-      const finalMsg = await Bun.file(TEMP_MSG_FILE).text();
-      if (finalMsg.trim()) {
-        // Update the message and show menu again instead of auto-committing
-        lastGeneratedMessage = finalMsg.trim();
-        skipGeneration = true; // Don't regenerate, just show edited message
-        continue;
-      } else {
-        return { message: "", committed: false, aborted: true };
+      // ── PROMPT ────────────────────────────────────────────────
+      case "prompt": {
+        const currentMessage: string = state.message;
+
+        // Auto-commit flow (--commit flag)
+        if (options.commit) {
+          if (state.validationFailed) {
+            log.warn(pc.yellow("Committing with validation warnings (--commit flag active)."));
+          }
+          try {
+            const result = await commit(currentMessage);
+            showCommitResult(result);
+            state = { type: "done", result: { message: currentMessage, committed: true, aborted: false } };
+          } catch (err) {
+            log.error(pc.red("Git commit failed."));
+            logCommitError(err);
+            state = { type: "done", result: { message: currentMessage, committed: false, aborted: true } };
+          }
+          break;
+        }
+
+        // Interactive flow
+        const noteTitle = state.validationFailed
+          ? "Generated Commit Message (with warnings)"
+          : "Generated Commit Message";
+        note(currentMessage, noteTitle);
+
+        const commitLabel = state.validationFailed ? "Commit (with warnings)" : "Commit";
+
+        const action = await select({
+          message: "Action",
+          options: [
+            { value: "commit", label: commitLabel },
+            { value: "retry", label: "Retry" },
+            { value: "edit", label: "Edit" },
+            { value: "cancel", label: "Cancel" },
+          ],
+        });
+
+        if (isCancel(action) || action === "cancel") {
+          state = { type: "done", result: { message: "", committed: false, aborted: true } };
+          break;
+        }
+
+        if (action === "commit") {
+          try {
+            const result = await commit(currentMessage);
+            showCommitResult(result);
+            state = { type: "done", result: { message: currentMessage, committed: true, aborted: false } };
+          } catch (err) {
+            log.error(pc.red("Git commit failed."));
+            logCommitError(err);
+            // Stay in prompt state to let user try again
+            break;
+          }
+          break;
+        }
+
+        if (action === "retry") {
+          lastGeneratedMessage = currentMessage;
+          state = { type: "retry", message: currentMessage };
+          break;
+        }
+
+        if (action === "edit") {
+          lastGeneratedMessage = currentMessage;
+          state = { type: "edit", message: currentMessage };
+          break;
+        }
+
+        break;
+      }
+
+      // ── RETRY ─────────────────────────────────────────────────
+      case "retry": {
+        const instruction = await text({
+          message: "Enter instructions to refine (or leave blank to retry as-is):",
+          placeholder: "e.g. 'Make the header shorter' or 'Use fix instead of feat'",
+        });
+
+        if (isCancel(instruction)) {
+          state = { type: "done", result: { message: "", committed: false, aborted: true } };
+          break;
+        }
+
+        const trimmed = ((instruction as string) ?? "").trim();
+        if (trimmed) {
+          userRefinements.push(trimmed);
+        } else {
+          // Blank = fresh retry, clear previous refinements
+          userRefinements = [];
+        }
+
+        // Reset retry counter for fresh attempts
+        autoRetries = 0;
+        editedManually = false;
+        generationErrors = [];
+        state = { type: "generate" };
+        break;
+      }
+
+      // ── EDIT ──────────────────────────────────────────────────
+      case "edit": {
+        await Bun.write(TEMP_MSG_FILE, state.message);
+
+        const candidates = [
+          ctx.editor,
+          process.env.VISUAL,
+          process.env.EDITOR,
+          ...(process.platform === "win32" ? ["code", "notepad"] : ["nvim", "vim", "nano", "vi"]),
+        ].filter((e): e is string => !!e);
+        let editor: string | null = null;
+
+        for (const candidate of candidates) {
+          if (await Bun.which(candidate)) {
+            editor = candidate;
+            break;
+          }
+        }
+
+        if (!editor) {
+          console.error(pc.red("Error: No suitable editor found. Please set the EDITOR environment variable."));
+          state = { type: "validate", message: state.message };
+          break;
+        }
+
+        // Bun.spawn (not $) so the editor inherits stdin/stdout/stderr for interactive use
+        const editProc = Bun.spawn([editor, TEMP_MSG_FILE], {
+          stdin: "inherit",
+          stdout: "inherit",
+          stderr: "inherit",
+        });
+        await editProc.exited;
+
+        const trimmedMsg = (await Bun.file(TEMP_MSG_FILE).text()).trim();
+        if (trimmedMsg) {
+          lastGeneratedMessage = trimmedMsg;
+          editedManually = true;
+          autoRetries = 3; // prevent auto-retry from discarding a manual edit
+          state = { type: "validate", message: trimmedMsg };
+        } else {
+          state = { type: "done", result: { message: "", committed: false, aborted: true } };
+        }
+        break;
+      }
+
+      default: {
+        const _exhaustive: never = state;
+        throw new Error(`Unhandled state: ${(_exhaustive as GenerationState).type}`);
       }
     }
   }
 
-  return { message: lastGeneratedMessage, committed: false, aborted: false };
+  return state.result;
 }
