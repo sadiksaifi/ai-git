@@ -289,9 +289,15 @@ describe("ai-git CLI", () => {
     expect(migratedConfig.model).toBe("sonnet-low");
 
     // Verify backup file was created
-    const backupPath = `${configPath}.bak`;
-    expect(fs.existsSync(backupPath)).toBe(true);
-    const backupConfig = JSON.parse(fs.readFileSync(backupPath, "utf8"));
+    const configDir = path.dirname(configPath);
+    const configBase = path.basename(configPath);
+    const backupFile = fs.readdirSync(configDir).find(
+      (f) => f.startsWith(`${configBase}.`) && f.endsWith(".bak")
+    );
+    expect(backupFile).toBeDefined();
+    const backupConfig = JSON.parse(
+      fs.readFileSync(path.join(configDir, backupFile!), "utf8")
+    );
     expect(backupConfig.model).toBe("sonnet");
   });
 

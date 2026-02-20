@@ -166,6 +166,7 @@ cli
       }
 
       const existingGlobalConfig = await loadUserConfig();
+      flushMigrationNotice();
 
       if (existingGlobalConfig && isConfigComplete(existingGlobalConfig)) {
         const initAction = await select({

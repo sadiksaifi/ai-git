@@ -1,6 +1,6 @@
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
 
-type ClaudeEffortLevel = "low" | "medium" | "high";
+export type ClaudeEffortLevel = "low" | "medium" | "high";
 
 /**
  * Parse a virtual Claude model ID into its base model and optional effort level.

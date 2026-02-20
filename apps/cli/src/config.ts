@@ -120,7 +120,7 @@ export async function loadUserConfig(): Promise<UserConfig | undefined> {
     const { config, changed, changes } = migrateConfig(raw);
     if (changed) {
       const backupPath = await backupConfigFile(CONFIG_FILE);
-      await saveUserConfig(config);
+      saveUserConfig(config).catch(() => {});
       pendingMigrationNotice = { changes, backupPath };
     }
 
@@ -173,8 +173,8 @@ export async function saveUserConfig(config: UserConfig): Promise<void> {
 
   // Add $schema at the top for editor support
   const configWithSchema = {
-    $schema: CONFIG_SCHEMA_URL,
     ...config,
+    $schema: CONFIG_SCHEMA_URL,
   };
 
   await Bun.write(CONFIG_FILE, JSON.stringify(configWithSchema, null, 2));
@@ -187,8 +187,8 @@ export async function saveUserConfig(config: UserConfig): Promise<void> {
 export async function saveProjectConfig(config: UserConfig): Promise<void> {
   // Add $schema at the top for editor support
   const configWithSchema = {
-    $schema: CONFIG_SCHEMA_URL,
     ...config,
+    $schema: CONFIG_SCHEMA_URL,
   };
 
   const configPath = await getProjectConfigPath();

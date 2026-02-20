@@ -1,4 +1,3 @@
-import * as fs from "node:fs";
 import { log } from "@clack/prompts";
 import pc from "picocolors";
 import type { UserConfig } from "../config.ts";
@@ -125,14 +124,15 @@ export function migrateConfig(raw: Record<string, unknown>): MigrationResult {
 
 /**
  * Create a timestamped backup of a config file before migration.
- * Copies the original to `<path>.bak`. Overwrites any existing backup.
+ * Copies the original to `<path>.<timestamp>.bak`.
  *
  * @param configPath - Absolute path to the config file to back up
  * @returns The backup file path
  */
 export async function backupConfigFile(configPath: string): Promise<string> {
-  const backupPath = `${configPath}.bak`;
-  fs.copyFileSync(configPath, backupPath);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const backupPath = `${configPath}.${timestamp}.bak`;
+  await Bun.write(backupPath, Bun.file(configPath));
   return backupPath;
 }
 
