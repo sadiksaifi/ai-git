@@ -1,6 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import { DEFAULT_SLOW_WARNING_THRESHOLD_MS } from "../config.ts";
 import { createSlowWarningTimer, resolveSlowWarningThreshold, type GenerationContext, type GenerationState } from "./generation.ts";
+import { validateCommitMessage } from "./validation.ts";
 
 describe("GenerationContext slow warning", () => {
   test("DEFAULT_SLOW_WARNING_THRESHOLD_MS is a positive number", () => {
@@ -79,5 +80,33 @@ describe("GenerationState type", () => {
       { type: "done", result: { message: "feat: test", committed: true, aborted: false } },
     ];
     expect(states).toHaveLength(7);
+  });
+});
+
+describe("State machine: validation → state transitions", () => {
+  test("valid message should result in valid=true (→ prompt state)", () => {
+    const result = validateCommitMessage("feat: add login");
+    expect(result.valid).toBe(true);
+    expect(result.errors.filter(e => e.severity === "critical")).toHaveLength(0);
+  });
+
+  test("invalid message should result in valid=false (→ auto_retry state)", () => {
+    const result = validateCommitMessage("This is not a conventional commit");
+    expect(result.valid).toBe(false);
+    expect(result.errors.some(e => e.severity === "critical")).toBe(true);
+  });
+
+  test("message with only non-critical errors should be valid=true (→ prompt with warnings)", () => {
+    // Uppercase subject is "important" severity, not critical
+    const result = validateCommitMessage("feat: Add login");
+    expect(result.valid).toBe(true);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors.every(e => e.severity !== "critical")).toBe(true);
+  });
+
+  test("long header is critical error (→ auto_retry)", () => {
+    const result = validateCommitMessage("feat: this is a very long commit message header that exceeds fifty characters");
+    expect(result.valid).toBe(false);
+    expect(result.errors.some(e => e.rule === "header-length")).toBe(true);
   });
 });
