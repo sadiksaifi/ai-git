@@ -349,6 +349,12 @@ export async function runGenerationLoop(
 
         // Auto-commit flow (--commit flag)
         if (options.commit) {
+          if (state.validationFailed) {
+            log.warn(pc.yellow("Committing with validation warnings (--commit flag active)."));
+            for (const w of state.warnings) {
+              log.warn(pc.yellow(`${w.severity}: ${w.message} — ${w.suggestion}`));
+            }
+          }
           try {
             const result = await commit(currentMessage);
             showCommitResult(result);
