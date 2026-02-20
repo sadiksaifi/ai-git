@@ -28,14 +28,14 @@ function parseModelId(virtualId: string): {
  * CLI Pattern:
  *   codex --model <base> --sandbox read-only -a never \
  *     --disable shell_tool -c model_reasoning_effort=<effort> \
- *     -c 'developer_instructions=<system>' -c 'web_search="disabled"' exec "<prompt>"
+ *     -c 'developer_instructions=<system>' -c 'web_search="disabled"' exec --ephemeral "<prompt>"
  *
  * All flags are top-level options (before the subcommand):
  * - `--sandbox read-only` enforces OS-level read-only filesystem
  * - `-a never` prevents interactive approval prompts
  * - `--disable shell_tool` removes shell tool from model's available tools
  * - `-c web_search="disabled"` disables web search
- * - `exec` subcommand runs non-interactively with prompt as argument
+ * - `exec --ephemeral` runs non-interactively without persisting session files
  */
 export const codexAdapter: CLIProviderAdapter = {
   providerId: "codex",
@@ -55,6 +55,7 @@ export const codexAdapter: CLIProviderAdapter = {
         "-c", `developer_instructions=${system}`,
         "-c", `web_search="disabled"`,
         "exec",
+        "--ephemeral",
         prompt,
       ],
       {
