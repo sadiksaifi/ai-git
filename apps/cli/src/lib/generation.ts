@@ -129,6 +129,7 @@ export async function runGenerationLoop(
 
   // Flag to skip AI generation (used after manual edit)
   let skipGeneration = false;
+  const slowThresholdMs = ctx.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS;
 
   while (loop) {
     let cleanMsg = lastGeneratedMessage;
@@ -190,7 +191,6 @@ export async function runGenerationLoop(
 
       // Call AI
       let rawMsg = "";
-      const slowThresholdMs = ctx.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS;
       let slowWarningTimer: ReturnType<typeof setTimeout> | undefined;
 
       try {
