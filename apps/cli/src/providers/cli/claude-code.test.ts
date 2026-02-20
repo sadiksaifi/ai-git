@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { parseClaudeModelId } from "./claude-code.ts";
 
 describe("parseClaudeModelId", () => {
@@ -53,5 +53,86 @@ describe("parseClaudeModelId", () => {
     expect(parseClaudeModelId("opus")).toEqual({
       model: "opus",
     });
+  });
+});
+
+describe("claudeCodeAdapter.invoke", () => {
+  let spawnCalls: { cmd: string[]; opts: unknown }[] = [];
+  let originalSpawn: typeof Bun.spawn;
+
+  beforeEach(() => {
+    spawnCalls = [];
+    originalSpawn = Bun.spawn;
+
+    // Mock Bun.spawn to capture arguments
+    (Bun as any).spawn = (cmd: string[], opts: unknown) => {
+      spawnCalls.push({ cmd, opts });
+      // Return a mock process
+      return {
+        stdout: new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode("feat: test commit"));
+            controller.close();
+          },
+        }),
+        stderr: new ReadableStream({
+          start(controller) {
+            controller.close();
+          },
+        }),
+        exited: Promise.resolve(0),
+      };
+    };
+  });
+
+  afterEach(() => {
+    (Bun as any).spawn = originalSpawn;
+  });
+
+  it("should pass --effort flag for effort-based model IDs", async () => {
+    const { claudeCodeAdapter } = await import("./claude-code.ts");
+    await claudeCodeAdapter.invoke({
+      model: "sonnet-high",
+      system: "test system",
+      prompt: "test prompt",
+    });
+
+    expect(spawnCalls).toHaveLength(1);
+    const cmd = spawnCalls[0].cmd;
+    expect(cmd).toContain("--effort");
+    expect(cmd).toContain("high");
+    // Base model should be "sonnet", not "sonnet-high"
+    const modelIndex = cmd.indexOf("--model");
+    expect(cmd[modelIndex + 1]).toBe("sonnet");
+  });
+
+  it("should NOT pass --effort flag for plain model IDs", async () => {
+    const { claudeCodeAdapter } = await import("./claude-code.ts");
+    await claudeCodeAdapter.invoke({
+      model: "sonnet",
+      system: "test system",
+      prompt: "test prompt",
+    });
+
+    expect(spawnCalls).toHaveLength(1);
+    const cmd = spawnCalls[0].cmd;
+    expect(cmd).not.toContain("--effort");
+    const modelIndex = cmd.indexOf("--model");
+    expect(cmd[modelIndex + 1]).toBe("sonnet");
+  });
+
+  it("should NOT pass --effort flag for haiku", async () => {
+    const { claudeCodeAdapter } = await import("./claude-code.ts");
+    await claudeCodeAdapter.invoke({
+      model: "haiku",
+      system: "test system",
+      prompt: "test prompt",
+    });
+
+    expect(spawnCalls).toHaveLength(1);
+    const cmd = spawnCalls[0].cmd;
+    expect(cmd).not.toContain("--effort");
+    const modelIndex = cmd.indexOf("--model");
+    expect(cmd[modelIndex + 1]).toBe("haiku");
   });
 });

@@ -40,23 +40,29 @@ export const claudeCodeAdapter: CLIProviderAdapter = {
   binary: "claude",
 
   async invoke({ model, system, prompt }: InvokeOptions): Promise<string> {
-    const proc = Bun.spawn(
-      [
-        "claude",
-        "-p",
-        "--model", model,
-        "--system-prompt", system,
-        "--tools", "",
-        "--no-session-persistence",
-        "--disable-slash-commands",
-        "--strict-mcp-config",
-        prompt,
-      ],
-      {
-        stdout: "pipe",
-        stderr: "pipe",
-      }
-    );
+    const { model: baseModel, effort } = parseClaudeModelId(model);
+
+    const args = [
+      "claude",
+      "-p",
+      "--model", baseModel,
+      "--system-prompt", system,
+      "--tools", "",
+      "--no-session-persistence",
+      "--disable-slash-commands",
+      "--strict-mcp-config",
+    ];
+
+    if (effort) {
+      args.push("--effort", effort);
+    }
+
+    args.push(prompt);
+
+    const proc = Bun.spawn(args, {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
 
     const [stdout, stderr] = await Promise.all([
       new Response(proc.stdout).text(),
