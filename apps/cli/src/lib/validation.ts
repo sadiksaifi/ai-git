@@ -56,7 +56,8 @@ export function validateCommitMessage(msg: string): ValidationResult {
   }
 
   // Critical: No markdown
-  if (/```/.test(msg) || /\*\*[^*]+\*\*/.test(msg)) {
+  // Bold regex requires non-/ after opening ** to avoid flagging glob paths (src/**/routes)
+  if (/```/.test(msg) || /\*\*[^*/][^*]*\*\*/.test(msg)) {
     errors.push({
       rule: "no-markdown",
       severity: "critical",

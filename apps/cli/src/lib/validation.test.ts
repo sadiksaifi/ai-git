@@ -62,6 +62,11 @@ describe("validateCommitMessage", () => {
     expect(result.errors.some((e) => e.rule === "no-markdown")).toBe(false);
   });
 
+  test("allows double-glob paths like **/routes/**", () => {
+    const result = validateCommitMessage("fix(glob): support **/routes/**");
+    expect(result.errors.some((e) => e.rule === "no-markdown")).toBe(false);
+  });
+
   // Critical: no preamble
   test("rejects preamble text", () => {
     const result = validateCommitMessage("Here is your commit message:\n\nfeat: add login");
