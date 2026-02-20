@@ -1,6 +1,6 @@
 import { spinner, confirm, text, isCancel, log } from "@clack/prompts";
 import pc from "picocolors";
-import { push, addRemoteAndPush } from "./git.ts";
+import { push, addRemoteAndPush, getRemoteSyncStatus } from "./git.ts";
 
 // ==============================================================================
 // PUSH MANAGEMENT
@@ -10,6 +10,46 @@ export interface PushOptions {
   push: boolean;
   dangerouslyAutoApprove: boolean;
   isInteractiveMode: boolean;
+}
+
+export interface PushPromptDeps {
+  confirmPrompt: typeof confirm;
+  getRemoteSyncStatusFn: typeof getRemoteSyncStatus;
+  warn: (message: string) => void;
+}
+
+/**
+ * Prompt for push and suggest pulling first when remote has new commits.
+ */
+export async function shouldProceedWithPush(
+  deps?: Partial<PushPromptDeps>
+): Promise<boolean> {
+  const confirmPrompt = deps?.confirmPrompt ?? confirm;
+  const getRemoteSyncStatusFn = deps?.getRemoteSyncStatusFn ?? getRemoteSyncStatus;
+  const warn = deps?.warn ?? ((message: string) => log.warn(message));
+
+  const shouldPush = await confirmPrompt({
+    message: "Do you want to git push?",
+    initialValue: false,
+  });
+
+  if (!shouldPush || isCancel(shouldPush)) {
+    return false;
+  }
+
+  const syncStatus = await getRemoteSyncStatusFn();
+  if (!syncStatus.remoteAhead) {
+    return true;
+  }
+
+  warn("Remote has new commits. Consider running `git pull --rebase` before pushing.");
+
+  const continuePush = await confirmPrompt({
+    message: "Remote has new commits. Pull first before pushing. Continue anyway?",
+    initialValue: false,
+  });
+
+  return !!continuePush && !isCancel(continuePush);
 }
 
 /**
@@ -91,13 +131,9 @@ export async function handlePush(options: PushOptions): Promise<void> {
     // --push flag provided: push automatically
     await safePush(options.dangerouslyAutoApprove);
   } else if (options.isInteractiveMode) {
-    // Interactive mode (no workflow flags): prompt user
-    const shouldPush = await confirm({
-      message: "Do you want to git push?",
-      initialValue: false,
-    });
-
-    if (shouldPush && !isCancel(shouldPush)) {
+    // Interactive mode (no workflow flags): prompt user and check remote sync
+    const shouldPush = await shouldProceedWithPush();
+    if (shouldPush) {
       await safePush(false);
     }
   }
