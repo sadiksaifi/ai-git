@@ -115,6 +115,17 @@ export function resolveSlowWarningThreshold(ctx: GenerationContext): number {
   return ctx.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS;
 }
 
+/** Log a commit error with appropriate formatting based on error type. */
+function logCommitError(err: unknown): void {
+  if (err && typeof err === "object" && "stderr" in err) {
+    console.error(pc.dim(String((err as any).stderr).trim()));
+  } else if (err instanceof Error) {
+    console.error(pc.dim(err.message));
+  } else {
+    console.error(pc.dim(String(err)));
+  }
+}
+
 /**
  * Run the AI generation loop.
  * Generates commit messages, validates them, and handles user interactions.
@@ -344,9 +355,6 @@ export async function runGenerationLoop(
         if (options.commit) {
           if (state.validationFailed) {
             log.warn(pc.yellow("Committing with validation warnings (--commit flag active)."));
-            for (const w of state.warnings) {
-              log.warn(pc.yellow(`${w.severity}: ${w.message} — ${w.suggestion}`));
-            }
           }
           try {
             const result = await commit(currentMessage);
@@ -354,13 +362,7 @@ export async function runGenerationLoop(
             state = { type: "done", result: { message: currentMessage, committed: true, aborted: false } };
           } catch (err) {
             log.error(pc.red("Git commit failed."));
-            if (err && typeof err === "object" && "stderr" in err) {
-              console.error(pc.dim(String((err as any).stderr).trim()));
-            } else if (err instanceof Error) {
-              console.error(pc.dim(err.message));
-            } else {
-              console.error(pc.dim(String(err)));
-            }
+            logCommitError(err);
             state = { type: "done", result: { message: currentMessage, committed: false, aborted: true } };
           }
           break;
@@ -396,13 +398,7 @@ export async function runGenerationLoop(
             state = { type: "done", result: { message: currentMessage, committed: true, aborted: false } };
           } catch (err) {
             log.error(pc.red("Git commit failed."));
-            if (err && typeof err === "object" && "stderr" in err) {
-              console.error(pc.dim(String((err as any).stderr).trim()));
-            } else if (err instanceof Error) {
-              console.error(pc.dim(err.message));
-            } else {
-              console.error(pc.dim(String(err)));
-            }
+            logCommitError(err);
             // Stay in prompt state to let user try again
             break;
           }
@@ -476,6 +472,7 @@ export async function runGenerationLoop(
           break;
         }
 
+        // Bun.spawn (not $) so the editor inherits stdin/stdout/stderr for interactive use
         const editProc = Bun.spawn([editor, TEMP_MSG_FILE], {
           stdin: "inherit",
           stdout: "inherit",
@@ -486,6 +483,7 @@ export async function runGenerationLoop(
         const finalMsg = await Bun.file(TEMP_MSG_FILE).text();
         if (finalMsg.trim()) {
           lastGeneratedMessage = finalMsg.trim();
+          autoRetries = 3; // prevent auto-retry from discarding a manual edit
           state = { type: "validate", message: finalMsg.trim() };
         } else {
           state = { type: "done", result: { message: "", committed: false, aborted: true } };
