@@ -83,7 +83,7 @@ describe("GenerationState type", () => {
   });
 });
 
-describe("State machine: validation → state transitions", () => {
+describe("validateCommitMessage: outputs that drive state transitions", () => {
   test("valid message should result in valid=true (→ prompt state)", () => {
     const result = validateCommitMessage("feat: add login");
     expect(result.valid).toBe(true);
