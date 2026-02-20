@@ -1,5 +1,23 @@
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
 
+type ClaudeEffortLevel = "low" | "medium" | "high";
+
+/**
+ * Parse a virtual Claude model ID into its base model and optional effort level.
+ * e.g. "sonnet-high" → { model: "sonnet", effort: "high" }
+ * Falls back to using the full ID as model with no effort.
+ */
+export function parseClaudeModelId(virtualId: string): {
+  model: string;
+  effort?: ClaudeEffortLevel;
+} {
+  const match = virtualId.match(/^(.+)-(low|medium|high)$/);
+  if (match?.[1] && match[2]) {
+    return { model: match[1], effort: match[2] as ClaudeEffortLevel };
+  }
+  return { model: virtualId };
+}
+
 /**
  * Claude Code CLI adapter.
  * Handles invocation of the `claude` CLI tool.
