@@ -261,4 +261,90 @@ describe("ai-git CLI", () => {
     expect(result.stderr).toContain("ai-git --setup");
     expect(result.exitCode).toBe(1);
   });
+
+  it("should auto-migrate legacy claude-code config and run dry-run", async () => {
+    // Create a config with the old plain "sonnet" model ID
+    const homeDir = createTestHome({
+      provider: "claude-code",
+      model: "sonnet",
+    });
+    const noProviderPath = await createPathWithoutProviderCLI();
+    const repoDir = createGitRepo();
+
+    fs.writeFileSync(path.join(repoDir, "README.md"), "updated\n");
+
+    const result = await runCLI(["--dry-run", "-a"], {
+      cwd: repoDir,
+      homeDir,
+      pathEnv: noProviderPath,
+    });
+
+    // Should work (migration converts "sonnet" → "sonnet-low")
+    expect(result.stdout).toContain("DRY RUN: SYSTEM PROMPT");
+    expect(result.exitCode).toBe(0);
+
+    // Verify config was migrated on disk
+    const configPath = path.join(homeDir, ".config", "ai-git", "config.json");
+    const migratedConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    expect(migratedConfig.model).toBe("sonnet-low");
+  });
+
+  it("should work with effort-based model IDs in dry-run", async () => {
+    const homeDir = createTestHome({
+      provider: "claude-code",
+      model: "sonnet-high",
+    });
+    const noProviderPath = await createPathWithoutProviderCLI();
+    const repoDir = createGitRepo();
+
+    fs.writeFileSync(path.join(repoDir, "README.md"), "updated\n");
+
+    const result = await runCLI(["--dry-run", "-a"], {
+      cwd: repoDir,
+      homeDir,
+      pathEnv: noProviderPath,
+    });
+
+    expect(result.stdout).toContain("DRY RUN: SYSTEM PROMPT");
+    expect(result.exitCode).toBe(0);
+  });
+
+  it("should work with haiku model ID (no effort)", async () => {
+    const homeDir = createTestHome({
+      provider: "claude-code",
+      model: "haiku",
+    });
+    const noProviderPath = await createPathWithoutProviderCLI();
+    const repoDir = createGitRepo();
+
+    fs.writeFileSync(path.join(repoDir, "README.md"), "updated\n");
+
+    const result = await runCLI(["--dry-run", "-a"], {
+      cwd: repoDir,
+      homeDir,
+      pathEnv: noProviderPath,
+    });
+
+    expect(result.stdout).toContain("DRY RUN: SYSTEM PROMPT");
+    expect(result.exitCode).toBe(0);
+  });
+
+  it("should reject invalid effort model like haiku-high", async () => {
+    const homeDir = createTestHome({
+      provider: "claude-code",
+      model: "haiku-high",
+    });
+    const noProviderPath = await createPathWithoutProviderCLI();
+    const repoDir = createGitRepo();
+
+    const result = await runCLI([], {
+      cwd: repoDir,
+      homeDir,
+      pathEnv: noProviderPath,
+    });
+
+    // Config validation should fail because haiku-high is not in the registry,
+    // triggering the setup wizard instead of proceeding normally
+    expect(result.stdout).toContain("Select AI provider");
+  });
 });
