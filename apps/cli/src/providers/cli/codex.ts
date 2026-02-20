@@ -26,15 +26,16 @@ function parseModelId(virtualId: string): {
  * at the `developer` authority level (high priority, below system prompt).
  *
  * CLI Pattern:
- *   codex exec --model <base> --sandbox read-only -a never \
+ *   codex --model <base> --sandbox read-only -a never \
  *     --disable shell_tool -c model_reasoning_effort=<effort> \
- *     -c 'developer_instructions=<system>' -c 'web_search="disabled"' "<prompt>"
+ *     -c 'developer_instructions=<system>' -c 'web_search="disabled"' exec "<prompt>"
  *
- * - `exec` is non-interactive mode
+ * All flags are top-level options (before the subcommand):
  * - `--sandbox read-only` enforces OS-level read-only filesystem
  * - `-a never` prevents interactive approval prompts
  * - `--disable shell_tool` removes shell tool from model's available tools
  * - `-c web_search="disabled"` disables web search
+ * - `exec` subcommand runs non-interactively with prompt as argument
  */
 export const codexAdapter: CLIProviderAdapter = {
   providerId: "codex",
@@ -46,7 +47,6 @@ export const codexAdapter: CLIProviderAdapter = {
     const proc = Bun.spawn(
       [
         "codex",
-        "exec",
         "--model", baseModel,
         "--sandbox", "read-only",
         "-a", "never",
@@ -54,6 +54,7 @@ export const codexAdapter: CLIProviderAdapter = {
         "-c", `model_reasoning_effort=${effort}`,
         "-c", `developer_instructions=${system}`,
         "-c", `web_search="disabled"`,
+        "exec",
         prompt,
       ],
       {
