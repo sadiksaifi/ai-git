@@ -245,6 +245,7 @@ export async function runGenerationLoop(
           const criticalErrors = validationResult.errors
             .filter((e) => e.severity === "critical")
             .map((e) => e.message);
+          lastGeneratedMessage = cleanMsg;
           generationErrors = criticalErrors;
           log.warn(
             pc.yellow(
@@ -265,7 +266,7 @@ export async function runGenerationLoop(
       const warnings = validationResult.errors.filter(
         (e) => e.severity === "important" || e.severity === "minor"
       );
-      if (warnings.length > 0 && validationResult.valid) {
+      if (warnings.length > 0) {
         for (const w of warnings) {
           log.warn(pc.yellow(`${w.severity}: ${w.message} — ${w.suggestion}`));
         }
