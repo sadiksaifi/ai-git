@@ -2,7 +2,7 @@ import * as path from "node:path";
 import { getProviderById } from "./providers/registry.ts";
 import { getRepoRoot } from "./lib/git.ts";
 import { CONFIG_DIR, CONFIG_FILE } from "./lib/paths.ts";
-import { migrateConfig } from "./lib/migration.ts";
+import { migrateConfig, backupConfigFile, showMigrationNotice, type MigrationNotice } from "./lib/migration.ts";
 
 // ==============================================================================
 // CONFIG FILE MANAGEMENT
@@ -85,9 +85,27 @@ export async function getProjectConfigPath(): Promise<string> {
   return path.join(repoRoot || process.cwd(), ".ai-git.json");
 }
 
+/** Pending migration notice to display after the welcome screen. */
+let pendingMigrationNotice: MigrationNotice | null = null;
+
+/**
+ * Show any pending migration notice and clear it.
+ * Call this after the welcome screen renders so `console.clear()` doesn't wipe it.
+ */
+export function flushMigrationNotice(): void {
+  if (pendingMigrationNotice) {
+    showMigrationNotice(pendingMigrationNotice.changes, pendingMigrationNotice.backupPath);
+    pendingMigrationNotice = null;
+  }
+}
+
 /**
  * Load user configuration from the config file.
  * Returns undefined if the file doesn't exist or is invalid.
+ *
+ * If migration is needed, a backup is created and the config is saved.
+ * The migration notice is deferred — call `flushMigrationNotice()` after
+ * the welcome screen to display it.
  */
 export async function loadUserConfig(): Promise<UserConfig | undefined> {
   try {
@@ -99,9 +117,11 @@ export async function loadUserConfig(): Promise<UserConfig | undefined> {
     const content = await file.text();
     const raw = JSON.parse(content);
 
-    const { config, changed } = migrateConfig(raw);
+    const { config, changed, changes } = migrateConfig(raw);
     if (changed) {
+      const backupPath = await backupConfigFile(CONFIG_FILE);
       await saveUserConfig(config);
+      pendingMigrationNotice = { changes, backupPath };
     }
 
     return config;

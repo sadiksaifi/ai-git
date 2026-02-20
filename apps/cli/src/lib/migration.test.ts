@@ -7,6 +7,8 @@ describe("migrateConfig", () => {
     const result = migrateConfig(raw);
     expect(result.config).toEqual({ provider: "gemini-cli", model: "gemini-3-flash-preview" });
     expect(result.changed).toBe(true);
+    expect(result.changes).toHaveLength(1);
+    expect(result.changes[0]).toContain("mode");
   });
 
   it("should migrate plain claude-code model IDs to effort defaults", () => {
@@ -14,6 +16,8 @@ describe("migrateConfig", () => {
     const result = migrateConfig(raw);
     expect(result.config.model).toBe("sonnet-low");
     expect(result.changed).toBe(true);
+    expect(result.changes).toHaveLength(1);
+    expect(result.changes[0]).toContain("sonnet");
   });
 
   it("should migrate opus to opus-low", () => {
@@ -21,6 +25,8 @@ describe("migrateConfig", () => {
     const result = migrateConfig(raw);
     expect(result.config.model).toBe("opus-low");
     expect(result.changed).toBe(true);
+    expect(result.changes).toHaveLength(1);
+    expect(result.changes[0]).toContain("opus");
   });
 
   it("should NOT migrate haiku (no effort support)", () => {
@@ -28,6 +34,7 @@ describe("migrateConfig", () => {
     const result = migrateConfig(raw);
     expect(result.config.model).toBe("haiku");
     expect(result.changed).toBe(false);
+    expect(result.changes).toHaveLength(0);
   });
 
   it("should NOT migrate already-effort model IDs", () => {
@@ -35,6 +42,7 @@ describe("migrateConfig", () => {
     const result = migrateConfig(raw);
     expect(result.config.model).toBe("sonnet-high");
     expect(result.changed).toBe(false);
+    expect(result.changes).toHaveLength(0);
   });
 
   it("should NOT migrate non-claude-code providers", () => {
@@ -42,6 +50,7 @@ describe("migrateConfig", () => {
     const result = migrateConfig(raw);
     expect(result.config.model).toBe("gpt-5.3-codex-low");
     expect(result.changed).toBe(false);
+    expect(result.changes).toHaveLength(0);
   });
 
   it("should handle both mode removal and model migration together", () => {
@@ -50,6 +59,9 @@ describe("migrateConfig", () => {
     expect(result.config).toEqual({ provider: "claude-code", model: "sonnet-low" });
     expect(result.changed).toBe(true);
     expect((result.config as any).mode).toBeUndefined();
+    expect(result.changes).toHaveLength(2);
+    expect(result.changes[0]).toContain("mode");
+    expect(result.changes[1]).toContain("sonnet");
   });
 
   it("should preserve other config properties", () => {
@@ -72,5 +84,6 @@ describe("migrateConfig", () => {
     const result = migrateConfig(raw);
     expect(result.config).toEqual(raw);
     expect(result.changed).toBe(false);
+    expect(result.changes).toHaveLength(0);
   });
 });

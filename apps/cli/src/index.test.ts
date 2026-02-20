@@ -287,6 +287,12 @@ describe("ai-git CLI", () => {
     const configPath = path.join(homeDir, ".config", "ai-git", "config.json");
     const migratedConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
     expect(migratedConfig.model).toBe("sonnet-low");
+
+    // Verify backup file was created
+    const backupPath = `${configPath}.bak`;
+    expect(fs.existsSync(backupPath)).toBe(true);
+    const backupConfig = JSON.parse(fs.readFileSync(backupPath, "utf8"));
+    expect(backupConfig.model).toBe("sonnet");
   });
 
   it("should work with effort-based model IDs in dry-run", async () => {

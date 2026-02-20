@@ -62,10 +62,8 @@ export const PROVIDERS: ProviderDefinition[] = [
       { id: "opus-low", name: "Claude Opus (low)" },
       { id: "opus-medium", name: "Claude Opus (medium)" },
       { id: "opus-high", name: "Claude Opus (high)" },
-      // plain model IDs (backward compatibility, no --effort passed)
-      { id: "sonnet", name: "Claude Sonnet" },
+      // doesn't have an effort level
       { id: "haiku", name: "Claude Haiku" },
-      { id: "opus", name: "Claude Opus" },
     ],
   },
   {

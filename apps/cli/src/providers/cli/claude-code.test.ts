@@ -153,11 +153,15 @@ describe("claude-code registry", () => {
     expect(modelIds).toContain("opus-high");
   });
 
-  it("should keep backward-compatible plain model IDs", () => {
+  it("should include haiku (no effort levels)", () => {
     const modelIds = getModelIds("claude-code");
-    expect(modelIds).toContain("sonnet");
     expect(modelIds).toContain("haiku");
-    expect(modelIds).toContain("opus");
+  });
+
+  it("should NOT include plain sonnet/opus model IDs", () => {
+    const modelIds = getModelIds("claude-code");
+    expect(modelIds).not.toContain("sonnet");
+    expect(modelIds).not.toContain("opus");
   });
 
   it("should NOT include effort variants for haiku", () => {

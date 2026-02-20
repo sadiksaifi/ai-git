@@ -21,6 +21,7 @@ import {
   resolveConfigAsync,
   getProviderById,
   getModelById,
+  flushMigrationNotice,
 } from "./config.ts";
 import { getAdapter } from "./providers/index.ts";
 import { checkGitInstalled, checkInsideRepo } from "./lib/git.ts";
@@ -265,6 +266,9 @@ cli
 
     // Show welcome screen on every run
     await showWelcomeScreen(VERSION, welcomeOptions);
+
+    // Show migration notice after welcome screen (so console.clear() doesn't wipe it)
+    flushMigrationNotice();
 
     if (options.setup || (!isGlobalComplete && !isProjectComplete)) {
       const onboardingResult = await runOnboarding({
