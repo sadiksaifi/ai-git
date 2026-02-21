@@ -6,6 +6,11 @@ export type ClaudeEffortLevel = "low" | "medium" | "high";
  * Parse a virtual Claude model ID into its base model and optional effort level.
  * e.g. "sonnet-high" → { model: "sonnet", effort: "high" }
  * Falls back to using the full ID as model with no effort.
+ *
+ * Note: This regex will parse "haiku-high" into { model: "haiku", effort: "high" },
+ * but Haiku does NOT support effort levels. The registry deliberately excludes
+ * haiku-low/medium/high variants, so invalid IDs like "haiku-high" are caught
+ * at config validation time, not here.
  */
 export function parseClaudeModelId(virtualId: string): {
   model: string;

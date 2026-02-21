@@ -156,8 +156,43 @@ export const wiredCliMachine = cliMachine.provide({
         const updateResult = await updateCheckPromise;
         showUpdateNotification(updateResult);
 
-        // If neither config is complete, return needsSetup
+        // If neither config is complete, either launch wizard or fail with error
         if (!isGlobalComplete && !isProjectComplete) {
+          // Check if config exists but has invalid values (vs truly missing)
+          const bestConfig = existingProjectConfig ?? existingConfig;
+          const hasProvider = !!bestConfig?.provider;
+          const hasModel = !!bestConfig?.model;
+
+          if (!options.options.setup && hasProvider && hasModel) {
+            // Config has provider+model set but they're invalid — fail with a
+            // clear error instead of silently launching the interactive wizard.
+            const provider = getProviderById(bestConfig!.provider!);
+            if (!provider) {
+              const validProviders = PROVIDERS.map((p) => p.id).join(", ");
+              console.error(
+                pc.red(`Error: Unknown provider '${bestConfig.provider}'.`),
+              );
+              console.error(pc.dim(`Supported providers: ${validProviders}`));
+              console.error(pc.dim("Run `ai-git --setup` to select a valid provider."));
+              throw new Error(`Unknown provider '${bestConfig.provider}'`);
+            }
+            // Provider is valid but model is not
+            console.error(
+              pc.red(
+                `Error: Unknown model '${bestConfig.model}' for provider '${provider.name}'.`,
+              ),
+            );
+            console.error(
+              pc.dim(
+                `Available models: ${provider.models.map((m) => m.id).join(", ")}`,
+              ),
+            );
+            console.error(pc.dim("Run `ai-git --setup` to select a valid model."));
+            throw new Error(
+              `Unknown model '${bestConfig.model}' for provider '${provider.name}'`,
+            );
+          }
+
           return {
             config: {
               provider: "",

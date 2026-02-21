@@ -341,7 +341,7 @@ describe("ai-git CLI", () => {
     expect(result.exitCode).toBe(0);
   });
 
-  it("should reject invalid effort model like haiku-high", async () => {
+  it("should reject haiku-high as invalid model", async () => {
     const homeDir = createTestHome({
       provider: "claude-code",
       model: "haiku-high",
@@ -355,9 +355,49 @@ describe("ai-git CLI", () => {
       pathEnv: noProviderPath,
     });
 
-    // Config validation should fail because haiku-high is not in the registry,
-    // triggering the setup wizard instead of proceeding normally
-    expect(result.stdout).toContain("Select AI provider");
-    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toContain("haiku-high");
+    expect(result.stderr).toContain("Unknown model");
+    expect(result.stderr).toContain("--setup");
+    expect(result.exitCode).toBe(1);
+  });
+
+  it("should reject haiku-medium as invalid model", async () => {
+    const homeDir = createTestHome({
+      provider: "claude-code",
+      model: "haiku-medium",
+    });
+    const noProviderPath = await createPathWithoutProviderCLI();
+    const repoDir = createGitRepo();
+
+    const result = await runCLI([], {
+      cwd: repoDir,
+      homeDir,
+      pathEnv: noProviderPath,
+    });
+
+    expect(result.stderr).toContain("haiku-medium");
+    expect(result.stderr).toContain("Unknown model");
+    expect(result.stderr).toContain("--setup");
+    expect(result.exitCode).toBe(1);
+  });
+
+  it("should reject haiku-low as invalid model", async () => {
+    const homeDir = createTestHome({
+      provider: "claude-code",
+      model: "haiku-low",
+    });
+    const noProviderPath = await createPathWithoutProviderCLI();
+    const repoDir = createGitRepo();
+
+    const result = await runCLI([], {
+      cwd: repoDir,
+      homeDir,
+      pathEnv: noProviderPath,
+    });
+
+    expect(result.stderr).toContain("haiku-low");
+    expect(result.stderr).toContain("Unknown model");
+    expect(result.stderr).toContain("--setup");
+    expect(result.exitCode).toBe(1);
   });
 });
