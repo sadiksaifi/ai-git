@@ -152,6 +152,23 @@ describe("upgradeMachine", () => {
     expect(snap.output!.errorMessage).toContain("binary not found");
   });
 
+  // detectMethod error falls through to fetchRelease
+  test("detectMethod error falls back to fetchRelease path", async () => {
+    let receivedVersion = "";
+    const snap = await runMachine({
+      detectInstallMethodActor: fromPromise(async () => {
+        throw new Error("detection failed");
+      }),
+      fetchReleaseActor: fromPromise(async ({ input }: { input: { version: string } }) => {
+        receivedVersion = input.version;
+        return { latestVersion: "2.0.0", tag: "v2.0.0" };
+      }),
+    });
+    expect(receivedVersion).toBe("1.0.0");
+    expect(snap.output!.exitCode).toBe(0);
+    expect(snap.output!.message).toContain("Upgraded");
+  });
+
   // Version forwarding
   test("forwards version to fetchRelease actor", async () => {
     let receivedVersion = "";
