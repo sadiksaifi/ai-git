@@ -18,7 +18,7 @@ describe("architectural enforcement", () => {
         const lines = content.split("\n");
 
         for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
+          const line = lines[i]!;
           if (
             line.includes("process.exit(") &&
             !line.trimStart().startsWith("//") &&
