@@ -625,7 +625,7 @@ export function createGatherContextActor(
   const defaultResolver = async () => {
     const [diff, commits, fileList] = await Promise.all([
       getStagedDiff(),
-      getRecentCommits(5),
+      getRecentCommits(5).then((c) => c.join("\n")),
       getStagedFileList(),
     ]);
     return { diff, commits, fileList };
@@ -1763,11 +1763,11 @@ git commit -m "refactor: remove old flow files replaced by state machines"
 **Step 1: Add Bug #5 fix to states.mmd**
 
 In the Upgrade sub-flow, replace:
-```
+```mermaid
 up_Extract --> up_Install
 ```
 with:
-```
+```mermaid
 up_Extract --> up_CheckBin
 up_CheckBin --> up_Install : binary found
 up_CheckBin --> up_ExtractFail : binary not found [UP11]

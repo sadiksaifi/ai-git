@@ -21,7 +21,7 @@ Refactor the entire CLI to use XState v5 state machines with composable, indepen
 ## Architecture
 
 ### Machine Hierarchy
-```
+```text
 cliMachine (top-level orchestrator, E1-E18)
 ├── initMachine (--init, IN1-IN10)
 │   └── setupWizardMachine (SW1-SW20)
