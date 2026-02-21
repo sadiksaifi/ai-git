@@ -34,6 +34,11 @@ export interface PushMachineOutput {
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
+/**
+ * Detect "no remote" git errors by matching known English error strings.
+ * Note: This is locale-dependent and won't match non-English git output.
+ * A future improvement could probe `git config branch.<name>.remote` instead.
+ */
 function isMissingRemoteError(error: unknown): boolean {
   const msg = extractErrorMessage(error);
   return (
@@ -72,6 +77,7 @@ export const pushMachine = setup({
       const error = (event as { error?: unknown }).error;
       return error instanceof UserCancelledError;
     },
+    isConfirmed: ({ event }) => (event as { output?: boolean }).output === true,
   },
   actions: {
     markPushed: assign({ pushed: true }),
@@ -128,7 +134,7 @@ export const pushMachine = setup({
         input: { message: "Push to remote?" },
         onDone: [
           {
-            guard: ({ event }) => event.output === true,
+            guard: "isConfirmed",
             target: "pushing",
           },
           {
@@ -186,7 +192,7 @@ export const pushMachine = setup({
         input: { message: "No remote configured. Add one now?" },
         onDone: [
           {
-            guard: ({ event }) => event.output === true,
+            guard: "isConfirmed",
             target: "enterRemoteUrl",
           },
           {
@@ -208,6 +214,10 @@ export const pushMachine = setup({
         input: {
           message: "Remote URL:",
           placeholder: "git@github.com:user/repo.git",
+          validate: (value: string) => {
+            if (!value.trim()) return "Remote URL is required";
+            return undefined;
+          },
         },
         onDone: {
           target: "addRemoteAndPush",
