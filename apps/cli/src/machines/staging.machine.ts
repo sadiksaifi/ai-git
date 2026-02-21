@@ -71,8 +71,6 @@ export const stagingMachine = setup({
     >,
   },
   guards: {
-    hasStaged: ({ context }) => context.stagedFiles.length > 0,
-    hasUnstaged: ({ context }) => context.unstagedFiles.length > 0,
     shouldAutoStage: ({ context }) =>
       context.stageAll || context.dangerouslyAutoApprove,
   },
