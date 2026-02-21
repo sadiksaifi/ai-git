@@ -160,13 +160,10 @@ export const wiredCliMachine = cliMachine.provide({
         if (!isGlobalComplete && !isProjectComplete) {
           // Check if config exists but has invalid values (vs truly missing)
           const bestConfig = existingProjectConfig ?? existingConfig;
-          const hasProvider = !!bestConfig?.provider;
-          const hasModel = !!bestConfig?.model;
-
-          if (!options.options.setup && hasProvider && hasModel) {
+          if (!options.options.setup && bestConfig?.provider && bestConfig?.model) {
             // Config has provider+model set but they're invalid — fail with a
             // clear error instead of silently launching the interactive wizard.
-            const provider = getProviderById(bestConfig!.provider!);
+            const provider = getProviderById(bestConfig.provider);
             if (!provider) {
               const validProviders = PROVIDERS.map((p) => p.id).join(", ");
               console.error(
