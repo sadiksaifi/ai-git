@@ -106,6 +106,10 @@ export function parseNameStatusOutput(output: string): FileWithStatus[] {
 /**
  * Get staged files with their status (M/A/D/R).
  * Uses `git diff --cached --name-status`.
+ *
+ * Intentionally includes all files (including lock files) because this is used
+ * for display purposes. For AI prompt context, use getStagedFileList() which
+ * excludes lock files via the LOCKFILES filter.
  */
 export async function getStagedFilesWithStatus(): Promise<FileWithStatus[]> {
   try {
