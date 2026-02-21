@@ -286,6 +286,10 @@ export const cliMachine = setup({
     loadConfig: {
       invoke: {
         src: "loadAndResolveConfigActor",
+        input: ({ context }) => ({
+          options: context.options,
+          version: context.version,
+        }),
         onDone: {
           target: "showWelcome",
           actions: "assignConfigResult",
@@ -304,6 +308,13 @@ export const cliMachine = setup({
     showWelcome: {
       invoke: {
         src: "showWelcomeActor",
+        input: ({ context }) => ({
+          version: context.version,
+          configResult: context.configResult,
+          needsSetup:
+            context.options.setup ||
+            (context.configResult?.needsSetup ?? false),
+        }),
         onDone: [
           {
             guard: "needsSetup",
@@ -326,6 +337,9 @@ export const cliMachine = setup({
     runOnboarding: {
       invoke: {
         src: "runOnboardingActor",
+        input: ({ context }) => ({
+          options: context.options,
+        }),
         onDone: [
           {
             // Onboarding completed and user wants to continue
@@ -357,6 +371,10 @@ export const cliMachine = setup({
     reloadConfig: {
       invoke: {
         src: "reloadConfigActor",
+        input: ({ context }) => ({
+          options: context.options,
+          version: context.version,
+        }),
         onDone: {
           target: "checkGit",
           actions: "assignConfigResult",
@@ -391,6 +409,10 @@ export const cliMachine = setup({
     checkAvailability: {
       invoke: {
         src: "checkAvailabilityActor",
+        input: ({ context }) => ({
+          configResult: context.configResult!,
+          dryRun: context.options.dryRun,
+        }),
         onDone: {
           target: "staging",
         },
@@ -457,6 +479,8 @@ export const cliMachine = setup({
           slowWarningThresholdMs:
             context.configResult?.config?.slowWarningThresholdMs ?? 5000,
           adapter: context.configResult?.adapter,
+          promptCustomization: context.configResult?.config?.prompt,
+          editor: context.configResult?.config?.editor,
         }),
         onDone: [
           {
