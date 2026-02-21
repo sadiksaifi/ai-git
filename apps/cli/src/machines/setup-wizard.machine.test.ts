@@ -1,4 +1,3 @@
-// @ts-nocheck — XState v5 strict generic inference doesn't match test mock types
 import { describe, test, expect } from "bun:test";
 import { createActor, waitFor, fromPromise } from "xstate";
 import { setupWizardMachine } from "./setup-wizard.machine.ts";
@@ -8,6 +7,7 @@ describe("setupWizardMachine", () => {
   test("SW1: wizard completes successfully with CLI provider", async () => {
     const machine = setupWizardMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
         runWizardActor: fromPromise(async () => ({
           completed: true,
           config: { provider: "claude-code", model: "claude-sonnet-4-5-20250514" },
@@ -19,14 +19,15 @@ describe("setupWizardMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.completed).toBe(true);
-    expect(snap.output.config?.provider).toBe("claude-code");
+    expect(snap.output!.completed).toBe(true);
+    expect(snap.output!.config?.provider).toBe("claude-code");
   });
 
   // SW12-SW15: cancel paths
   test("SW12: wizard cancelled returns completed=false", async () => {
     const machine = setupWizardMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
         runWizardActor: fromPromise(async () => ({
           completed: false,
           config: null,
@@ -38,14 +39,15 @@ describe("setupWizardMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.completed).toBe(false);
-    expect(snap.output.config).toBeNull();
+    expect(snap.output!.completed).toBe(false);
+    expect(snap.output!.config).toBeNull();
   });
 
   // SW4-SW11: API happy path
   test("SW4: wizard completes with API provider", async () => {
     const machine = setupWizardMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
         runWizardActor: fromPromise(async () => ({
           completed: true,
           config: { provider: "openai", model: "gpt-4o" },
@@ -57,14 +59,15 @@ describe("setupWizardMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.completed).toBe(true);
-    expect(snap.output.config?.provider).toBe("openai");
+    expect(snap.output!.completed).toBe(true);
+    expect(snap.output!.config?.provider).toBe("openai");
   });
 
   // Wizard error
   test("wizard error returns completed=false", async () => {
     const machine = setupWizardMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
         runWizardActor: fromPromise(async () => {
           throw new Error("unexpected error");
         }),
@@ -75,8 +78,8 @@ describe("setupWizardMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.completed).toBe(false);
-    expect(snap.output.config).toBeNull();
+    expect(snap.output!.completed).toBe(false);
+    expect(snap.output!.config).toBeNull();
   });
 
   // Test that defaults are forwarded

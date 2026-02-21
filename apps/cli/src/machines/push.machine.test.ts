@@ -1,4 +1,3 @@
-// @ts-nocheck — XState v5 strict generic inference doesn't match test mock types
 import { describe, test, expect } from "bun:test";
 import { createActor, waitFor, fromPromise } from "xstate";
 import { pushMachine } from "./push.machine.ts";
@@ -9,6 +8,7 @@ describe("pushMachine", () => {
   test("PU1: --push flag triggers auto-push", async () => {
     const machine = pushMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {}),
       },
     });
@@ -17,14 +17,15 @@ describe("pushMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.pushed).toBe(true);
-    expect(snap.output.exitCode).toBe(0);
+    expect(snap.output!.pushed).toBe(true);
+    expect(snap.output!.exitCode).toBe(0);
   });
 
   // PU8: push error
   test("PU8: push error exits gracefully", async () => {
     const machine = pushMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {
           throw new Error("auth failed");
         }),
@@ -35,20 +36,24 @@ describe("pushMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.pushed).toBe(false);
+    expect(snap.output!.pushed).toBe(false);
   });
 
   // PU2-PU3: missing remote → recovery flow
   test("PU3: missing remote in interactive mode → prompt to add", async () => {
     const machine = pushMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {
           throw Object.assign(new Error(), {
             stderr: "No configured push destination",
           });
         }),
+        // @ts-expect-error — XState v5 test mock type inference
         confirmActor: fromPromise(async () => true),
+        // @ts-expect-error — XState v5 test mock type inference
         textActor: fromPromise(async () => "git@github.com:user/repo.git"),
+        // @ts-expect-error — XState v5 test mock type inference
         addRemoteAndPushActor: fromPromise(async () => {}),
       },
     });
@@ -57,13 +62,14 @@ describe("pushMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.pushed).toBe(true);
+    expect(snap.output!.pushed).toBe(true);
   });
 
   // PU2: missing remote in non-interactive mode → skip with log
   test("PU2: missing remote in non-interactive mode → skip", async () => {
     const machine = pushMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {
           throw Object.assign(new Error(), {
             stderr: "No configured push destination",
@@ -76,7 +82,7 @@ describe("pushMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.pushed).toBe(false);
+    expect(snap.output!.pushed).toBe(false);
   });
 
   // PU4: add remote and push succeeds (covered in PU3 test above)
@@ -85,13 +91,17 @@ describe("pushMachine", () => {
   test("PU5: add remote and push fails → error output", async () => {
     const machine = pushMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {
           throw Object.assign(new Error(), {
             stderr: "No configured push destination",
           });
         }),
+        // @ts-expect-error — XState v5 test mock type inference
         confirmActor: fromPromise(async () => true),
+        // @ts-expect-error — XState v5 test mock type inference
         textActor: fromPromise(async () => "git@github.com:user/repo.git"),
+        // @ts-expect-error — XState v5 test mock type inference
         addRemoteAndPushActor: fromPromise(async () => {
           throw new Error("permission denied");
         }),
@@ -102,19 +112,22 @@ describe("pushMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.pushed).toBe(false);
+    expect(snap.output!.pushed).toBe(false);
   });
 
   // PU6: cancel at enter URL prompt
   test("PU6: cancel at enter URL prompt → skip", async () => {
     const machine = pushMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {
           throw Object.assign(new Error(), {
             stderr: "No configured push destination",
           });
         }),
+        // @ts-expect-error — XState v5 test mock type inference
         confirmActor: fromPromise(async () => true),
+        // @ts-expect-error — XState v5 test mock type inference
         textActor: fromPromise(async () => {
           throw new UserCancelledError();
         }),
@@ -125,18 +138,20 @@ describe("pushMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.pushed).toBe(false);
+    expect(snap.output!.pushed).toBe(false);
   });
 
   // PU7: decline to add remote
   test("PU7: decline to add remote → skip", async () => {
     const machine = pushMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {
           throw Object.assign(new Error(), {
             stderr: "No configured push destination",
           });
         }),
+        // @ts-expect-error — XState v5 test mock type inference
         confirmActor: fromPromise(async () => false),
       },
     });
@@ -145,14 +160,16 @@ describe("pushMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.pushed).toBe(false);
+    expect(snap.output!.pushed).toBe(false);
   });
 
   // PU9: interactive mode → prompt → Yes
   test("PU9: interactive mode prompts user and pushes on yes", async () => {
     const machine = pushMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
         confirmActor: fromPromise(async () => true),
+        // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {}),
       },
     });
@@ -161,13 +178,14 @@ describe("pushMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.pushed).toBe(true);
+    expect(snap.output!.pushed).toBe(true);
   });
 
   // PU10: interactive mode → prompt → No
   test("PU10: interactive mode skips on no", async () => {
     const machine = pushMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
         confirmActor: fromPromise(async () => false),
       },
     });
@@ -176,7 +194,7 @@ describe("pushMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.pushed).toBe(false);
+    expect(snap.output!.pushed).toBe(false);
   });
 
   // PU11: non-interactive without --push → skip
@@ -186,13 +204,14 @@ describe("pushMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.pushed).toBe(false);
+    expect(snap.output!.pushed).toBe(false);
   });
 
   // Cancel handling
   test("user cancel at push prompt → skip gracefully", async () => {
     const machine = pushMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
         confirmActor: fromPromise(async () => {
           throw new UserCancelledError();
         }),
@@ -203,13 +222,14 @@ describe("pushMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.pushed).toBe(false);
+    expect(snap.output!.pushed).toBe(false);
   });
 
   // dangerouslyAutoApprove mode → auto-push
   test("dangerouslyAutoApprove → auto-push without prompt", async () => {
     const machine = pushMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {}),
       },
     });
@@ -218,6 +238,6 @@ describe("pushMachine", () => {
     });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.pushed).toBe(true);
+    expect(snap.output!.pushed).toBe(true);
   });
 });
