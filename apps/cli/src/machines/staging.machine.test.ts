@@ -604,7 +604,7 @@ describe("stagingMachine", () => {
   });
 
   test("showFileSummary invokes displayFileSummaryActor before prompt", async () => {
-    let summaryCalled = false;
+    const callOrder: string[] = [];
     const machine = stagingMachine.provide({
       actors: {
         // @ts-expect-error — XState v5 test mock type inference
@@ -613,10 +613,13 @@ describe("stagingMachine", () => {
         getUnstagedFilesActor: fromPromise(async () => ["a.ts"]),
         // @ts-expect-error — XState v5 test mock type inference
         displayFileSummaryActor: fromPromise(async () => {
-          summaryCalled = true;
+          callOrder.push("summary");
         }),
         // @ts-expect-error — XState v5 test mock type inference
-        selectActor: fromPromise(async () => "cancel"),
+        selectActor: fromPromise(async () => {
+          callOrder.push("select");
+          return "cancel";
+        }),
         // @ts-expect-error — XState v5 test mock type inference
         displayStagedResultActor: fromPromise(async () => {}),
       },
@@ -626,6 +629,6 @@ describe("stagingMachine", () => {
     });
     actor.start();
     await waitFor(actor, (s) => s.status === "done");
-    expect(summaryCalled).toBe(true);
+    expect(callOrder).toEqual(["summary", "select"]);
   });
 });
