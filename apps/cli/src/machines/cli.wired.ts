@@ -10,6 +10,7 @@ import { fromPromise } from "xstate";
 import pc from "picocolors";
 import { cliMachine, type ConfigResolutionResult, type OnboardingActorResult } from "./cli.machine.ts";
 import { initMachine } from "./init.machine.ts";
+import { stagingMachine } from "./staging.machine.ts";
 import type { ProviderDefinition } from "../types.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
 import type { ResolvedConfig, PromptCustomization } from "../config.ts";
@@ -25,7 +26,6 @@ import {
 import { PROVIDERS } from "../providers/registry.ts";
 import { getAdapter } from "../providers/index.ts";
 import { checkGitInstalled, checkInsideRepo } from "../lib/git.ts";
-import { handleStaging } from "../lib/staging.ts";
 import { runGenerationLoop } from "../lib/generation.ts";
 import { handlePush } from "../lib/push.ts";
 import { runOnboarding } from "../lib/onboarding/index.ts";
@@ -321,20 +321,7 @@ export const wiredCliMachine = cliMachine.provide({
     ),
 
     // ── Staging ──────────────────────────────────────────────────────
-    stagingMachine: fromPromise(
-      async ({ input }: { input: Record<string, unknown> }) => {
-        const ctx = input as {
-          stageAll: boolean;
-          dangerouslyAutoApprove: boolean;
-          exclude: string[];
-        };
-        return handleStaging({
-          stageAll: ctx.stageAll,
-          dangerouslyAutoApprove: ctx.dangerouslyAutoApprove,
-          exclude: ctx.exclude.length > 0 ? ctx.exclude : undefined,
-        });
-      },
-    ),
+    stagingMachine: stagingMachine,
 
     // ── Generation ───────────────────────────────────────────────────
     generationMachine: fromPromise(
