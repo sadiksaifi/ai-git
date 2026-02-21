@@ -142,6 +142,11 @@ export const cliMachine = setup({
       },
     ),
 
+    // ── Clean tree warning ──────────────────────────────────────────
+    warnCleanTreeActor: fromPromise(async (): Promise<void> => {
+      // Default implementation — replaced in production wiring
+    }),
+
     generationMachine: fromPromise(
       async (): Promise<{
         message: string;
@@ -446,9 +451,8 @@ export const cliMachine = setup({
           },
           {
             guard: "hasNoStagedFiles",
-            // Clean working directory — exit ok
-            target: "exit",
-            actions: "setExitOk",
+            // Clean working directory — warn user, then exit ok
+            target: "warnCleanTree",
           },
           {
             target: "generation",
@@ -457,6 +461,24 @@ export const cliMachine = setup({
         onError: {
           target: "exit",
           actions: "setExitError",
+        },
+      },
+    },
+
+    // ══════════════════════════════════════════════════════════════════
+    // ── CLEAN TREE WARNING ──────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════
+    warnCleanTree: {
+      invoke: {
+        src: "warnCleanTreeActor",
+        onDone: {
+          target: "exit",
+          actions: "setExitOk",
+        },
+        onError: {
+          // Warning display failure is non-fatal
+          target: "exit",
+          actions: "setExitOk",
         },
       },
     },
