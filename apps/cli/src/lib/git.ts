@@ -9,7 +9,7 @@ import { CLIError } from "./errors.ts";
 
 /**
  * Check if git is installed.
- * Exits with error if not found.
+ * Throws CLIError if not found.
  */
 export async function checkGitInstalled(): Promise<void> {
   try {
@@ -22,7 +22,7 @@ export async function checkGitInstalled(): Promise<void> {
 
 /**
  * Check if the current directory is inside a git repository.
- * Exits with error if not.
+ * Throws CLIError if not inside a git repository.
  */
 export async function checkInsideRepo(): Promise<void> {
   try {
