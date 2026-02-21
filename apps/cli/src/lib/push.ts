@@ -1,6 +1,7 @@
 import { spinner, confirm, text, isCancel, log } from "@clack/prompts";
 import pc from "picocolors";
 import { push, addRemoteAndPush } from "./git.ts";
+import { extractErrorMessage } from "./errors.ts";
 
 // ==============================================================================
 // PUSH MANAGEMENT
@@ -10,6 +11,16 @@ export interface PushOptions {
   push: boolean;
   dangerouslyAutoApprove: boolean;
   isInteractiveMode: boolean;
+}
+
+/** Returns trimmed stderr string for Bun shell errors, or "" for everything else. */
+function getShellStderr(error: unknown): string {
+  if (error === null || typeof error !== "object" || !("stderr" in error))
+    return "";
+  const { stderr } = error as { stderr: unknown };
+  return (
+    stderr instanceof Buffer ? stderr.toString() : typeof stderr === "string" ? stderr : ""
+  ).trim();
 }
 
 /**
@@ -25,14 +36,14 @@ export async function safePush(isAutomated: boolean): Promise<void> {
   try {
     await push();
     s.stop("Pushed successfully");
-  } catch (error: any) {
+  } catch (error) {
     s.stop("Push failed");
 
     // Check for missing remote error
-    const stderr = error.stderr?.toString() || "";
+    const stderrStr = getShellStderr(error);
     if (
-      stderr.includes("No configured push destination") ||
-      stderr.includes("no remote repository specified")
+      stderrStr.includes("No configured push destination") ||
+      stderrStr.includes("no remote repository specified")
     ) {
       if (isAutomated) {
         log.error(pc.red("No remote repository configured. Cannot push."));
@@ -68,15 +79,13 @@ export async function safePush(isAutomated: boolean): Promise<void> {
       try {
         await addRemoteAndPush(remoteUrl as string);
         s2.stop("Remote added and pushed successfully");
-      } catch (e: any) {
+      } catch (innerError) {
         s2.stop("Failed to push to new remote");
-        const errMsg = e.stderr?.toString() || e.message || "Unknown error";
-        log.error(pc.red(errMsg));
+        log.error(pc.red(extractErrorMessage(innerError)));
       }
     } else {
       // Some other error - extract meaningful message
-      const errMsg = stderr || error.message || "Unknown error";
-      log.error(pc.red(`Push failed: ${errMsg}`));
+      log.error(pc.red(`Push failed: ${extractErrorMessage(error)}`));
     }
   }
 }
