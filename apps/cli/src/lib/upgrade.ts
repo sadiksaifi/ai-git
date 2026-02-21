@@ -135,10 +135,15 @@ export async function downloadRelease(
   const tarballPath = path.join(tmpDir, platform.archiveName);
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120_000); // 2 min
+
     const [tarballResp, checksumsResp] = await Promise.all([
-      fetch(tarballUrl),
-      fetch(checksumsUrl),
+      fetch(tarballUrl, { signal: controller.signal }),
+      fetch(checksumsUrl, { signal: controller.signal }),
     ]);
+
+    clearTimeout(timeoutId);
 
     if (!tarballResp.ok) {
       throw new CLIError(`Failed to download binary (HTTP ${tarballResp.status}).`);
