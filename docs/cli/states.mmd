@@ -1,0 +1,816 @@
+%% ═══════════════════════════════════════════════════════════════════════════════
+%% AI-GIT CLI — EXHAUSTIVE STATE MACHINE
+%% Single source of truth for every flow, transition, error path, and interaction
+%%
+%% Contains 6 interconnected sub-flows as composite states:
+%%   1. Top-Level CLI Flow — Master orchestration from entry to exit
+%%   2. Init Sub-Flow — Project initialization (--init)
+%%   3. Setup Wizard Sub-Flow — Provider/model setup (CLI + API paths)
+%%   4. Staging Sub-Flow — File staging decisions
+%%   5. Generation Engine Sub-Flow — 7-state AI generation loop
+%%   6. Push Sub-Flow — Push decisions and remote recovery
+%%   (+) Upgrade Sub-Flow — Self-update and package manager delegation
+%%
+%% Scenario IDs referenced inline (168 total):
+%%   E  = Entry Point (18)       C  = Flag Combination (15)
+%%   CF = Config Resolution (14) SW = Setup Wizard (20)
+%%   IN = Init Flow (10)         PM = Provider/Model (12)
+%%   AA = Auto-Approve (4)       ST = Staging (14)
+%%   GN = Generation (29)        PU = Push (11)
+%%   UP = Upgrade (11)           XC = Cross-Cutting (12)
+%%
+%% Exit codes: 0 = success, 1 = error/abort, 130 = SIGINT (Ctrl+C)
+%%
+%% Source files:
+%%   apps/cli/src/index.ts              — Main orchestration
+%%   apps/cli/src/lib/generation.ts     — Generation state machine
+%%   apps/cli/src/lib/staging.ts        — Staging flow
+%%   apps/cli/src/lib/push.ts           — Push flow
+%%   apps/cli/src/lib/onboarding/       — Setup wizard + onboarding
+%%   apps/cli/src/config.ts             — Config resolution
+%%   apps/cli/src/lib/validation.ts     — Commit message validation
+%%   apps/cli/src/lib/upgrade.ts        — Upgrade command
+%%   apps/cli/src/lib/git.ts            — Git operations
+%%   apps/cli/src/lib/update-check.ts   — Background update check
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+stateDiagram-v2
+
+    %% ─────────────────────────────────────────────────────
+    %% TERMINAL STATES
+    %% ─────────────────────────────────────────────────────
+    state "Exit 0 (success)" as Exit0
+    state "Exit 1 (error/abort)" as Exit1
+    state "Exit 130 (SIGINT)" as Exit130
+
+    %% ═════════════════════════════════════════════════════
+    %% 1. TOP-LEVEL CLI FLOW
+    %% Master orchestration from entry to exit
+    %% ═════════════════════════════════════════════════════
+
+    [*] --> Parse
+
+    %% ── Immediate-exit entry points ──
+
+    %% E1: ai-git --version → print VERSION string
+    Parse --> PrintVersion : --version
+    PrintVersion --> Exit0
+
+    %% E2: ai-git --help → print help sections (cac handles this)
+    Parse --> PrintHelp : --help
+    PrintHelp --> Exit0
+
+    %% E17: ai-git upgrade → upgrade subcommand
+    Parse --> Upgrade : "upgrade" subcommand
+
+    %% E18: ai-git --unknown → unknown option
+    Parse --> Exit1 : unknown option
+
+    %% ── Init entry point ──
+
+    %% E3/E4: ai-git --setup / --init → project initialization
+    Parse --> Init : --init
+
+    %% Init can exit or fall through to normal flow
+    Init --> Exit0 : user exits [IN4, IN6, IN7, IN10]
+    Init --> Exit1 : setup failed [IN8]
+    Init --> FlagProcessing : try now [IN9, C14]
+
+    %% ── Normal entry (all other valid flags) ──
+
+    %% E5-E16: normal entry with valid options
+    %% Flag combinations C1-C15 are resolved here
+    Parse --> FlagProcessing : valid flags
+
+    %% FlagProcessing applies all CLI options:
+    %%   E16/C8: --dangerously-auto-approve expands to stageAll+commit+push
+    %%   E7/C1: -P <id> overrides provider
+    %%   E8/C2: -M <id> overrides model
+    %%   E9/C3: -P + -M overrides both
+    %%   E10/C4-C7,C9,C12,C15: -a sets stageAll
+    %%   E11/C4,C6-C7,C11,C15: -c sets commit
+    %%   E12/C5-C7,C15: -p sets push
+    %%   E13/C11,C15: -H <text> sets hint
+    %%   E14/C12,C15: -X <pat> sets exclude patterns
+    %%   E15/C9-C10: --dry-run enables dry-run mode
+
+    %% Background update check starts here (non-blocking)
+    %% XC8: network failure returns "no update" silently
+    FlagProcessing --> LoadConfig
+
+    %% ── Config resolution ──
+
+    %% CF1-CF14: Two-tier config system (project > global > defaults)
+    %% CF8/CF9: malformed JSON treated as missing (returns undefined)
+    %% CF14/XC10: config migration → backup + deferred notice
+    LoadConfig --> ShowWelcome
+
+    note right of LoadConfig
+        CF2: global complete, no project → use global
+        CF3: no global, project complete → use project
+        CF4: both complete → project overrides global
+        CF5: global complete, project incomplete → use global
+        CF6: global incomplete, project complete → use project
+        CF13: CLI -P flag overrides config provider
+    end note
+
+    %% Config completeness determines next step
+    %% CF1/CF7: both incomplete → force setup wizard
+    ShowWelcome --> SetupWizard : --setup OR config incomplete [E3, E5, CF1, CF7]
+    ShowWelcome --> ResolveProvider : config complete [E6-E16, CF2-CF6]
+
+    %% ── Setup Wizard outcome ──
+
+    %% C13: --setup + -P pre-selects provider default in wizard
+    SetupWizard --> AskTryNow : wizard completed
+    SetupWizard --> Exit1 : wizard cancelled/failed [SW3, SW8, SW12-SW15, SW19, SW20]
+
+    %% SW16-SW18: Post-setup "Run ai-git now?"
+    AskTryNow --> ResolveProvider : Yes [SW16]
+    AskTryNow --> Exit0 : No [SW17]
+    AskTryNow --> Exit0 : Ctrl+C [SW18]
+
+    %% ── Provider/Model validation pipeline ──
+
+    %% PM5/CF10: unknown provider (not in registry)
+    ResolveProvider --> Exit1 : unknown provider [PM5, CF10]
+    ResolveProvider --> GetAdapter : provider valid
+
+    %% PM6: no adapter found
+    GetAdapter --> Exit1 : adapter not found [PM6]
+    GetAdapter --> ValidateModel : adapter found
+
+    %% PM2/CF11: unknown model for CLI provider
+    %% PM4/CF12: deprecated model for API provider
+    %% PM12/XC7: catalog unavailable → cache → snapshot fallback
+    ValidateModel --> Exit1 : model invalid or deprecated [PM2, PM4, CF11, CF12]
+    ValidateModel --> Countdown : valid, --dangerously-auto-approve [AA1-AA4]
+    ValidateModel --> CheckGit : valid, normal
+
+    note right of ValidateModel
+        PM1: CLI provider, valid model → proceed
+        PM3: API provider, model not deprecated → proceed
+        PM12: catalog unavailable → graceful fallback to snapshot
+    end note
+
+    %% ── Auto-approve countdown (5 seconds) ──
+
+    %% AA4: non-TTY (piped) → skip keypress detection, wait full 5s
+    Countdown --> CheckGit : 5s elapsed [AA1]
+    Countdown --> CheckGit : Enter pressed (skip) [AA2]
+    Countdown --> Exit130 : Ctrl+C [AA3]
+
+    note right of Countdown
+        AA4: non-TTY environment skips keypress
+        detection, waits full 5 seconds silently
+    end note
+
+    %% ── Dependency checks ──
+
+    %% Background update check awaited + notification shown here
+    %% XC2: git not installed
+    CheckGit --> Exit1 : git not installed [XC2]
+    CheckGit --> CheckRepo : installed
+
+    %% XC3: not inside git repo
+    CheckRepo --> Exit1 : not a git repository [XC3]
+    CheckRepo --> CheckAvail : in repo
+
+    %% PM7-PM11: provider availability
+    %% PM11: dry-run skips this check entirely
+    %% PM8: CLI binary not installed
+    %% PM10: API key not found
+    %% XC9: secrets keychain unavailable → AES-256-GCM file fallback
+    CheckAvail --> Exit1 : provider unavailable [PM8, PM10]
+    CheckAvail --> Staging : available or dry-run [PM7, PM9, PM11]
+
+    %% ── Phase 1: Staging ──
+
+    Staging --> Exit1 : aborted [ST11, ST12]
+    Staging --> Exit0 : clean working directory [ST7]
+    Staging --> Generation : files staged
+
+    %% ── Phase 2: Generation ──
+
+    Generation --> Exit0 : dry-run completed [GN14]
+    Generation --> Exit1 : aborted or fatal error
+    Generation --> Push : committed
+
+    %% ── Phase 3: Push ──
+
+    %% isInteractiveMode = !(commit || stageAll || push || dangerouslyAutoApprove)
+    Push --> Exit0 : done
+
+    %% ═════════════════════════════════════════════════════
+    %% 2. INIT SUB-FLOW (--init)
+    %% Project configuration initialization
+    %% Scenarios: IN1-IN10
+    %% ═════════════════════════════════════════════════════
+
+    state Init {
+        [*] --> i_CheckProject
+
+        %% IN5-IN7: existing project config (.ai-git.json)
+        i_CheckProject --> i_ConfirmOverwrite : .ai-git.json exists [IN5]
+        i_CheckProject --> i_CheckGlobal : no project config [IN1-IN4]
+
+        %% IN5: overwrite confirmed → continue
+        %% IN6: overwrite declined → exit
+        %% IN7: Ctrl+C at overwrite prompt → exit [XC1]
+        i_ConfirmOverwrite --> i_CheckGlobal : Yes [IN5]
+        i_ConfirmOverwrite --> i_ExitOk : No / Ctrl+C [IN6, IN7]
+
+        %% IN1/IN2: global config complete → choice between copy and wizard
+        %% IN3/IN4: no global config → confirm setup
+        i_CheckGlobal --> i_InitChoice : global config complete [IN1, IN2]
+        i_CheckGlobal --> i_ConfirmSetup : no global config [IN3, IN4]
+
+        %% IN3: proceed to wizard
+        %% IN4: decline setup → exit
+        i_ConfirmSetup --> i_RunWizard : Yes [IN3]
+        i_ConfirmSetup --> i_ExitOk : No [IN4]
+
+        %% IN1: copy global config to .ai-git.json
+        %% IN2: run full setup wizard (target=project)
+        %% IN8: cancel at choice prompt [XC1]
+        i_InitChoice --> i_CopyGlobal : Copy from global config [IN1]
+        i_InitChoice --> i_RunWizard : Run setup wizard [IN2]
+        i_InitChoice --> i_ExitErr : cancel [IN8]
+
+        i_CopyGlobal --> i_AskTryNow
+
+        %% i_RunWizard invokes the SetupWizard sub-flow (target=project)
+        i_RunWizard --> i_AskTryNow : completed
+        i_RunWizard --> i_ExitErr : not completed
+
+        note right of i_RunWizard
+            Runs SetupWizard sub-flow
+            with target = "project"
+        end note
+
+        %% IN9: continue to normal flow
+        %% IN10: exit after init
+        i_AskTryNow --> i_Continue : Yes [IN9]
+        i_AskTryNow --> i_ExitOk : No / Ctrl+C [IN10]
+    }
+
+    %% ═════════════════════════════════════════════════════
+    %% 3. SETUP WIZARD SUB-FLOW
+    %% Provider and model selection (CLI + API paths)
+    %% Scenarios: SW1-SW20
+    %% ═════════════════════════════════════════════════════
+
+    state SetupWizard {
+        [*] --> sw_PreCheck
+
+        %% Pre-check: parallel checkAvailable() for all CLI providers
+        %% Provider list shows hints: "(recommended)", "(not installed)"
+        sw_PreCheck --> sw_SelectProvider
+
+        %% SW12: cancel at provider selection [XC1]
+        %% SW19: unknown provider (defensive, shouldn't happen in UI)
+        sw_SelectProvider --> sw_CLIFlow : CLI-mode provider selected
+        sw_SelectProvider --> sw_APIFlow : API-mode provider selected
+        sw_SelectProvider --> sw_Failed : cancel [SW12]
+        sw_SelectProvider --> sw_Failed : unknown provider [SW19]
+
+        %% ── CLI Provider Path ──
+
+        state sw_CLIFlow {
+            [*] --> sw_CheckInstalled
+
+            %% SW1: binary found → select model
+            %% PM7: CLI provider available
+            sw_CheckInstalled --> sw_SelectCLIModel : installed [SW1]
+            sw_CheckInstalled --> sw_NotInstalled : binary missing
+
+            %% Show install instructions note
+            %% SW2: choose different → restart wizard from provider selection
+            %% SW3: exit to install first
+            sw_NotInstalled --> sw_CliAction
+            sw_CliAction --> sw_Restart : Choose different provider [SW2]
+            sw_CliAction --> sw_CliFailed : Exit and install first [SW3]
+
+            %% SW1: model chosen → save config
+            %% SW13: cancel at model selection [XC1]
+            sw_SelectCLIModel --> sw_SaveCli : model chosen [SW1]
+            sw_SelectCLIModel --> sw_CliFailed : cancel [SW13]
+
+            sw_SaveCli --> sw_CliDone
+        }
+
+        %% SW2: restart loops back to provider selection
+        sw_Restart --> sw_SelectProvider
+
+        %% ── API Provider Path ──
+
+        state sw_APIFlow {
+            [*] --> sw_CheckKey
+
+            %% SW4: no existing key → prompt for key
+            %% SW5/SW6: existing key found → choice
+            sw_CheckKey --> sw_KeyChoice : key exists [SW5, SW6]
+            sw_CheckKey --> sw_EnterKey : no existing key [SW4]
+
+            %% SW5: use existing key → validate
+            %% SW6: enter new key → prompt
+            %% SW15: cancel [XC1]
+            sw_KeyChoice --> sw_Validate : Use existing key [SW5]
+            sw_KeyChoice --> sw_EnterKey : Enter new key [SW6]
+            sw_KeyChoice --> sw_ApiFailed : cancel [SW15]
+
+            %% SW4: key entered → validate
+            %% SW14: cancel at key entry [XC1]
+            sw_EnterKey --> sw_Validate : key entered [SW4]
+            sw_EnterKey --> sw_ApiFailed : cancel [SW14]
+
+            %% Spinner: "Validating API key and fetching models..."
+            %% Validates key by calling adapter.fetchModels(apiKey)
+            sw_Validate --> sw_FetchModels : valid
+            sw_Validate --> sw_KeyError : invalid
+
+            %% SW7: enter different key (loops back)
+            %% SW8: exit setup
+            sw_KeyError --> sw_EnterKey : Enter different key [SW7]
+            sw_KeyError --> sw_ApiFailed : Exit setup [SW8]
+
+            %% SW9: API returns 0 models
+            %% SW10: ≤20 models → clack select list
+            %% SW11: >20 models → fuzzy autocomplete (prompts library)
+            %% SW20: provider adapter not found
+            sw_FetchModels --> sw_SelectAPIModel : models available [SW10, SW11]
+            sw_FetchModels --> sw_ApiFailed : 0 models returned [SW9]
+            sw_FetchModels --> sw_ApiFailed : adapter not found [SW20]
+
+            %% SW13: cancel at model selection [XC1]
+            sw_SelectAPIModel --> sw_SaveApi : model chosen [SW10, SW11]
+            sw_SelectAPIModel --> sw_ApiFailed : cancel [SW13]
+
+            sw_SaveApi --> sw_ApiDone
+        }
+
+        %% Merge outcomes
+        sw_CliDone --> sw_Complete
+        sw_ApiDone --> sw_Complete
+        sw_CliFailed --> sw_Failed
+        sw_ApiFailed --> sw_Failed
+
+        note right of sw_Complete
+            Config saved (global or project based on target).
+            Log: success message + SPEED_HINT.
+        end note
+    }
+
+    %% ═════════════════════════════════════════════════════
+    %% 4. STAGING SUB-FLOW
+    %% File staging decisions
+    %% Scenarios: ST1-ST14
+    %% ═════════════════════════════════════════════════════
+
+    state Staging {
+        [*] --> st_CheckStaged
+
+        %% Branch based on whether files are already in the git staging area
+        st_CheckStaged --> st_HasStaged : files already staged [ST1-ST6]
+        st_CheckStaged --> st_NoneStaged : nothing staged [ST7-ST12]
+
+        %% ── Path A: Files Already Staged ──
+
+        state st_HasStaged {
+            [*] --> st_ShowStaged
+
+            %% Display "Currently Staged Files" note
+            st_ShowStaged --> st_CheckUnstaged
+
+            %% ST1: no unstaged changes → proceed with existing staged files
+            %% ST5: stageAll flag set → auto-stage all remaining
+            %% ST6: dangerouslyAutoApprove → auto-stage all remaining
+            st_CheckUnstaged --> st_StagedDone : no unstaged [ST1]
+            st_CheckUnstaged --> st_AutoMore : stageAll or autoApprove [ST5, ST6]
+            st_CheckUnstaged --> st_PromptMore : unstaged exist, interactive
+
+            %% ST14/C12: exclude patterns filter files before staging
+            st_AutoMore --> st_StagedDone
+
+            %% Prompt: "You have unstaged changes. Would you like to stage more?"
+            %% ST2: "No, proceed with generation" → keep existing
+            %% ST3: "Yes, select files to stage" → multiselect
+            %% ST4: "Stage All (git add -A)" → stageAllExcept
+            %% ST12: Ctrl+C → abort [XC1]
+            st_PromptMore --> st_StagedDone : Proceed with staged [ST2]
+            st_PromptMore --> st_MultiMore : Select files [ST3]
+            st_PromptMore --> st_StageAllMore : Stage All [ST4]
+            st_PromptMore --> st_StagedAbort : cancel [ST12]
+
+            %% Multiselect from unstaged files (required=false)
+            %% ST3: files chosen → stage them
+            %% ST13: 0 files chosen → proceed with existing staged
+            %% ST12: cancel → abort [XC1]
+            st_MultiMore --> st_StageSelMore : files chosen [ST3]
+            st_MultiMore --> st_StagedDone : 0 chosen [ST13]
+            st_MultiMore --> st_StagedAbort : cancel [ST12]
+
+            st_StageSelMore --> st_StagedDone
+            st_StageAllMore --> st_StagedDone
+        }
+
+        %% ── Path B: Nothing Staged ──
+
+        state st_NoneStaged {
+            [*] --> st_CheckUnstaged2
+
+            %% ST7: no unstaged files either → clean working directory
+            st_CheckUnstaged2 --> st_Clean : no unstaged files [ST7]
+
+            %% ST8/C4-C9,C12,C15: stageAll flag → auto-stage
+            %% ST14: exclude patterns applied via stageAllExcept
+            st_CheckUnstaged2 --> st_AutoAll : stageAll flag [ST8]
+
+            %% Interactive path: unstaged files exist, no stageAll flag
+            st_CheckUnstaged2 --> st_PromptAction : unstaged exist, interactive
+
+            %% Prompt: "No staged changes detected. What would you like to do?"
+            %% ST9: "Stage All (git add -A)"
+            %% ST10: "Select Files" → multiselect (required=true)
+            %% ST11: "Cancel"
+            %% ST12: Ctrl+C [XC1]
+            st_PromptAction --> st_StageAll2 : Stage All [ST9]
+            st_PromptAction --> st_SelectFiles : Select Files [ST10]
+            st_PromptAction --> st_NoneAbort : Cancel [ST11]
+            st_PromptAction --> st_NoneAbort : Ctrl+C [ST12]
+
+            %% Multiselect from unstaged files (required=true)
+            %% ST12: cancel → abort [XC1]
+            st_SelectFiles --> st_StageSel2 : files chosen [ST10]
+            st_SelectFiles --> st_NoneAbort : cancel [ST12]
+
+            st_AutoAll --> st_NoneDone
+            st_StageAll2 --> st_NoneDone
+            st_StageSel2 --> st_NoneDone
+        }
+    }
+
+    %% ═════════════════════════════════════════════════════
+    %% 5. GENERATION ENGINE SUB-FLOW
+    %% 7-state AI generation loop (generate → validate →
+    %% auto_retry/prompt → retry/edit → done)
+    %% Scenarios: GN1-GN29
+    %% ═════════════════════════════════════════════════════
+
+    state Generation {
+        [*] --> g_Generate
+
+        %% Context variables tracked across iterations:
+        %%   autoRetries (0..3), editedManually (bool),
+        %%   generationErrors (string[]), userRefinements (string[]),
+        %%   lastGeneratedMessage (string), branchName (string)
+
+        %% ── GENERATE state ──
+        %% Fetches diff, recent commits, file list; builds prompt; invokes AI
+
+        state g_Generate {
+            [*] --> g_FetchContext
+
+            %% GN1-GN3: new repo with no commits → branch name handling
+            %% GN1: interactive → prompt "Set initial branch name?" (default: "main")
+            %% GN2: autoApprove → default "main" without prompting
+            %% GN3: cancel branch prompt → abort
+            g_FetchContext --> g_BranchPrompt : new repo, no commits [GN1, GN2]
+            g_FetchContext --> g_BuildPrompt : existing branch
+
+            g_BranchPrompt --> g_BuildPrompt : name set [GN1, GN2]
+            g_BranchPrompt --> g_Aborted : cancel [GN3]
+
+            %% Build AI prompt with:
+            %%   - System prompt (Conventional Commits schema)
+            %%   - Staged diff (XC4: truncated at 2500 lines)
+            %%   - XC5: binary-only diff falls back to --stat
+            %%   - XC6: lock files excluded from diff content
+            %%   - Recent commit subjects (style context)
+            %%   - Staged file list with status (A/M/D/R)
+            %%   - Hint text if provided [E13, C11, C15]
+            %%   - Error context on retries (generationErrors + lastMessage)
+            %%   - User refinements on retry (userRefinements)
+
+            %% GN14/C9-C10: --dry-run prints system+user prompts, no AI call
+            g_BuildPrompt --> g_DryRun : --dry-run [GN14]
+            g_BuildPrompt --> g_InvokeAI : normal
+
+            g_DryRun --> g_DoneDry
+
+            %% GN12/GN13: slow generation warning
+            %% threshold > 0: spinner changes to "Still generating..." after threshold ms
+            %% threshold = 0 (GN13): warning disabled
+            %% XC11: API rate limiting (429) → error message passed through
+
+            g_InvokeAI --> g_CleanResponse : AI responds
+            g_InvokeAI --> g_GenError : AI fails
+
+            %% GN8: model not found → specific error message
+            %% GN9: API provider error → provider error + guidance
+            %% GN10: CLI provider error → non-zero exit code
+            g_GenError --> g_Fatal
+
+            %% Strip markdown code blocks (```...```) from response
+            g_CleanResponse --> g_CheckEmpty
+
+            %% GN11: empty after cleanup → fatal error
+            g_CheckEmpty --> g_Fatal : empty [GN11]
+            g_CheckEmpty --> g_ToValidate : non-empty
+        }
+
+        %% ── VALIDATE state ──
+        %% Validates commit message against Conventional Commits rules
+        %% 7 rules checked:
+        %%   critical: header-length (>50), valid-type, no-markdown
+        %%   important: imperative-mood, lowercase-subject, breaking-change-consistency
+        %%   minor: no-period
+
+        state g_Validate {
+            [*] --> g_RunRules
+            g_RunRules --> g_CheckSeverity
+        }
+
+        g_ToValidate --> g_Validate
+
+        %% GN6: critical errors + autoRetries < 3 → auto-retry
+        g_Validate --> g_AutoRetry : critical errors, retries < 3 [GN6]
+        %% GN7: critical errors + autoRetries >= 3 → prompt with validationFailed=true
+        g_Validate --> g_Prompt : critical errors, retries ≥ 3 [GN7]
+        %% GN4: valid, no errors → prompt
+        %% GN5: valid with important/minor warnings → prompt (warnings shown)
+        g_Validate --> g_Prompt : valid (may have warnings) [GN4, GN5]
+
+        %% ── AUTO_RETRY state ──
+        %% Increments autoRetries, stores errors for context injection
+        %% Log: "Validation failed: {errors}. Retrying ({n}/3)..."
+
+        g_AutoRetry --> g_Generate : increment retries, loop [GN6]
+
+        %% ── PROMPT state ──
+        %% Interactive commit menu or auto-commit based on --commit flag
+
+        state g_Prompt {
+            [*] --> g_CheckCommit
+
+            %% ── Auto-commit path (--commit flag) ──
+            %% GN15: valid message → auto-commit (skip menu)
+            %% GN16: validationFailed → log warning, then auto-commit
+            %% GN17: git commit fails → abort
+            %% C4,C6-C8,C11,C15: flag combinations that include -c
+            g_CheckCommit --> g_AutoCommit : --commit flag [GN15, GN16]
+            g_CheckCommit --> g_ShowMsg : interactive (no --commit)
+
+            g_AutoCommit --> g_Committed : success [GN15, GN16]
+            g_AutoCommit --> g_CommitErr : git error [GN17]
+
+            %% ── Interactive path ──
+            %% Display "Generated Commit Message" in note box
+            %% (with warnings if validationFailed or important/minor errors)
+            g_ShowMsg --> g_Menu
+
+            %% Menu: Commit / Retry / Edit / Cancel
+            %% GN18: Commit → try git commit
+            %% GN20: Retry → enter refinement instructions
+            %% GN21: Edit → open in external editor
+            %% GN22: Cancel
+            %% GN23: Ctrl+C [XC1]
+            g_Menu --> g_TryCommit : Commit [GN18]
+            g_Menu --> g_ToRetry : Retry [GN20]
+            g_Menu --> g_ToEdit : Edit [GN21]
+            g_Menu --> g_Cancelled : Cancel [GN22]
+            g_Menu --> g_Cancelled : Ctrl+C [GN23]
+
+            %% GN18: success → committed
+            %% GN19: git commit fails → stay in prompt (can retry)
+            g_TryCommit --> g_Committed : success [GN18]
+            g_TryCommit --> g_ShowMsg : git error, stay in prompt [GN19]
+        }
+
+        %% ── RETRY state ──
+        %% User enters refinement instructions or retries fresh
+
+        state g_Retry {
+            [*] --> g_AskRefine
+
+            %% Prompt: "Enter instructions to refine (or leave blank to retry as-is)"
+            %% GN24: instructions → append to userRefinements
+            %% GN25: blank → clear userRefinements (fresh retry)
+            %% GN26: cancel (Ctrl+C) [XC1]
+            g_AskRefine --> g_RefineInstr : instructions given [GN24]
+            g_AskRefine --> g_RefineFresh : blank (fresh retry) [GN25]
+            g_AskRefine --> g_RetryAbort : cancel [GN26]
+        }
+
+        g_ToRetry --> g_Retry
+        %% Reset autoRetries, editedManually, generationErrors on retry
+        g_RefineInstr --> g_Generate : append refinements, regenerate [GN24]
+        g_RefineFresh --> g_Generate : clear refinements, regenerate [GN25]
+
+        %% ── EDIT state ──
+        %% Open message in external editor
+        %% Editor priority: config.editor > $VISUAL > $EDITOR > platform defaults
+
+        state g_Edit {
+            [*] --> g_FindEditor
+
+            %% GN27: editor found, user saves non-empty message
+            %%   → editedManually=true, autoRetries=3 (prevent auto-retry on re-validate)
+            %% GN28: editor found, user clears message → abort
+            %% GN29: no editor found → error msg, fallback to validate original
+            g_FindEditor --> g_OpenEditor : editor found
+            g_FindEditor --> g_NoEditor : no editor [GN29]
+
+            g_OpenEditor --> g_EditSaved : non-empty [GN27]
+            g_OpenEditor --> g_EditCleared : empty [GN28]
+
+            %% GN29: "No suitable editor found. Set EDITOR env var."
+            %% Falls through to validate with the original message
+            g_NoEditor --> g_EditFallback
+        }
+
+        g_ToEdit --> g_Edit
+        g_EditSaved --> g_Validate : validate edited message [GN27]
+        g_EditFallback --> g_Validate : validate original message [GN29]
+
+        %% ── DONE state ──
+        %% Three categories: committed, aborted, dry-run
+
+        %% Committed (success path)
+        %% Shows "Commit Created" box with hash, branch, stats, file list
+        g_Committed --> g_Done
+
+        %% Aborted (various cancel/error paths)
+        g_Cancelled --> g_Done
+        g_CommitErr --> g_Done
+        g_RetryAbort --> g_Done
+        g_EditCleared --> g_Done
+        g_Aborted --> g_Done
+
+        %% Fatal errors (exit(1) in source, modeled as abort)
+        %% GN8: model not found, GN9: API error, GN10: CLI error, GN11: empty
+        g_Fatal --> g_Done
+
+        %% Dry-run (not aborted, no commit)
+        g_DoneDry --> g_Done
+    }
+
+    %% ═════════════════════════════════════════════════════
+    %% 6. PUSH SUB-FLOW
+    %% Push decisions and remote recovery
+    %% Scenarios: PU1-PU11
+    %% ═════════════════════════════════════════════════════
+
+    state Push {
+        [*] --> p_CheckFlags
+
+        %% PU1/C5-C8,C15: --push flag → auto-push
+        %% PU9: interactive mode (no workflow flags) → prompt
+        %% PU11: flag-only mode (e.g. -a -c without -p) → skip push
+        p_CheckFlags --> p_SafePush : --push flag [PU1]
+        p_CheckFlags --> p_PromptPush : interactive mode [PU9]
+        p_CheckFlags --> p_Done : non-interactive, no --push [PU11]
+
+        %% Prompt: "Do you want to git push?" (initialValue: false)
+        %% PU9: Yes → push
+        %% PU10: No / cancel → skip
+        p_PromptPush --> p_SafePush : Yes [PU9]
+        p_PromptPush --> p_Done : No / cancel [PU10]
+
+        %% ── SafePush: push with error recovery ──
+
+        state p_SafePush {
+            [*] --> p_TryPush
+
+            %% PU1: push succeeds
+            p_TryPush --> p_PushOk : success [PU1]
+            %% Missing remote detection (stderr contains specific messages)
+            p_TryPush --> p_NoRemote : no remote configured [PU2, PU3]
+            %% PU8: other push error
+            p_TryPush --> p_PushErr : other error [PU8]
+
+            %% PU2: automated (dangerouslyAutoApprove) → log error, skip
+            %% PU3: interactive → prompt to add remote
+            p_NoRemote --> p_SkipLog : automated [PU2]
+            p_NoRemote --> p_AskRemote : interactive [PU3]
+
+            %% Prompt: "Do you want to add a remote repository?"
+            %% PU7: No → skip push
+            p_AskRemote --> p_EnterURL : Yes
+            p_AskRemote --> p_SkipPush : No [PU7]
+            p_AskRemote --> p_SkipPush : cancel
+
+            %% Prompt: "Enter the remote repository URL"
+            %% PU4: URL entered → add remote + push
+            %% PU5: push fails after adding remote
+            %% PU6: cancel URL input → skip
+            p_EnterURL --> p_AddPush : URL entered
+            p_EnterURL --> p_SkipPush : cancel [PU6]
+
+            p_AddPush --> p_RemoteOk : success [PU4]
+            p_AddPush --> p_RemoteErr : failure [PU5]
+        }
+
+        p_SafePush --> p_Done
+    }
+
+    %% ═════════════════════════════════════════════════════
+    %% 7. UPGRADE SUB-FLOW
+    %% Self-update and package manager delegation
+    %% Scenarios: UP1-UP11
+    %% ═════════════════════════════════════════════════════
+
+    state Upgrade {
+        [*] --> up_Detect
+
+        %% Detect install method: brew, npm, source, curl, unknown
+        %% UP1: Homebrew → show "brew upgrade ai-git"
+        up_Detect --> up_Brew : brew [UP1]
+        %% UP2: npm → show "npm update -g @ai-git/cli"
+        up_Detect --> up_Npm : npm [UP2]
+        %% UP3: source → show "git pull && bun install && bun run build"
+        up_Detect --> up_Source : source [UP3]
+        %% UP4-UP11: curl/unknown → self-update flow
+        up_Detect --> up_SelfUpdate : curl or unknown
+
+        up_Brew --> up_ExitOk
+        up_Npm --> up_ExitOk
+        up_Source --> up_ExitOk
+
+        state up_SelfUpdate {
+            [*] --> up_FetchRelease
+
+            %% UP6: GitHub API fetch fails
+            up_FetchRelease --> up_FetchFail : fetch error [UP6]
+            %% UP4: already on latest version
+            up_FetchRelease --> up_Latest : same version [UP4]
+            %% UP5: newer version available
+            up_FetchRelease --> up_Platform : newer available [UP5]
+
+            %% UP10: unsupported platform/architecture
+            %% Supported: darwin/linux + arm64/x64
+            up_Platform --> up_PlatFail : unsupported [UP10]
+            up_Platform --> up_Download : supported
+
+            %% UP7: download HTTP error
+            up_Download --> up_DlFail : HTTP error [UP7]
+            up_Download --> up_Checksum : downloaded
+
+            %% UP8: checksum mismatch (SHA-256 verification)
+            up_Checksum --> up_ChkFail : mismatch [UP8]
+            up_Checksum --> up_Extract : valid
+
+            up_Extract --> up_CheckBin
+
+            %% UP11: binary not found after extraction
+            up_CheckBin --> up_Install : binary found
+            up_CheckBin --> up_ExtractFail : binary not found [UP11]
+
+            %% UP9: permission denied on target directory
+            %% Suggests: "Try: sudo ai-git upgrade"
+            up_Install --> up_PermFail : permission denied [UP9]
+            %% UP5: atomic replace: copy → chmod 755 → rename
+            up_Install --> up_Success : installed [UP5]
+        }
+    }
+
+    %% Upgrade terminal transitions
+    Upgrade --> Exit0 : success or delegated
+    Upgrade --> Exit1 : failure
+
+    %% ═════════════════════════════════════════════════════
+    %% CROSS-CUTTING CONCERNS
+    %% Scenarios: XC1-XC12
+    %% ═════════════════════════════════════════════════════
+
+    note right of Exit1
+        XC1: Ctrl+C at ANY @clack prompt triggers
+        isCancel() → abort/exit. Applies to all
+        interactive states across all sub-flows.
+
+        XC4: Diffs > 2500 lines are truncated with
+        "... [DIFF TRUNCATED] ..." marker.
+
+        XC5: Binary-only diffs fall back to --stat view.
+
+        XC6: Lock files (package-lock.json, yarn.lock,
+        bun.lockb, pnpm-lock.yaml) excluded from diff
+        content but remain in staged file list.
+    end note
+
+    note right of Exit0
+        XC7: Network failure during model catalog
+        fetch → fallback chain: cache → bundled snapshot.
+
+        XC8: Network failure during update check →
+        returns "no update available" (silent).
+
+        XC9: Secrets keychain unavailable →
+        fallback to AES-256-GCM encrypted file.
+
+        XC11: API rate limiting (429) → error
+        message from provider passed through to user.
+
+        XC12: Concurrent ai-git runs → no locking;
+        git handles conflicts at the VCS level.
+    end note
