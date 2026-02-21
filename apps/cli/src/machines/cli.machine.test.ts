@@ -211,7 +211,7 @@ describe("cliMachine", () => {
           stagedFiles: [] as string[],
           aborted: false as boolean,
         })),
-        warnCleanTreeActor: fromPromise(async () => {
+        warnCleanTreeActor: fromPromise(async (): Promise<void> => {
           throw new Error("display error");
         }),
       },
