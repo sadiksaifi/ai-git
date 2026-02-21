@@ -38,6 +38,8 @@ describe("getStagedFileList", () => {
   });
 });
 
+// Smoke test — per-file assertions only run when files exist in the working tree.
+// Deterministic coverage is provided by parseNameStatusOutput tests below.
 describe("getStagedFilesWithStatus", () => {
   test("returns FileWithStatus array", async () => {
     const files = await getStagedFilesWithStatus();
@@ -51,6 +53,8 @@ describe("getStagedFilesWithStatus", () => {
   });
 });
 
+// Smoke test — per-file assertions only run when files exist in the working tree.
+// Deterministic coverage is provided by parseUnstagedOutput tests below.
 describe("getUnstagedFilesWithStatus", () => {
   test("returns FileWithStatus array", async () => {
     const files = await getUnstagedFilesWithStatus();

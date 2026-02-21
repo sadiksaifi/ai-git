@@ -251,6 +251,8 @@ export const stagingMachine = setup({
             // ST13: 0 selected files is intentional when pre-staged files exist —
             // the user chose "select files" but decided not to add more, so we
             // proceed with whatever is already staged rather than aborting.
+            // Note: if stagedFiles is empty, the consumer (cli.machine) handles
+            // this via its hasNoStagedFiles guard → warnCleanTree transition.
             target: "showResult",
           },
           {
