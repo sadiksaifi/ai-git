@@ -225,6 +225,7 @@ export function installBinary(extractedBinPath: string): void {
  * Clean up the temporary directory. Best effort — never throws.
  */
 export function cleanupTmpDir(tmpDir: string): void {
+  if (!tmpDir) return;
   try {
     fs.rmSync(tmpDir, { recursive: true });
   } catch {
