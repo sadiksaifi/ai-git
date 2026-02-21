@@ -298,6 +298,10 @@ export const stagingMachine = setup({
       // @ts-expect-error — XState v5 invoke type inference
       invoke: {
         src: "displayStagedResultActor",
+        // Pass context so the actor knows which files were staged in this session.
+        // The actor still calls getStagedFilesWithStatus() for accurate statuses,
+        // but filters to only the files in context.stagedFiles.
+        input: ({ context }) => ({ stagedFiles: context.stagedFiles }),
         onDone: "done",
         onError: "done", // non-fatal
       },

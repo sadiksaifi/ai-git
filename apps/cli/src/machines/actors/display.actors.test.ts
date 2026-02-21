@@ -6,15 +6,15 @@ import {
 } from "./display.actors.ts";
 
 describe("displayStagedResultActor", () => {
-  test("calls resolver and completes without error", async () => {
-    let called = false;
-    const actor = createDisplayStagedResultActor(async () => {
-      called = true;
+  test("calls resolver with input and completes without error", async () => {
+    let receivedFiles: string[] = [];
+    const actor = createDisplayStagedResultActor(async (input) => {
+      receivedFiles = input.stagedFiles;
     });
-    const a = createActor(actor);
+    const a = createActor(actor, { input: { stagedFiles: ["a.ts", "b.ts"] } });
     a.start();
     await waitFor(a, (s) => s.status === "done");
-    expect(called).toBe(true);
+    expect(receivedFiles).toEqual(["a.ts", "b.ts"]);
   });
 });
 

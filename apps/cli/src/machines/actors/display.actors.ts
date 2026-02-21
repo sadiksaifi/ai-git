@@ -4,14 +4,25 @@ import { displayFileList } from "../../lib/display.ts";
 
 // ── Display staged result (after staging resolves) ────────────────────
 
+export interface DisplayStagedResultInput {
+  stagedFiles: string[];
+}
+
 export function createDisplayStagedResultActor(
-  resolver?: () => Promise<void>,
+  resolver?: (input: DisplayStagedResultInput) => Promise<void>,
 ) {
-  const defaultResolver = async () => {
-    const staged = await getStagedFilesWithStatus();
-    displayFileList("Staged files", staged);
+  const defaultResolver = async (input: DisplayStagedResultInput) => {
+    // Re-fetch statuses for accurate display (context only stores paths),
+    // then filter to files the machine actually staged this session.
+    const allStaged = await getStagedFilesWithStatus();
+    const relevant = input.stagedFiles.length > 0
+      ? allStaged.filter((f) => input.stagedFiles.some((p) => f.path.includes(p)))
+      : allStaged;
+    displayFileList("Staged files", relevant);
   };
-  return fromPromise(async () => (resolver ?? defaultResolver)());
+  return fromPromise(async ({ input }: { input: DisplayStagedResultInput }) =>
+    (resolver ?? defaultResolver)(input),
+  );
 }
 
 export const displayStagedResultActor = createDisplayStagedResultActor();
