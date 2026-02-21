@@ -341,63 +341,23 @@ describe("ai-git CLI", () => {
     expect(result.exitCode).toBe(0);
   });
 
-  it("should reject haiku-high as invalid model", async () => {
-    const homeDir = createTestHome({
-      provider: "claude-code",
-      model: "haiku-high",
-    });
-    const noProviderPath = await createPathWithoutProviderCLI();
-    const repoDir = createGitRepo();
+  it.each(["haiku-high", "haiku-medium", "haiku-low"])(
+    "should reject %s as invalid model",
+    async (model) => {
+      const homeDir = createTestHome({ provider: "claude-code", model });
+      const noProviderPath = await createPathWithoutProviderCLI();
+      const repoDir = createGitRepo();
 
-    const result = await runCLI([], {
-      cwd: repoDir,
-      homeDir,
-      pathEnv: noProviderPath,
-    });
+      const result = await runCLI([], {
+        cwd: repoDir,
+        homeDir,
+        pathEnv: noProviderPath,
+      });
 
-    expect(result.stderr).toContain("haiku-high");
-    expect(result.stderr).toContain("Unknown model");
-    expect(result.stderr).toContain("--setup");
-    expect(result.exitCode).toBe(1);
-  });
-
-  it("should reject haiku-medium as invalid model", async () => {
-    const homeDir = createTestHome({
-      provider: "claude-code",
-      model: "haiku-medium",
-    });
-    const noProviderPath = await createPathWithoutProviderCLI();
-    const repoDir = createGitRepo();
-
-    const result = await runCLI([], {
-      cwd: repoDir,
-      homeDir,
-      pathEnv: noProviderPath,
-    });
-
-    expect(result.stderr).toContain("haiku-medium");
-    expect(result.stderr).toContain("Unknown model");
-    expect(result.stderr).toContain("--setup");
-    expect(result.exitCode).toBe(1);
-  });
-
-  it("should reject haiku-low as invalid model", async () => {
-    const homeDir = createTestHome({
-      provider: "claude-code",
-      model: "haiku-low",
-    });
-    const noProviderPath = await createPathWithoutProviderCLI();
-    const repoDir = createGitRepo();
-
-    const result = await runCLI([], {
-      cwd: repoDir,
-      homeDir,
-      pathEnv: noProviderPath,
-    });
-
-    expect(result.stderr).toContain("haiku-low");
-    expect(result.stderr).toContain("Unknown model");
-    expect(result.stderr).toContain("--setup");
-    expect(result.exitCode).toBe(1);
-  });
+      expect(result.stderr).toContain(model);
+      expect(result.stderr).toContain("Unknown model");
+      expect(result.stderr).toContain("--setup");
+      expect(result.exitCode).toBe(1);
+    },
+  );
 });
