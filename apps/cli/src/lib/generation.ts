@@ -361,6 +361,12 @@ export async function runGenerationLoop(
 
         // Auto-commit flow (--commit flag)
         if (options.commit) {
+          // Always display the generated message before committing
+          const autoNoteTitle = state.validationFailed
+            ? "Generated Commit Message (with warnings)"
+            : "Generated Commit Message";
+          note(currentMessage, autoNoteTitle);
+
           if (state.validationFailed) {
             log.warn(pc.yellow("Committing with validation warnings (--commit flag active)."));
           }
