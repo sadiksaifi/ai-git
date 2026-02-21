@@ -4,9 +4,7 @@ import { stagingMachine } from "./staging.machine.ts";
 
 // Shared no-op display actor mocks — used in every test
 const displayMocks = {
-  // @ts-expect-error — XState v5 test mock type inference
   displayStagedResultActor: fromPromise(async () => {}),
-  // @ts-expect-error — XState v5 test mock type inference
   displayFileSummaryActor: fromPromise(async () => {}),
 };
 
