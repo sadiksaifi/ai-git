@@ -24,7 +24,7 @@ type TextInput = {
   message: string;
   placeholder?: string;
   initialValue?: string;
-  validate?: (value: string) => string | void;
+  validate?: (value: string) => string | Error | undefined;
 };
 
 type MultiselectInput = {

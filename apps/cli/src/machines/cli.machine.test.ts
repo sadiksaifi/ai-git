@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import { createActor, waitFor, fromPromise } from "xstate";
 import { cliMachine } from "./cli.machine.ts";
-import type { CLIInput } from "./cli.machine.ts";
+import type { CLIInput, ConfigResolutionResult, OnboardingActorResult } from "./cli.machine.ts";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -25,12 +25,11 @@ const defaultInput = (overrides?: Partial<CLIInput["options"]>): CLIInput => ({
 });
 
 /** Mock resolved config data returned by loadAndResolveConfigActor */
-const mockConfigResult = () => ({
+const mockConfigResult = (): ConfigResolutionResult => ({
   config: {
     provider: "claude-code",
     model: "sonnet-low",
-    prompt: undefined,
-    editor: undefined,
+    defaults: { stageAll: false, commit: false, push: false },
     slowWarningThresholdMs: 5000,
   },
   providerDef: {
@@ -60,17 +59,17 @@ const happyPathActors = () => ({
   checkGitActor: fromPromise(async () => {}),
   checkAvailabilityActor: fromPromise(async () => true),
   stagingMachine: fromPromise(async () => ({
-    stagedFiles: ["file.ts"],
-    aborted: false,
+    stagedFiles: ["file.ts"] as string[],
+    aborted: false as boolean,
   })),
   generationMachine: fromPromise(async () => ({
     message: "feat: test commit",
-    committed: true,
-    aborted: false,
+    committed: true as boolean,
+    aborted: false as boolean,
   })),
   pushMachine: fromPromise(async () => ({
-    pushed: false,
-    exitCode: 0,
+    pushed: false as boolean,
+    exitCode: 0 as const,
   })),
 });
 
@@ -86,7 +85,7 @@ describe("cliMachine", () => {
     const snap = await waitFor(actor, (s) => s.status === "done", {
       timeout: 5000,
     });
-    expect(snap.output.exitCode).toBe(0);
+    expect(snap.output!.exitCode).toBe(0);
   });
 
   // Bug #2: unknown provider -> error with dynamic provider list
@@ -94,7 +93,7 @@ describe("cliMachine", () => {
     const machine = cliMachine.provide({
       actors: {
         ...happyPathActors(),
-        loadAndResolveConfigActor: fromPromise(async () => {
+        loadAndResolveConfigActor: fromPromise(async (): Promise<ConfigResolutionResult> => {
           throw new Error(
             "Unknown provider 'invalid'. Supported providers: codex, claude-code, gemini-cli, openrouter, openai, google-ai-studio, anthropic, cerebras",
           );
@@ -109,7 +108,7 @@ describe("cliMachine", () => {
     const snap = await waitFor(actor, (s) => s.status === "done", {
       timeout: 5000,
     });
-    expect(snap.output.exitCode).toBe(1);
+    expect(snap.output!.exitCode).toBe(1);
   });
 
   // --init flag -> invokes init machine
@@ -120,7 +119,7 @@ describe("cliMachine", () => {
         ...happyPathActors(),
         initMachine: fromPromise(async () => {
           initCalled = true;
-          return { continue: false, exitCode: 0 as const };
+          return { continue: false as boolean, exitCode: 0 as 0 | 1 };
         }),
       },
     });
@@ -133,7 +132,7 @@ describe("cliMachine", () => {
       timeout: 5000,
     });
     expect(initCalled).toBe(true);
-    expect(snap.output.exitCode).toBe(0);
+    expect(snap.output!.exitCode).toBe(0);
   });
 
   // --init -> continue to normal flow
@@ -142,8 +141,8 @@ describe("cliMachine", () => {
       actors: {
         ...happyPathActors(),
         initMachine: fromPromise(async () => ({
-          continue: true,
-          exitCode: 0 as const,
+          continue: true as boolean,
+          exitCode: 0 as 0 | 1,
         })),
       },
     });
@@ -155,7 +154,7 @@ describe("cliMachine", () => {
     const snap = await waitFor(actor, (s) => s.status === "done", {
       timeout: 5000,
     });
-    expect(snap.output.exitCode).toBe(0);
+    expect(snap.output!.exitCode).toBe(0);
   });
 
   // Staging abort -> exit 1
@@ -164,8 +163,8 @@ describe("cliMachine", () => {
       actors: {
         ...happyPathActors(),
         stagingMachine: fromPromise(async () => ({
-          stagedFiles: [],
-          aborted: true,
+          stagedFiles: [] as string[],
+          aborted: true as boolean,
         })),
       },
     });
@@ -175,7 +174,7 @@ describe("cliMachine", () => {
     const snap = await waitFor(actor, (s) => s.status === "done", {
       timeout: 5000,
     });
-    expect(snap.output.exitCode).toBe(1);
+    expect(snap.output!.exitCode).toBe(1);
   });
 
   // Clean working directory -> exit 0
@@ -184,8 +183,8 @@ describe("cliMachine", () => {
       actors: {
         ...happyPathActors(),
         stagingMachine: fromPromise(async () => ({
-          stagedFiles: [],
-          aborted: false,
+          stagedFiles: [] as string[],
+          aborted: false as boolean,
         })),
       },
     });
@@ -195,7 +194,7 @@ describe("cliMachine", () => {
     const snap = await waitFor(actor, (s) => s.status === "done", {
       timeout: 5000,
     });
-    expect(snap.output.exitCode).toBe(0);
+    expect(snap.output!.exitCode).toBe(0);
   });
 
   // --setup flag triggers setup wizard
@@ -204,11 +203,11 @@ describe("cliMachine", () => {
     const machine = cliMachine.provide({
       actors: {
         ...happyPathActors(),
-        loadAndResolveConfigActor: fromPromise(async () => ({
+        loadAndResolveConfigActor: fromPromise(async (): Promise<ConfigResolutionResult> => ({
           ...mockConfigResult(),
           needsSetup: true,
         })),
-        runOnboardingActor: fromPromise(async () => {
+        runOnboardingActor: fromPromise(async (): Promise<OnboardingActorResult> => {
           setupCalled = true;
           return { completed: true, continueToRun: false };
         }),
@@ -223,7 +222,7 @@ describe("cliMachine", () => {
       timeout: 5000,
     });
     expect(setupCalled).toBe(true);
-    expect(snap.output.exitCode).toBe(0);
+    expect(snap.output!.exitCode).toBe(0);
   });
 
   // Generation abort -> exit 1
@@ -233,8 +232,8 @@ describe("cliMachine", () => {
         ...happyPathActors(),
         generationMachine: fromPromise(async () => ({
           message: "",
-          committed: false,
-          aborted: true,
+          committed: false as boolean,
+          aborted: true as boolean,
         })),
       },
     });
@@ -244,7 +243,7 @@ describe("cliMachine", () => {
     const snap = await waitFor(actor, (s) => s.status === "done", {
       timeout: 5000,
     });
-    expect(snap.output.exitCode).toBe(1);
+    expect(snap.output!.exitCode).toBe(1);
   });
 
   // --dangerouslyAutoApprove expands flags
@@ -253,9 +252,9 @@ describe("cliMachine", () => {
     const machine = cliMachine.provide({
       actors: {
         ...happyPathActors(),
-        stagingMachine: fromPromise(async ({ input }: { input: Record<string, unknown> }) => {
-          capturedInput = input;
-          return { stagedFiles: ["file.ts"], aborted: false };
+        stagingMachine: fromPromise(async ({ input }: { input: unknown }) => {
+          capturedInput = input as Record<string, unknown>;
+          return { stagedFiles: ["file.ts"] as string[], aborted: false as boolean };
         }),
       },
     });
@@ -266,7 +265,7 @@ describe("cliMachine", () => {
 
     await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(capturedInput).not.toBeNull();
-    expect((capturedInput as Record<string, unknown>).stageAll).toBe(true);
+    expect((capturedInput as unknown as Record<string, unknown>).stageAll).toBe(true);
   });
 
   // Setup not completed -> exit 1
@@ -274,11 +273,11 @@ describe("cliMachine", () => {
     const machine = cliMachine.provide({
       actors: {
         ...happyPathActors(),
-        loadAndResolveConfigActor: fromPromise(async () => ({
+        loadAndResolveConfigActor: fromPromise(async (): Promise<ConfigResolutionResult> => ({
           ...mockConfigResult(),
           needsSetup: true,
         })),
-        runOnboardingActor: fromPromise(async () => ({
+        runOnboardingActor: fromPromise(async (): Promise<OnboardingActorResult> => ({
           completed: false,
           continueToRun: false,
         })),
@@ -292,7 +291,7 @@ describe("cliMachine", () => {
     const snap = await waitFor(actor, (s) => s.status === "done", {
       timeout: 5000,
     });
-    expect(snap.output.exitCode).toBe(1);
+    expect(snap.output!.exitCode).toBe(1);
   });
 
   // Git check failure -> exit 1
@@ -300,7 +299,7 @@ describe("cliMachine", () => {
     const machine = cliMachine.provide({
       actors: {
         ...happyPathActors(),
-        checkGitActor: fromPromise(async () => {
+        checkGitActor: fromPromise(async (): Promise<void> => {
           throw new Error("git not installed");
         }),
       },
@@ -311,7 +310,7 @@ describe("cliMachine", () => {
     const snap = await waitFor(actor, (s) => s.status === "done", {
       timeout: 5000,
     });
-    expect(snap.output.exitCode).toBe(1);
+    expect(snap.output!.exitCode).toBe(1);
   });
 
   // Provider not available -> exit 1
@@ -319,7 +318,7 @@ describe("cliMachine", () => {
     const machine = cliMachine.provide({
       actors: {
         ...happyPathActors(),
-        checkAvailabilityActor: fromPromise(async () => {
+        checkAvailabilityActor: fromPromise(async (): Promise<boolean> => {
           throw new Error("CLI not installed");
         }),
       },
@@ -330,7 +329,7 @@ describe("cliMachine", () => {
     const snap = await waitFor(actor, (s) => s.status === "done", {
       timeout: 5000,
     });
-    expect(snap.output.exitCode).toBe(1);
+    expect(snap.output!.exitCode).toBe(1);
   });
 
   // Onboarding completes and continues to normal flow
@@ -338,11 +337,11 @@ describe("cliMachine", () => {
     const machine = cliMachine.provide({
       actors: {
         ...happyPathActors(),
-        loadAndResolveConfigActor: fromPromise(async () => ({
+        loadAndResolveConfigActor: fromPromise(async (): Promise<ConfigResolutionResult> => ({
           ...mockConfigResult(),
           needsSetup: true,
         })),
-        runOnboardingActor: fromPromise(async () => ({
+        runOnboardingActor: fromPromise(async (): Promise<OnboardingActorResult> => ({
           completed: true,
           continueToRun: true,
         })),
@@ -358,6 +357,6 @@ describe("cliMachine", () => {
     const snap = await waitFor(actor, (s) => s.status === "done", {
       timeout: 5000,
     });
-    expect(snap.output.exitCode).toBe(0);
+    expect(snap.output!.exitCode).toBe(0);
   });
 });
