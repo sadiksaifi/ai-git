@@ -2,29 +2,31 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { $ } from "bun";
-import { log, spinner } from "@clack/prompts";
-import pc from "picocolors";
-import { detectInstallMethod } from "./install-method.ts";
 import { fetchLatestRelease, isNewerVersion, GITHUB_REPO } from "./update-check.ts";
+import { CLIError } from "./errors.ts";
 
 // ==============================================================================
 // CONSTANTS
 // ==============================================================================
 
-const GITHUB_RELEASE_BASE =
+export const GITHUB_RELEASE_BASE =
   `https://github.com/${GITHUB_REPO}/releases/download`;
 
 // ==============================================================================
-// PLATFORM DETECTION
+// TYPES
 // ==============================================================================
 
-interface PlatformInfo {
+export interface PlatformInfo {
   os: string;
   arch: string;
   archiveName: string;
 }
 
-function detectPlatform(): PlatformInfo | null {
+// ==============================================================================
+// PLATFORM DETECTION
+// ==============================================================================
+
+export function detectPlatform(): PlatformInfo | null {
   const platform = process.platform;
   const arch = process.arch;
 
@@ -63,7 +65,7 @@ function detectPlatform(): PlatformInfo | null {
 // CHECKSUM VERIFICATION
 // ==============================================================================
 
-async function verifyChecksum(
+export async function verifyChecksum(
   filePath: string,
   checksumFileContent: string,
   expectedFileName: string,
@@ -87,168 +89,158 @@ async function verifyChecksum(
 }
 
 // ==============================================================================
-// SELF-UPDATE (for curl/unknown installs)
+// FETCH AND CHECK VERSION
 // ==============================================================================
 
-async function selfUpdate(currentVersion: string): Promise<void> {
-  const s = spinner();
-
-  // 1. Fetch latest release
-  s.start("Checking for updates...");
+/**
+ * Fetch the latest release and check if it's newer than the current version.
+ * Returns version info if an update is available, null if already latest.
+ * Throws CLIError if the fetch fails.
+ */
+export async function fetchAndCheckVersion(
+  currentVersion: string,
+): Promise<{ latestVersion: string; tag: string } | null> {
   const release = await fetchLatestRelease();
   if (!release) {
-    s.stop(pc.red("Failed to fetch latest release from GitHub."));
-    process.exit(1);
+    throw new CLIError("Failed to fetch latest release from GitHub.");
   }
 
   const latestVersion = release.tag_name.replace(/^v/, "");
   if (!isNewerVersion(currentVersion, latestVersion)) {
-    s.stop(pc.green(`Already on the latest version (${currentVersion}).`));
-    return;
+    return null; // Already on latest
   }
 
-  // 2. Detect platform
-  const platform = detectPlatform();
-  if (!platform) {
-    s.stop(
-      pc.red(
-        `Unsupported platform: ${process.platform}-${process.arch}. Download manually from GitHub Releases.`,
-      ),
-    );
-    process.exit(1);
-  }
+  return { latestVersion, tag: release.tag_name };
+}
 
-  // 3. Download tarball + checksums
-  s.message(`Downloading ${release.tag_name}...`);
-  const tarballUrl = `${GITHUB_RELEASE_BASE}/${release.tag_name}/${platform.archiveName}`;
-  const checksumsUrl = `${GITHUB_RELEASE_BASE}/${release.tag_name}/checksums.txt`;
+// ==============================================================================
+// DOWNLOAD RELEASE
+// ==============================================================================
+
+/**
+ * Download the release tarball and checksums file.
+ * Returns paths to the downloaded files and the temp directory.
+ * Throws CLIError on HTTP errors.
+ */
+export async function downloadRelease(
+  tag: string,
+  platform: PlatformInfo,
+): Promise<{ tarballPath: string; checksumsContent: string; tmpDir: string }> {
+  const tarballUrl = `${GITHUB_RELEASE_BASE}/${tag}/${platform.archiveName}`;
+  const checksumsUrl = `${GITHUB_RELEASE_BASE}/${tag}/checksums.txt`;
 
   const tmpDir = path.join(os.tmpdir(), `ai-git-upgrade-${Date.now()}`);
   fs.mkdirSync(tmpDir, { recursive: true });
 
   const tarballPath = path.join(tmpDir, platform.archiveName);
-  const checksumsPath = path.join(tmpDir, "checksums.txt");
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120_000); // 2 min
+
     const [tarballResp, checksumsResp] = await Promise.all([
-      fetch(tarballUrl),
-      fetch(checksumsUrl),
+      fetch(tarballUrl, { signal: controller.signal }),
+      fetch(checksumsUrl, { signal: controller.signal }),
     ]);
 
+    clearTimeout(timeoutId);
+
     if (!tarballResp.ok) {
-      s.stop(pc.red(`Failed to download binary (HTTP ${tarballResp.status}).`));
-      process.exit(1);
+      throw new CLIError(`Failed to download binary (HTTP ${tarballResp.status}).`);
     }
     if (!checksumsResp.ok) {
-      s.stop(
-        pc.red(
-          `Failed to download checksums (HTTP ${checksumsResp.status}).`,
-        ),
-      );
-      process.exit(1);
+      throw new CLIError(`Failed to download checksums (HTTP ${checksumsResp.status}).`);
     }
 
     await Bun.write(tarballPath, tarballResp);
     const checksumsContent = await checksumsResp.text();
-    await Bun.write(checksumsPath, checksumsContent);
 
-    // 4. Verify checksum
-    s.message("Verifying checksum...");
-    const valid = await verifyChecksum(
-      tarballPath,
-      checksumsContent,
-      platform.archiveName,
-    );
-    if (!valid) {
-      s.stop(pc.red("Checksum verification failed. Aborting upgrade."));
-      process.exit(1);
-    }
-
-    // 5. Extract binary
-    s.message("Extracting...");
-    await $`tar -xzf ${tarballPath} -C ${tmpDir}`.quiet();
-
-    const extractedBin = path.join(tmpDir, "ai-git");
-    if (!fs.existsSync(extractedBin)) {
-      s.stop(pc.red("Extracted binary not found. Aborting upgrade."));
-      process.exit(1);
-    }
-
-    // 6. Atomic replace
-    s.message("Installing...");
-    let targetPath: string;
-    try {
-      targetPath = fs.realpathSync(process.argv[0] ?? "");
-    } catch {
-      targetPath = path.join(os.homedir(), ".local", "bin", "ai-git");
-    }
-
-    // Ensure target directory exists
-    fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-
-    // Check write permission before attempting replace
-    try {
-      fs.accessSync(path.dirname(targetPath), fs.constants.W_OK);
-    } catch {
-      s.stop(
-        pc.red(
-          `Permission denied: cannot write to ${path.dirname(targetPath)}.\n` +
-          pc.dim(`Try: sudo ai-git upgrade`),
-        ),
-      );
-      process.exit(1);
-    }
-
-    // Copy to temp location next to target, then rename (atomic on same filesystem)
-    // Use unique name to avoid conflicts with concurrent upgrades
-    const tmpTarget = `${targetPath}.tmp.${process.pid}`;
-    fs.copyFileSync(extractedBin, tmpTarget);
-    fs.chmodSync(tmpTarget, 0o755);
-    fs.renameSync(tmpTarget, targetPath);
-
-    s.stop(
-      pc.green(
-        `Upgraded ai-git: ${currentVersion} -> ${latestVersion}`,
-      ),
-    );
-  } finally {
-    // Cleanup temp dir
-    try {
-      fs.rmSync(tmpDir, { recursive: true });
-    } catch {
-      // Best effort
-    }
+    return { tarballPath, checksumsContent, tmpDir };
+  } catch (err) {
+    cleanupTmpDir(tmpDir);
+    throw err;
   }
 }
 
 // ==============================================================================
-// PUBLIC API
+// EXTRACT BINARY
 // ==============================================================================
 
-export async function runUpgrade(currentVersion: string): Promise<void> {
-  const method = detectInstallMethod();
+/**
+ * Extract the binary from the tarball.
+ * Returns the path to the extracted binary.
+ * Throws CLIError if the binary is not found after extraction.
+ */
+export async function extractBinary(
+  tarballPath: string,
+  tmpDir: string,
+): Promise<string> {
+  await $`tar -xzf ${tarballPath} -C ${tmpDir}`.quiet();
 
-  switch (method) {
-    case "brew":
-      log.info(pc.yellow('Installed via Homebrew. Run "brew upgrade ai-git" instead.'));
-      process.exit(0);
-      break;
-    case "npm":
-      log.info(pc.yellow('Installed via npm. Run "npm update -g @ai-git/cli" instead.'));
-      process.exit(0);
-      break;
-    case "source":
-      log.info(
-        pc.yellow(
-          'Installed from source. Run "git pull && bun install && bun run build" instead.',
-        ),
-      );
-      process.exit(0);
-      break;
-    case "curl":
-    case "unknown":
-    default:
-      await selfUpdate(currentVersion);
-      break;
+  const extractedBinPath = path.join(tmpDir, "ai-git");
+  if (!fs.existsSync(extractedBinPath)) {
+    throw new CLIError("Extracted binary not found. Aborting upgrade.");
+  }
+
+  return extractedBinPath;
+}
+
+// ==============================================================================
+// INSTALL BINARY
+// ==============================================================================
+
+/**
+ * Install the extracted binary by atomically replacing the current one.
+ * Throws CLIError on permission denied.
+ */
+export function installBinary(extractedBinPath: string): void {
+  let targetPath: string;
+  try {
+    targetPath = fs.realpathSync(process.argv[0] ?? "");
+  } catch {
+    targetPath = path.join(os.homedir(), ".local", "bin", "ai-git");
+  }
+
+  // Ensure target directory exists
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+
+  // Check write permission before attempting replace
+  try {
+    fs.accessSync(path.dirname(targetPath), fs.constants.W_OK);
+  } catch {
+    throw new CLIError(
+      `Permission denied: cannot write to ${path.dirname(targetPath)}.`,
+      1,
+      "Try: sudo ai-git upgrade",
+    );
+  }
+
+  // Atomic replace: copy → chmod → rename. Guard ensures the .tmp file
+  // is cleaned up if chmod or rename fails after the copy succeeds.
+  const tmpTarget = `${targetPath}.tmp.${process.pid}`;
+  fs.copyFileSync(extractedBinPath, tmpTarget);
+  let installed = false;
+  try {
+    fs.chmodSync(tmpTarget, 0o755);
+    fs.renameSync(tmpTarget, targetPath);
+    installed = true;
+  } finally {
+    if (!installed) fs.rmSync(tmpTarget, { force: true });
+  }
+}
+
+// ==============================================================================
+// CLEANUP
+// ==============================================================================
+
+/**
+ * Clean up the temporary directory. Best effort — never throws.
+ */
+export function cleanupTmpDir(tmpDir: string): void {
+  if (!tmpDir) return;
+  try {
+    fs.rmSync(tmpDir, { recursive: true });
+  } catch {
+    // Best effort
   }
 }

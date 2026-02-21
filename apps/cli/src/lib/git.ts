@@ -1,6 +1,7 @@
 import { $ } from "bun";
 import pc from "picocolors";
 import { LOCKFILES, filterExcludedFiles } from "./utils.ts";
+import { CLIError } from "./errors.ts";
 
 // ==============================================================================
 // GIT OPERATIONS
@@ -8,27 +9,29 @@ import { LOCKFILES, filterExcludedFiles } from "./utils.ts";
 
 /**
  * Check if git is installed.
- * Exits with error if not found.
+ * Throws CLIError if not found.
  */
 export async function checkGitInstalled(): Promise<void> {
   try {
     await $`git --version`.quiet();
   } catch {
     console.error(pc.red("Error: 'git' is not installed."));
-    process.exit(1);
+    console.error(pc.dim("Install git: https://git-scm.com/downloads"));
+    throw new CLIError("'git' is not installed.", 1, "Install git: https://git-scm.com/downloads");
   }
 }
 
 /**
  * Check if the current directory is inside a git repository.
- * Exits with error if not.
+ * Throws CLIError if not inside a git repository.
  */
 export async function checkInsideRepo(): Promise<void> {
   try {
     await $`git rev-parse --is-inside-work-tree`.quiet();
   } catch {
     console.error(pc.red("Error: Not a git repository."));
-    process.exit(1);
+    console.error(pc.dim("Run this command inside a git repository."));
+    throw new CLIError("Not a git repository.", 1, "Run this command inside a git repository.");
   }
 }
 
