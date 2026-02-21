@@ -83,29 +83,63 @@ export async function getUnstagedFiles(): Promise<string[]> {
 }
 
 /**
+ * Parse `git diff --name-status` output into FileWithStatus[].
+ * Exported for deterministic testing with mock output.
+ */
+export function parseNameStatusOutput(output: string): FileWithStatus[] {
+  return output
+    .trim()
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      const parts = line.split("\t");
+      const status = (parts[0] ?? "M").trim().charAt(0);
+      // Renames: git outputs "R100\told-path\tnew-path" — show both paths
+      const path = status === "R" && parts[2]
+        ? `${(parts[1] ?? "").trim()} → ${parts[2].trim()}`
+        : (parts[1] ?? "").trim();
+      return { status, path };
+    })
+    .filter((f) => f.path);
+}
+
+/**
  * Get staged files with their status (M/A/D/R).
  * Uses `git diff --cached --name-status`.
  */
 export async function getStagedFilesWithStatus(): Promise<FileWithStatus[]> {
   try {
     const output = await $`git diff --cached --name-status`.text();
-    return output
-      .trim()
-      .split("\n")
-      .filter(Boolean)
-      .map((line) => {
-        const parts = line.split("\t");
-        const status = (parts[0] ?? "M").trim().charAt(0);
-        // Renames: git outputs "R100\told-path\tnew-path" — show both paths
-        const path = status === "R" && parts[2]
-          ? `${(parts[1] ?? "").trim()} → ${parts[2].trim()}`
-          : (parts[1] ?? "").trim();
-        return { status, path };
-      })
-      .filter((f) => f.path);
+    return parseNameStatusOutput(output);
   } catch {
     return [];
   }
+}
+
+/**
+ * Parse modified + untracked output into FileWithStatus[].
+ * Exported for deterministic testing with mock output.
+ */
+export function parseUnstagedOutput(modified: string, untracked: string): FileWithStatus[] {
+  const files: FileWithStatus[] = [];
+
+  // Parse modified/deleted (format: "M\tfile.ts" or "D\tfile.ts")
+  for (const line of modified.trim().split("\n").filter(Boolean)) {
+    const parts = line.split("\t");
+    files.push({
+      status: (parts[0] ?? "M").trim().charAt(0),
+      path: (parts[1] ?? "").trim(),
+    });
+  }
+
+  // Untracked files
+  for (const path of untracked.trim().split("\n").filter(Boolean)) {
+    if (!files.some((f) => f.path === path.trim())) {
+      files.push({ status: "?", path: path.trim() });
+    }
+  }
+
+  return files.filter((f) => f.path);
 }
 
 /**
@@ -116,26 +150,7 @@ export async function getUnstagedFilesWithStatus(): Promise<FileWithStatus[]> {
   try {
     const modified = await $`git diff --name-status`.text();
     const untracked = await $`git ls-files -o --exclude-standard`.text();
-
-    const files: FileWithStatus[] = [];
-
-    // Parse modified/deleted (format: "M\tfile.ts" or "D\tfile.ts")
-    for (const line of modified.trim().split("\n").filter(Boolean)) {
-      const parts = line.split("\t");
-      files.push({
-        status: (parts[0] ?? "M").trim().charAt(0),
-        path: (parts[1] ?? "").trim(),
-      });
-    }
-
-    // Untracked files
-    for (const path of untracked.trim().split("\n").filter(Boolean)) {
-      if (!files.some((f) => f.path === path.trim())) {
-        files.push({ status: "?", path: path.trim() });
-      }
-    }
-
-    return files.filter((f) => f.path);
+    return parseUnstagedOutput(modified, untracked);
   } catch {
     return [];
   }
