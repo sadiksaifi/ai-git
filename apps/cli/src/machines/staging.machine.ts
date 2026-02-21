@@ -104,6 +104,10 @@ export const stagingMachine = setup({
           target: "checkUnstaged",
           actions: "assignStagedFiles",
         },
+        onError: {
+          target: "done",
+          actions: "markAborted",
+        },
       },
     },
 
@@ -114,6 +118,10 @@ export const stagingMachine = setup({
         onDone: {
           target: "routing",
           actions: "assignUnstagedFiles",
+        },
+        onError: {
+          target: "done",
+          actions: "markAborted",
         },
       },
     },
@@ -168,6 +176,9 @@ export const stagingMachine = setup({
             src: "stageAllExceptActor",
             input: ({ context }) => ({ exclude: context.exclude }),
             onDone: "refreshStagedAfterAutoMore",
+            onError: {
+              target: "aborted",
+            },
           },
         },
 
@@ -177,6 +188,9 @@ export const stagingMachine = setup({
             onDone: {
               target: "done",
               actions: "assignStagedFiles",
+            },
+            onError: {
+              target: "aborted",
             },
           },
         },
@@ -267,6 +281,9 @@ export const stagingMachine = setup({
               files: (event as { output?: string[] }).output ?? [],
             }),
             onDone: "refreshStagedAfterSelectMore",
+            onError: {
+              target: "aborted",
+            },
           },
         },
 
@@ -277,6 +294,9 @@ export const stagingMachine = setup({
               target: "done",
               actions: "assignStagedFiles",
             },
+            onError: {
+              target: "aborted",
+            },
           },
         },
 
@@ -286,6 +306,9 @@ export const stagingMachine = setup({
             src: "stageAllExceptActor",
             input: ({ context }) => ({ exclude: context.exclude }),
             onDone: "refreshStagedAfterStageAllMore",
+            onError: {
+              target: "aborted",
+            },
           },
         },
 
@@ -295,6 +318,9 @@ export const stagingMachine = setup({
             onDone: {
               target: "done",
               actions: "assignStagedFiles",
+            },
+            onError: {
+              target: "aborted",
             },
           },
         },
@@ -354,6 +380,9 @@ export const stagingMachine = setup({
             src: "stageAllExceptActor",
             input: ({ context }) => ({ exclude: context.exclude }),
             onDone: "refreshStagedAfterAutoAll",
+            onError: {
+              target: "aborted",
+            },
           },
         },
 
@@ -363,6 +392,9 @@ export const stagingMachine = setup({
             onDone: {
               target: "done",
               actions: "assignStagedFiles",
+            },
+            onError: {
+              target: "aborted",
             },
           },
         },
@@ -415,6 +447,9 @@ export const stagingMachine = setup({
             src: "stageAllExceptActor",
             input: ({ context }) => ({ exclude: context.exclude }),
             onDone: "refreshStagedAfterStageAll",
+            onError: {
+              target: "aborted",
+            },
           },
         },
 
@@ -424,6 +459,9 @@ export const stagingMachine = setup({
             onDone: {
               target: "done",
               actions: "assignStagedFiles",
+            },
+            onError: {
+              target: "aborted",
             },
           },
         },
@@ -463,6 +501,9 @@ export const stagingMachine = setup({
               files: (event as { output?: string[] }).output ?? [],
             }),
             onDone: "refreshStagedAfterSelect",
+            onError: {
+              target: "aborted",
+            },
           },
         },
 
@@ -472,6 +513,9 @@ export const stagingMachine = setup({
             onDone: {
               target: "done",
               actions: "assignStagedFiles",
+            },
+            onError: {
+              target: "aborted",
             },
           },
         },

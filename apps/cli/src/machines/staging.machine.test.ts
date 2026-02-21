@@ -256,6 +256,28 @@ describe("stagingMachine", () => {
     expect(snap.output.aborted).toBe(true);
   });
 
+  // ST-ERR1: getStagedFiles error → aborted
+  test("ST-ERR1: getStagedFiles error → aborted", async () => {
+    const machine = stagingMachine.provide({
+      actors: {
+        getStagedFilesActor: fromPromise(async () => {
+          throw new Error("git failed");
+        }),
+        getUnstagedFilesActor: fromPromise(async () => []),
+        stageAllExceptActor: fromPromise(async () => {}),
+        stageFilesActor: fromPromise(async () => {}),
+        selectActor: fromPromise(async () => "proceed"),
+        multiselectActor: fromPromise(async () => []),
+      },
+    });
+    const actor = createActor(machine, {
+      input: { stageAll: false, dangerouslyAutoApprove: false, exclude: [] },
+    });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(snap.output.aborted).toBe(true);
+  });
+
   // Exclude parameter is passed through to stageAllExcept
   test("exclude parameter is forwarded to stageAllExceptActor", async () => {
     let receivedExclude: string[] | undefined;
