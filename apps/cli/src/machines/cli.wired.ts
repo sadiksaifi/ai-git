@@ -260,7 +260,12 @@ export const wiredCliMachine = cliMachine.provide({
 
         if (ctx.dryRun) return true;
 
-        const { adapter, providerDef } = ctx.configResult;
+        // adapter and providerDef are guaranteed non-null here:
+        // checkAvailability only runs after successful config resolution
+        const { adapter, providerDef } = ctx.configResult as ConfigResolutionResult & {
+          adapter: NonNullable<ConfigResolutionResult["adapter"]>;
+          providerDef: NonNullable<ConfigResolutionResult["providerDef"]>;
+        };
         const isAvailable = await adapter.checkAvailable();
         if (!isAvailable) {
           if (adapter.mode === "cli" && providerDef.binary) {
