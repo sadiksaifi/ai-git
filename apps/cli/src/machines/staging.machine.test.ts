@@ -631,4 +631,32 @@ describe("stagingMachine", () => {
     await waitFor(actor, (s) => s.status === "done");
     expect(callOrder).toEqual(["summary", "select"]);
   });
+
+  // Negative test: displayStagedResultActor should NOT be called on abort
+  test("displayStagedResultActor is not invoked when machine aborts", async () => {
+    let displayCalled = false;
+    const machine = stagingMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getStagedFilesActor: fromPromise(async () => []),
+        // @ts-expect-error — XState v5 test mock type inference
+        getUnstagedFilesActor: fromPromise(async () => ["a.ts"]),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => "cancel"),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayStagedResultActor: fromPromise(async () => {
+          displayCalled = true;
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayFileSummaryActor: fromPromise(async () => {}),
+      },
+    });
+    const actor = createActor(machine, {
+      input: { stageAll: false, dangerouslyAutoApprove: false, exclude: [] },
+    });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(snap.output!.aborted).toBe(true);
+    expect(displayCalled).toBe(false);
+  });
 });
