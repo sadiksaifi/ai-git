@@ -187,6 +187,24 @@ describe("generationMachine", () => {
     expect(snap.output.committed).toBe(true);
   });
 
+  // GN-ERR: gatherContext failure → aborted
+  test("GN-ERR: gatherContext failure → aborted", async () => {
+    const machine = generationMachine.provide({
+      actors: {
+        getBranchNameActor: fromPromise(async (): Promise<string> => "main"),
+        gatherContextActor: fromPromise(async () => { throw new Error("git failed"); }),
+        invokeAIActor: fromPromise(async (): Promise<string> => ""),
+        commitActor: fromPromise(async () => ({ hash: "", branch: "", subject: "", filesChanged: 0, insertions: 0, deletions: 0, files: [] as string[], isRoot: false })),
+        selectActor: fromPromise(async (): Promise<string> => "commit"),
+        textActor: fromPromise(async (): Promise<string> => ""),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
+    expect(snap.output!.aborted).toBe(true);
+  });
+
   // dangerouslyAutoApprove auto-commits
   test("dangerouslyAutoApprove auto-commits without prompt", async () => {
     const machine = generationMachine.provide({

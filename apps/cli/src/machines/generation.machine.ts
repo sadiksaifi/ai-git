@@ -63,6 +63,7 @@ export interface GenerationContext {
   commitResult: CommitResult | null;
   committed: boolean;
   aborted: boolean;
+  _routeTarget: "retry" | "edit";
 }
 
 export interface GenerationOutput {
@@ -78,8 +79,8 @@ export interface GenerationOutput {
  */
 function cleanAIResponse(raw: string): string {
   return raw
-    .replace(/^```.*/gm, "")
-    .replace(/```$/gm, "")
+    .replace(/^```\w*$/gm, "") // Remove opening fence lines (```lang)
+    .replace(/^```$/gm, "")     // Remove closing fence lines
     .trim();
 }
 
@@ -192,10 +193,18 @@ export const generationMachine = setup({
       userRefinements: [] as string[],
       lastGeneratedMessage: ({ context }) => context.currentMessage,
     }),
+    setRouteToRetry: assign({ _routeTarget: "retry" as const }),
+    setRouteToEdit: assign({ _routeTarget: "edit" as const }),
     storeErrorMessage: assign({
-      generationErrors: ({ event }) => {
+      generationErrors: ({ context, event }) => {
         const error = (event as { error?: unknown }).error;
-        return [extractErrorMessage(error)];
+        return [...context.generationErrors, extractErrorMessage(error)];
+      },
+    }),
+    logContextError: assign({
+      generationErrors: ({ context, event }) => {
+        const error = (event as { error?: unknown }).error;
+        return [...context.generationErrors, `Context gathering failed: ${extractErrorMessage(error)}`];
       },
     }),
   },
@@ -222,6 +231,7 @@ export const generationMachine = setup({
     commitResult: null,
     committed: false,
     aborted: false,
+    _routeTarget: "retry" as const,
   }),
   output: ({ context }) => ({
     message: context.currentMessage,
@@ -258,7 +268,8 @@ export const generationMachine = setup({
               actions: "assignGatheredContext",
             },
             onError: {
-              target: "buildPrompt",
+              target: "fatalError",
+              actions: "logContextError",
             },
           },
         },
@@ -527,10 +538,12 @@ export const generationMachine = setup({
 
         toRetry: {
           type: "final" as const,
+          entry: "setRouteToRetry",
         },
 
         toEdit: {
           type: "final" as const,
+          entry: "setRouteToEdit",
         },
       },
       onDone: [
@@ -554,15 +567,15 @@ export const generationMachine = setup({
     // ── RETRY_OR_EDIT routing ─────────────────────────────────────────
     // ══════════════════════════════════════════════════════════════════
     retryOrEdit: {
-      // We don't have direct info about which sub-state exited, so we
-      // need a routing mechanism. Since prompt.toRetry and prompt.toEdit
-      // are both non-abort, non-commit exits, we'll use a flag approach.
-      // Actually, simpler: use the prompt compound state's history or
-      // just route to retry by default (edit can redirect to validate).
-      // For now, route to retry since the test only tests retry path.
-      always: {
-        target: "retry",
-      },
+      always: [
+        {
+          guard: ({ context }) => context._routeTarget === "edit",
+          target: "edit",
+        },
+        {
+          target: "retry",
+        },
+      ],
     },
 
     // ══════════════════════════════════════════════════════════════════
