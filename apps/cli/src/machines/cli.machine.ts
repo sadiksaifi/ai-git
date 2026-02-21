@@ -51,8 +51,8 @@ export interface CLIOutput {
  */
 export interface ConfigResolutionResult {
   config: ResolvedConfig;
-  providerDef: ProviderDefinition;
-  adapter: ProviderAdapter;
+  providerDef: ProviderDefinition | null;
+  adapter: ProviderAdapter | null;
   model: string;
   modelName: string;
   /** Whether the setup wizard / onboarding needs to run */
@@ -467,21 +467,24 @@ export const cliMachine = setup({
     generation: {
       invoke: {
         src: "generationMachine",
-        input: ({ context }) => ({
-          model: context.configResult?.model ?? "",
-          modelName: context.configResult?.modelName ?? "",
-          options: {
-            commit: context.options.commit,
-            dangerouslyAutoApprove: context.options.dangerouslyAutoApprove,
-            dryRun: context.options.dryRun,
-            hint: context.options.hint,
-          },
-          slowWarningThresholdMs:
-            context.configResult?.config?.slowWarningThresholdMs ?? 5000,
-          adapter: context.configResult?.adapter,
-          promptCustomization: context.configResult?.config?.prompt,
-          editor: context.configResult?.config?.editor,
-        }),
+        input: ({ context }) => {
+          // configResult is guaranteed non-null: loadConfig succeeds before reaching here
+          const cr = context.configResult!;
+          return {
+            model: cr.model,
+            modelName: cr.modelName,
+            options: {
+              commit: context.options.commit,
+              dangerouslyAutoApprove: context.options.dangerouslyAutoApprove,
+              dryRun: context.options.dryRun,
+              hint: context.options.hint,
+            },
+            slowWarningThresholdMs: cr.config?.slowWarningThresholdMs ?? 5000,
+            adapter: cr.adapter,
+            promptCustomization: cr.config?.prompt,
+            editor: cr.config?.editor,
+          };
+        },
         onDone: [
           {
             guard: "generationAborted",

@@ -12,7 +12,7 @@ import { cliMachine, type ConfigResolutionResult, type OnboardingActorResult } f
 import { initMachine } from "./init.machine.ts";
 import type { ProviderDefinition } from "../types.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
-import type { ResolvedConfig } from "../config.ts";
+import type { ResolvedConfig, PromptCustomization } from "../config.ts";
 import {
   loadUserConfig,
   loadProjectConfig,
@@ -167,8 +167,8 @@ export const wiredCliMachine = cliMachine.provide({
               model: "",
               slowWarningThresholdMs: 5000,
             } as ResolvedConfig,
-            providerDef: {} as ProviderDefinition,
-            adapter: {} as ProviderAdapter,
+            providerDef: null,
+            adapter: null,
             model: "",
             modelName: "",
             needsSetup: true,
@@ -306,7 +306,7 @@ export const wiredCliMachine = cliMachine.provide({
     generationMachine: fromPromise(
       async ({ input }: { input: Record<string, unknown> }) => {
         const ctx = input as {
-          adapter: any;
+          adapter: ProviderAdapter;
           model: string;
           modelName: string;
           options: {
@@ -316,7 +316,7 @@ export const wiredCliMachine = cliMachine.provide({
             hint?: string;
           };
           slowWarningThresholdMs: number;
-          promptCustomization?: any;
+          promptCustomization?: PromptCustomization;
           editor?: string;
         };
         return runGenerationLoop({
@@ -339,6 +339,9 @@ export const wiredCliMachine = cliMachine.provide({
           dangerouslyAutoApprove: boolean;
           isInteractiveMode: boolean;
         };
+        // Note: handlePush manages its own error display and doesn't return push status.
+        // The pushed: true here indicates the push flow completed without throwing.
+        // A future refactor should make handlePush return { pushed: boolean }.
         await handlePush(ctx);
         return { pushed: true, exitCode: 0 as const };
       },
