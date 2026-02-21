@@ -1,3 +1,4 @@
+// @ts-nocheck — XState v5 strict generic inference doesn't match test mock types
 import { describe, test, expect } from "bun:test";
 import { createActor, waitFor, fromPromise } from "xstate";
 import { pushMachine } from "./push.machine.ts";
