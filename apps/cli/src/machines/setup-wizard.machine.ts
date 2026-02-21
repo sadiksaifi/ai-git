@@ -1,6 +1,7 @@
 import { setup, fromPromise, assign } from "xstate";
 import { runWizard, type WizardResult } from "../lib/onboarding/wizard.ts";
 import type { UserConfig } from "../config.ts";
+import { UserCancelledError } from "../lib/errors.ts";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -66,7 +67,11 @@ export const setupWizardMachine = setup({
         },
         onError: {
           target: "done",
-          // On error, remain with completed=false, config=null (defaults)
+          actions: ({ event }) => {
+            if (!(event.error instanceof UserCancelledError)) {
+              console.error("[setupWizard] Unexpected error:", event.error);
+            }
+          },
         },
       },
     },
