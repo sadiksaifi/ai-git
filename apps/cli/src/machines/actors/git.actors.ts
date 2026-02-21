@@ -1,4 +1,5 @@
 import { fromPromise } from "xstate";
+import { $ } from "bun";
 import {
   getStagedFiles,
   getUnstagedFiles,
@@ -21,7 +22,7 @@ import { CLIError } from "../../lib/errors.ts";
 export function createCheckGitInstalledActor(
   checker: () => Promise<void> = async () => {
     try {
-      await Bun.$`git --version`.quiet();
+      await $`git --version`.quiet();
     } catch {
       throw new CLIError(
         "git is not installed",
@@ -39,7 +40,7 @@ export function createCheckGitInstalledActor(
 export function createCheckInsideRepoActor(
   checker: () => Promise<void> = async () => {
     try {
-      await Bun.$`git rev-parse --is-inside-work-tree`.quiet();
+      await $`git rev-parse --is-inside-work-tree`.quiet();
     } catch {
       throw new CLIError(
         "Not inside a git repository",
