@@ -145,6 +145,14 @@ describe("parseUnstagedOutput", () => {
     expect(parseUnstagedOutput("", "")).toEqual([]);
   });
 
+  test("handles rename in modified output (destination path not captured)", () => {
+    const modified = "R100\tsrc/old.ts\tsrc/new.ts\n";
+    const result = parseUnstagedOutput(modified, "");
+    expect(result).toEqual([
+      { status: "R", path: "src/old.ts" },
+    ]);
+  });
+
   test("handles only untracked files", () => {
     const result = parseUnstagedOutput("", "a.ts\nb.ts\n");
     expect(result).toEqual([
