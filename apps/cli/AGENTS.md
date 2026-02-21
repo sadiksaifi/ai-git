@@ -25,7 +25,7 @@ bun run sync:models        # Run both model snapshot + schema sync
 **Tech Stack:** Bun runtime, XState v5 (state machines), TypeScript strict, @clack/prompts, cac (CLI parsing)
 
 ### Core Flow
-```
+```text
 CLI Entry (src/index.ts)
     → Parse args (cac) → cliMachine (XState)
         → Load config → Validate provider → Check git
@@ -85,7 +85,7 @@ API model filtering/ranking/defaults/deprecation checks are centralized here:
 Self-correcting generator-discriminator pattern implemented as an XState state machine:
 1. Gather context (diff, commits, file list) via `gatherContextActor`
 2. Invoke AI via `invokeAIActor` (with spinner + slow warning)
-3. Clean response (strip markdown code blocks)
+3. Clean response (strip Markdown code blocks)
 4. Validate against Conventional Commits (`src/lib/validation.ts`)
 5. Auto-retry up to 3x on critical validation errors
 6. Present interactive menu (Commit / Retry / Edit / Cancel)
