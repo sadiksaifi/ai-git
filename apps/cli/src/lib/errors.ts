@@ -14,6 +14,7 @@ export class UserCancelledError extends Error {
  * Replaces scattered process.exit() calls throughout the codebase.
  */
 export class CLIError extends Error {
+  override name = "CLIError" as const;
   constructor(
     message: string,
     public exitCode: number = 1,
