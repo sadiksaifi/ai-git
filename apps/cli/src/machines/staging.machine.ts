@@ -9,8 +9,12 @@ import {
   selectActor as defaultSelectActor,
   multiselectActor as defaultMultiselectActor,
 } from "./actors/clack.actors.ts";
+import {
+  displayStagedResultActor as defaultDisplayStagedResultActor,
+  displayFileSummaryActor as defaultDisplayFileSummaryActor,
+} from "./actors/display.actors.ts";
 
-// ── Types ────────────────────────────────────────────────────────────
+// ── Types (UNCHANGED — same interface) ────────────────────────────────
 
 export interface StagingMachineInput {
   stageAll: boolean;
@@ -32,7 +36,7 @@ export interface StagingMachineOutput {
   aborted: boolean;
 }
 
-// ── Machine ──────────────────────────────────────────────────────────
+// ── Machine ───────────────────────────────────────────────────────────
 
 export const stagingMachine = setup({
   types: {
@@ -59,10 +63,14 @@ export const stagingMachine = setup({
     multiselectActor: defaultMultiselectActor as ActorLogicFrom<
       typeof defaultMultiselectActor
     >,
+    displayStagedResultActor: defaultDisplayStagedResultActor as ActorLogicFrom<
+      typeof defaultDisplayStagedResultActor
+    >,
+    displayFileSummaryActor: defaultDisplayFileSummaryActor as ActorLogicFrom<
+      typeof defaultDisplayFileSummaryActor
+    >,
   },
   guards: {
-    hasStaged: ({ context }) => context.stagedFiles.length > 0,
-    hasUnstaged: ({ context }) => context.unstagedFiles.length > 0,
     shouldAutoStage: ({ context }) =>
       context.stageAll || context.dangerouslyAutoApprove,
   },
@@ -81,7 +89,7 @@ export const stagingMachine = setup({
   },
 }).createMachine({
   id: "staging",
-  initial: "checkStaged",
+  initial: "fetchStaged",
   context: ({ input }) => ({
     stageAll: input.stageAll,
     dangerouslyAutoApprove: input.dangerouslyAutoApprove,
@@ -95,464 +103,218 @@ export const stagingMachine = setup({
     aborted: context.aborted,
   }),
   states: {
-    // ── Entry: fetch staged files to determine path ──────────────────
-    checkStaged: {
+    // ── Fetch staged files ──────────────────────────────────────────
+    fetchStaged: {
       // @ts-expect-error — XState v5 invoke type inference
       invoke: {
         src: "getStagedFilesActor",
         onDone: {
-          target: "checkUnstaged",
+          target: "fetchUnstaged",
           actions: "assignStagedFiles",
         },
         onError: {
-          target: "done",
-          actions: "markAborted",
+          target: "aborted",
         },
       },
     },
 
-    // ── Fetch unstaged files before deciding path ────────────────────
-    checkUnstaged: {
+    // ── Fetch unstaged files ────────────────────────────────────────
+    fetchUnstaged: {
       // @ts-expect-error — XState v5 invoke type inference
       invoke: {
         src: "getUnstagedFilesActor",
         onDone: {
-          target: "routing",
+          target: "evaluate",
           actions: "assignUnstagedFiles",
         },
         onError: {
-          target: "done",
-          actions: "markAborted",
+          target: "aborted",
         },
       },
     },
 
-    // ── Route to hasStaged or noneStaged path ────────────────────────
-    routing: {
+    // ── Evaluate what to do based on staged/unstaged/flags ──────────
+    evaluate: {
       always: [
-        { guard: "hasStaged", target: "hasStaged" },
-        { target: "noneStaged" },
+        {
+          // ST7: clean working tree — nothing staged, nothing unstaged
+          guard: ({ context }) =>
+            context.stagedFiles.length === 0 && context.unstagedFiles.length === 0,
+          target: "done",
+        },
+        {
+          // ST1: has staged, no unstaged → proceed with what's staged
+          guard: ({ context }) =>
+            context.stagedFiles.length > 0 && context.unstagedFiles.length === 0,
+          target: "showResult",
+        },
+        {
+          // ST5/ST6/ST8/ST-AUTO1: auto-stage path
+          guard: "shouldAutoStage",
+          target: "stageAll",
+        },
+        {
+          // Interactive path — show file summary first
+          target: "showFileSummary",
+        },
       ],
     },
 
-    // ══════════════════════════════════════════════════════════════════
-    // ── Path A: hasStaged ────────────────────────────────────────────
-    // ══════════════════════════════════════════════════════════════════
-    hasStaged: {
-      initial: "checkUnstagedInHasStaged",
-      states: {
-        // ── ST1: no unstaged → done immediately ────────────────────
-        // ── ST5/ST6: auto-stage if stageAll or autoApprove ─────────
-        // ── Otherwise: interactive prompt ───────────────────────────
-        checkUnstagedInHasStaged: {
-          always: [
-            {
-              guard: { type: "hasUnstaged", params: undefined },
-              target: "checkAutoStageMore",
-            },
-            {
-              // ST1: no unstaged files → proceed with what's staged
-              target: "done",
-            },
-          ],
-        },
-
-        // Decide whether to auto-stage or prompt interactively
-        checkAutoStageMore: {
-          always: [
-            {
-              // ST5/ST6: BUG #1 FIX — auto-stage remaining files
-              guard: { type: "shouldAutoStage", params: undefined },
-              target: "autoStageMore",
-            },
-            {
-              target: "promptMore",
-            },
-          ],
-        },
-
-        // ── ST5/ST6: invoke stageAllExcept then refresh ────────────
-        autoStageMore: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "stageAllExceptActor",
-            input: ({ context }) => ({ exclude: context.exclude }),
-            onDone: "refreshStagedAfterAutoMore",
-            onError: {
-              target: "aborted",
-            },
-          },
-        },
-
-        refreshStagedAfterAutoMore: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "getStagedFilesActor",
-            onDone: {
-              target: "done",
-              actions: "assignStagedFiles",
-            },
-            onError: {
-              target: "aborted",
-            },
-          },
-        },
-
-        // ── ST2/ST3/ST4/ST12: interactive prompt ───────────────────
-        promptMore: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "selectActor",
-            input: ({ context }) => ({
-              message: `${context.stagedFiles.length} file(s) staged. ${context.unstagedFiles.length} unstaged file(s) remaining.`,
-              options: [
-                {
-                  value: "proceed",
-                  label: "Proceed with staged files",
-                },
-                {
-                  value: "select_files",
-                  label: "Select files to stage",
-                },
-                {
-                  value: "stage_all",
-                  label: "Stage all remaining files",
-                },
-                {
-                  value: "cancel",
-                  label: "Cancel",
-                },
-              ],
-            }),
-            onDone: [
-              {
-                guard: ({ event }) => event.output === "proceed",
-                target: "done",
-              },
-              {
-                guard: ({ event }) => event.output === "select_files",
-                target: "multiSelectMore",
-              },
-              {
-                guard: ({ event }) => event.output === "stage_all",
-                target: "stageAllMore",
-              },
-              {
-                // cancel
-                target: "aborted",
-              },
-            ],
-            onError: {
-              // Ctrl+C
-              target: "aborted",
-            },
-          },
-        },
-
-        // ── ST3: multi-select files to stage ───────────────────────
-        multiSelectMore: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "multiselectActor",
-            input: ({ context }) => ({
-              message: "Select files to stage:",
-              options: context.unstagedFiles.map((f) => ({
-                value: f,
-                label: f,
-              })),
-            }),
-            onDone: [
-              {
-                guard: ({ event }) =>
-                  // @ts-expect-error — XState v5 invoke type inference
-                  Array.isArray(event.output) && event.output.length === 0,
-                // ST13: 0 chosen → proceed with existing staged
-                target: "done",
-              },
-              {
-                target: "stageSelectedMore",
-              },
-            ],
-            onError: {
-              target: "aborted",
-            },
-          },
-        },
-
-        // ── Stage the selected files ───────────────────────────────
-        stageSelectedMore: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "stageFilesActor",
-            input: ({ event }) => ({
-              files: (event as { output?: string[] }).output ?? [],
-            }),
-            onDone: "refreshStagedAfterSelectMore",
-            onError: {
-              target: "aborted",
-            },
-          },
-        },
-
-        refreshStagedAfterSelectMore: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "getStagedFilesActor",
-            onDone: {
-              target: "done",
-              actions: "assignStagedFiles",
-            },
-            onError: {
-              target: "aborted",
-            },
-          },
-        },
-
-        // ── ST4: stage all remaining ───────────────────────────────
-        stageAllMore: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "stageAllExceptActor",
-            input: ({ context }) => ({ exclude: context.exclude }),
-            onDone: "refreshStagedAfterStageAllMore",
-            onError: {
-              target: "aborted",
-            },
-          },
-        },
-
-        refreshStagedAfterStageAllMore: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "getStagedFilesActor",
-            onDone: {
-              target: "done",
-              actions: "assignStagedFiles",
-            },
-            onError: {
-              target: "aborted",
-            },
-          },
-        },
-
-        // ── Terminal states ────────────────────────────────────────
-        aborted: {
-          type: "final" as const,
-          entry: "markAborted",
-        },
-
-        done: {
-          type: "final" as const,
-        },
+    // ── Display staged + unstaged file lists before prompt ───────────
+    showFileSummary: {
+      // @ts-expect-error — XState v5 invoke type inference
+      invoke: {
+        src: "displayFileSummaryActor",
+        onDone: "prompt",
+        onError: "prompt", // non-fatal
       },
-      onDone: "done",
     },
 
-    // ══════════════════════════════════════════════════════════════════
-    // ── Path B: noneStaged ───────────────────────────────────────────
-    // ══════════════════════════════════════════════════════════════════
-    noneStaged: {
-      initial: "checkUnstagedInNoneStaged",
-      states: {
-        // ── ST7: nothing unstaged either → clean ───────────────────
-        // ── ST8: stageAll → auto-stage all ─────────────────────────
-        // ── Otherwise: interactive prompt ───────────────────────────
-        checkUnstagedInNoneStaged: {
-          always: [
+    // ── Interactive prompt ───────────────────────────────────────────
+    prompt: {
+      // @ts-expect-error — XState v5 invoke type inference
+      invoke: {
+        src: "selectActor",
+        input: ({ context }) => ({
+          message: context.stagedFiles.length > 0
+            ? `${context.stagedFiles.length} file(s) staged. ${context.unstagedFiles.length} unstaged file(s) remaining.`
+            : `${context.unstagedFiles.length} unstaged file(s). What would you like to do?`,
+          options: [
+            ...(context.stagedFiles.length > 0
+              ? [{ value: "proceed", label: "Proceed with staged files" }]
+              : []),
             {
-              guard: { type: "hasUnstaged", params: undefined },
-              target: "checkAutoStageAll",
+              value: "stage_all",
+              label: context.stagedFiles.length > 0
+                ? "Stage all remaining files"
+                : "Stage all files",
             },
-            {
-              // ST7: clean working directory
-              target: "done",
-            },
+            { value: "select_files", label: "Select files to stage" },
+            { value: "cancel", label: "Cancel" },
           ],
-        },
-
-        // Decide whether to auto-stage or prompt
-        checkAutoStageAll: {
-          always: [
-            {
-              // ST8: auto-stage all
-              guard: { type: "shouldAutoStage", params: undefined },
-              target: "autoStageAll",
-            },
-            {
-              target: "promptAction",
-            },
-          ],
-        },
-
-        // ── ST8: invoke stageAllExcept then refresh ────────────────
-        autoStageAll: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "stageAllExceptActor",
-            input: ({ context }) => ({ exclude: context.exclude }),
-            onDone: "refreshStagedAfterAutoAll",
-            onError: {
-              target: "aborted",
-            },
+        }),
+        onDone: [
+          {
+            guard: ({ event }) => event.output === "proceed",
+            target: "showResult",
           },
-        },
-
-        refreshStagedAfterAutoAll: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "getStagedFilesActor",
-            onDone: {
-              target: "done",
-              actions: "assignStagedFiles",
-            },
-            onError: {
-              target: "aborted",
-            },
+          {
+            guard: ({ event }) => event.output === "stage_all",
+            target: "stageAll",
           },
-        },
-
-        // ── ST9/ST10/ST11/ST12: interactive prompt ─────────────────
-        promptAction: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "selectActor",
-            input: ({ context }) => ({
-              message: `${context.unstagedFiles.length} unstaged file(s). What would you like to do?`,
-              options: [
-                {
-                  value: "stage_all",
-                  label: "Stage all files",
-                },
-                {
-                  value: "select_files",
-                  label: "Select files to stage",
-                },
-                {
-                  value: "cancel",
-                  label: "Cancel",
-                },
-              ],
-            }),
-            onDone: [
-              {
-                guard: ({ event }) => event.output === "stage_all",
-                target: "stageAll",
-              },
-              {
-                guard: ({ event }) => event.output === "select_files",
-                target: "selectFiles",
-              },
-              {
-                // cancel
-                target: "aborted",
-              },
-            ],
-            onError: {
-              // Ctrl+C
-              target: "aborted",
-            },
+          {
+            guard: ({ event }) => event.output === "select_files",
+            target: "selectFiles",
           },
-        },
-
-        // ── ST9: stage all ─────────────────────────────────────────
-        stageAll: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "stageAllExceptActor",
-            input: ({ context }) => ({ exclude: context.exclude }),
-            onDone: "refreshStagedAfterStageAll",
-            onError: {
-              target: "aborted",
-            },
+          {
+            // cancel
+            target: "aborted",
           },
-        },
-
-        refreshStagedAfterStageAll: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "getStagedFilesActor",
-            onDone: {
-              target: "done",
-              actions: "assignStagedFiles",
-            },
-            onError: {
-              target: "aborted",
-            },
-          },
-        },
-
-        // ── ST10: select files ─────────────────────────────────────
-        selectFiles: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "multiselectActor",
-            input: ({ context }) => ({
-              message: "Select files to stage:",
-              options: context.unstagedFiles.map((f) => ({
-                value: f,
-                label: f,
-              })),
-            }),
-            onDone: [
-              {
-                guard: ({ event }) =>
-                  // @ts-expect-error — XState v5 invoke type inference
-                  Array.isArray(event.output) && event.output.length === 0,
-                target: "done",
-              },
-              {
-                target: "stageSelected",
-              },
-            ],
-            onError: {
-              target: "aborted",
-            },
-          },
-        },
-
-        // ── Stage the selected files ───────────────────────────────
-        stageSelected: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "stageFilesActor",
-            input: ({ event }) => ({
-              files: (event as { output?: string[] }).output ?? [],
-            }),
-            onDone: "refreshStagedAfterSelect",
-            onError: {
-              target: "aborted",
-            },
-          },
-        },
-
-        refreshStagedAfterSelect: {
-          // @ts-expect-error — XState v5 invoke type inference
-          invoke: {
-            src: "getStagedFilesActor",
-            onDone: {
-              target: "done",
-              actions: "assignStagedFiles",
-            },
-            onError: {
-              target: "aborted",
-            },
-          },
-        },
-
-        // ── Terminal states ────────────────────────────────────────
-        aborted: {
-          type: "final" as const,
-          entry: "markAborted",
-        },
-
-        done: {
-          type: "final" as const,
+        ],
+        onError: {
+          // Ctrl+C
+          target: "aborted",
         },
       },
-      onDone: "done",
     },
 
-    // ── Terminal state ───────────────────────────────────────────────
+    // ── Stage all files (except excluded patterns) ───────────────────
+    stageAll: {
+      // @ts-expect-error — XState v5 invoke type inference
+      invoke: {
+        src: "stageAllExceptActor",
+        input: ({ context }) => ({ exclude: context.exclude }),
+        onDone: "refreshStaged",
+        onError: {
+          target: "aborted",
+        },
+      },
+    },
+
+    // ── Multi-select files to stage ──────────────────────────────────
+    selectFiles: {
+      // @ts-expect-error — XState v5 invoke type inference
+      invoke: {
+        src: "multiselectActor",
+        input: ({ context }) => ({
+          message: "Select files to stage:",
+          options: context.unstagedFiles.map((f) => ({
+            value: f,
+            label: f,
+          })),
+        }),
+        onDone: [
+          {
+            guard: ({ event }) =>
+              // @ts-expect-error — XState v5 invoke type inference
+              Array.isArray(event.output) && event.output.length === 0,
+            // ST13: 0 selected files is intentional when pre-staged files exist —
+            // the user chose "select files" but decided not to add more, so we
+            // proceed with whatever is already staged rather than aborting.
+            // Note: if stagedFiles is empty, the consumer (cli.machine) handles
+            // this via its hasNoStagedFiles guard → warnCleanTree transition.
+            target: "showResult",
+          },
+          {
+            target: "stageSelected",
+          },
+        ],
+        onError: {
+          target: "aborted",
+        },
+      },
+    },
+
+    // ── Stage the selected files ─────────────────────────────────────
+    stageSelected: {
+      // @ts-expect-error — XState v5 invoke type inference
+      invoke: {
+        src: "stageFilesActor",
+        input: ({ event }) => ({
+          files: (event as { output?: string[] }).output ?? [],
+        }),
+        onDone: "refreshStaged",
+        onError: {
+          target: "aborted",
+        },
+      },
+    },
+
+    // ── Refresh staged file list after staging ───────────────────────
+    refreshStaged: {
+      // @ts-expect-error — XState v5 invoke type inference
+      invoke: {
+        src: "getStagedFilesActor",
+        onDone: {
+          target: "showResult",
+          actions: "assignStagedFiles",
+        },
+        onError: {
+          target: "aborted",
+        },
+      },
+    },
+
+    // ── Display final staged file list ───────────────────────────────
+    showResult: {
+      // @ts-expect-error — XState v5 invoke type inference
+      invoke: {
+        src: "displayStagedResultActor",
+        // Pass context so the actor knows which files were staged in this session.
+        // The actor still calls getStagedFilesWithStatus() for accurate statuses,
+        // but filters to only the files in context.stagedFiles.
+        input: ({ context }) => ({ stagedFiles: context.stagedFiles }),
+        onDone: "done",
+        onError: "done", // non-fatal
+      },
+    },
+
+    // ── Terminal states ──────────────────────────────────────────────
+    aborted: {
+      type: "final",
+      entry: "markAborted",
+    },
+
     done: {
       type: "final",
     },

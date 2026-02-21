@@ -2,8 +2,14 @@ import { describe, test, expect } from "bun:test";
 import { createActor, waitFor, fromPromise } from "xstate";
 import { stagingMachine } from "./staging.machine.ts";
 
+// Shared no-op display actor mocks — used in every test
+const displayMocks = {
+  displayStagedResultActor: fromPromise(async () => {}),
+  displayFileSummaryActor: fromPromise(async () => {}),
+};
+
 describe("stagingMachine", () => {
-  // ST1: files already staged, no unstaged → proceed
+  // ST1: files already staged, no unstaged → showResult → done
   test("ST1: proceeds with existing staged files when no unstaged exist", async () => {
     const machine = stagingMachine.provide({
       actors: {
@@ -11,6 +17,7 @@ describe("stagingMachine", () => {
         getStagedFilesActor: fromPromise(async () => ["a.ts", "b.ts"]),
         // @ts-expect-error — XState v5 test mock type inference
         getUnstagedFilesActor: fromPromise(async () => []),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -37,6 +44,7 @@ describe("stagingMachine", () => {
         stageAllExceptActor: fromPromise(async () => {
           stageAllCalled = true;
         }),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -63,6 +71,7 @@ describe("stagingMachine", () => {
         stageAllExceptActor: fromPromise(async () => {
           stageAllCalled = true;
         }),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -81,6 +90,7 @@ describe("stagingMachine", () => {
         getStagedFilesActor: fromPromise(async () => []),
         // @ts-expect-error — XState v5 test mock type inference
         getUnstagedFilesActor: fromPromise(async () => []),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -105,6 +115,7 @@ describe("stagingMachine", () => {
         stageAllExceptActor: fromPromise(async () => {
           staged = true;
         }),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -126,6 +137,7 @@ describe("stagingMachine", () => {
         getUnstagedFilesActor: fromPromise(async () => ["a.ts"]),
         // @ts-expect-error — XState v5 test mock type inference
         selectActor: fromPromise(async () => "cancel"),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -153,6 +165,7 @@ describe("stagingMachine", () => {
         stageAllExceptActor: fromPromise(async () => {
           staged = true;
         }),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -184,6 +197,7 @@ describe("stagingMachine", () => {
             stagedFiles = input.files;
           },
         ),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -204,6 +218,7 @@ describe("stagingMachine", () => {
         getUnstagedFilesActor: fromPromise(async () => ["b.ts", "c.ts"]),
         // @ts-expect-error — XState v5 test mock type inference
         selectActor: fromPromise(async () => "proceed"),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -236,6 +251,7 @@ describe("stagingMachine", () => {
             stagedFiles = input.files;
           },
         ),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -264,6 +280,7 @@ describe("stagingMachine", () => {
         stageAllExceptActor: fromPromise(async () => {
           stageAllCalled = true;
         }),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -285,6 +302,7 @@ describe("stagingMachine", () => {
         getUnstagedFilesActor: fromPromise(async () => ["b.ts"]),
         // @ts-expect-error — XState v5 test mock type inference
         selectActor: fromPromise(async () => "cancel"),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -313,6 +331,7 @@ describe("stagingMachine", () => {
         selectActor: fromPromise(async () => "proceed"),
         // @ts-expect-error — XState v5 test mock type inference
         multiselectActor: fromPromise(async () => []),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -338,6 +357,7 @@ describe("stagingMachine", () => {
             receivedExclude = input.exclude;
           },
         ),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -353,7 +373,6 @@ describe("stagingMachine", () => {
   });
 
   // ST-AUTO1: dangerouslyAutoApprove + no files staged + has unstaged → auto-stage
-  // (Bug B regression — imperative code missed this, machine handles it correctly)
   test("ST-AUTO1: dangerouslyAutoApprove with nothing staged auto-stages all", async () => {
     let staged = false;
     const machine = stagingMachine.provide({
@@ -366,6 +385,7 @@ describe("stagingMachine", () => {
         stageAllExceptActor: fromPromise(async () => {
           staged = true;
         }),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -393,6 +413,7 @@ describe("stagingMachine", () => {
             receivedExclude = input.exclude;
           },
         ),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -422,6 +443,7 @@ describe("stagingMachine", () => {
             stageAllCalled = true;
           },
         ),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -448,6 +470,7 @@ describe("stagingMachine", () => {
         stageAllExceptActor: fromPromise(async () => {
           stageCallCount++;
         }),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -460,7 +483,7 @@ describe("stagingMachine", () => {
     expect(snap.output!.aborted).toBe(false);
   });
 
-  // ST-ERR2: stageAllExcept error in hasStaged auto-stage → aborted
+  // ST-ERR2: stageAllExcept error in hasStaged path → aborted
   test("ST-ERR2: stageAllExcept error in hasStaged path aborts", async () => {
     const machine = stagingMachine.provide({
       actors: {
@@ -472,6 +495,7 @@ describe("stagingMachine", () => {
         stageAllExceptActor: fromPromise(async () => {
           throw new Error("git add failed");
         }),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -494,6 +518,7 @@ describe("stagingMachine", () => {
         stageAllExceptActor: fromPromise(async () => {
           throw new Error("git add failed");
         }),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -516,6 +541,7 @@ describe("stagingMachine", () => {
         selectActor: fromPromise(async () => "select_files"),
         // @ts-expect-error — XState v5 test mock type inference
         multiselectActor: fromPromise(async () => []),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -541,6 +567,7 @@ describe("stagingMachine", () => {
         multiselectActor: fromPromise(async () => {
           throw new Error("User cancelled");
         }),
+        ...displayMocks,
       },
     });
     const actor = createActor(machine, {
@@ -549,5 +576,87 @@ describe("stagingMachine", () => {
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
     expect(snap.output!.aborted).toBe(true);
+  });
+
+  // Display actor tests — verify display actors are invoked
+  test("showResult invokes displayStagedResultActor", async () => {
+    let displayCalled = false;
+    const machine = stagingMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getStagedFilesActor: fromPromise(async () => ["a.ts"]),
+        // @ts-expect-error — XState v5 test mock type inference
+        getUnstagedFilesActor: fromPromise(async () => []),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayStagedResultActor: fromPromise(async () => {
+          displayCalled = true;
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayFileSummaryActor: fromPromise(async () => {}),
+      },
+    });
+    const actor = createActor(machine, {
+      input: { stageAll: false, dangerouslyAutoApprove: false, exclude: [] },
+    });
+    actor.start();
+    await waitFor(actor, (s) => s.status === "done");
+    expect(displayCalled).toBe(true);
+  });
+
+  test("showFileSummary invokes displayFileSummaryActor before prompt", async () => {
+    const callOrder: string[] = [];
+    const machine = stagingMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getStagedFilesActor: fromPromise(async () => []),
+        // @ts-expect-error — XState v5 test mock type inference
+        getUnstagedFilesActor: fromPromise(async () => ["a.ts"]),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayFileSummaryActor: fromPromise(async () => {
+          callOrder.push("summary");
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => {
+          callOrder.push("select");
+          return "cancel";
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayStagedResultActor: fromPromise(async () => {}),
+      },
+    });
+    const actor = createActor(machine, {
+      input: { stageAll: false, dangerouslyAutoApprove: false, exclude: [] },
+    });
+    actor.start();
+    await waitFor(actor, (s) => s.status === "done");
+    expect(callOrder).toEqual(["summary", "select"]);
+  });
+
+  // Negative test: displayStagedResultActor should NOT be called on abort
+  test("displayStagedResultActor is not invoked when machine aborts", async () => {
+    let displayCalled = false;
+    const machine = stagingMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getStagedFilesActor: fromPromise(async () => []),
+        // @ts-expect-error — XState v5 test mock type inference
+        getUnstagedFilesActor: fromPromise(async () => ["a.ts"]),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => "cancel"),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayStagedResultActor: fromPromise(async () => {
+          displayCalled = true;
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayFileSummaryActor: fromPromise(async () => {}),
+      },
+    });
+    const actor = createActor(machine, {
+      input: { stageAll: false, dangerouslyAutoApprove: false, exclude: [] },
+    });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(snap.output!.aborted).toBe(true);
+    expect(displayCalled).toBe(false);
   });
 });

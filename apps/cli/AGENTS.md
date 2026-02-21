@@ -57,6 +57,7 @@ Reusable `fromPromise()` actors with factory pattern for test dependency injecti
 - **`clack.actors.ts`** - @clack/prompts wrappers (select, confirm, text, multiselect) with cancel → `UserCancelledError`
 - **`git.actors.ts`** - Git operations (stage, commit, push, branch, diff, etc.)
 - **`ai.actors.ts`** - AI invocation with spinner and slow warning timer
+- **`display.actors.ts`** - Display formatting (staged result, file summary) with @clack/prompts
 
 ### Key Components
 
