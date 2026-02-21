@@ -134,22 +134,27 @@ export async function downloadRelease(
 
   const tarballPath = path.join(tmpDir, platform.archiveName);
 
-  const [tarballResp, checksumsResp] = await Promise.all([
-    fetch(tarballUrl),
-    fetch(checksumsUrl),
-  ]);
+  try {
+    const [tarballResp, checksumsResp] = await Promise.all([
+      fetch(tarballUrl),
+      fetch(checksumsUrl),
+    ]);
 
-  if (!tarballResp.ok) {
-    throw new CLIError(`Failed to download binary (HTTP ${tarballResp.status}).`);
+    if (!tarballResp.ok) {
+      throw new CLIError(`Failed to download binary (HTTP ${tarballResp.status}).`);
+    }
+    if (!checksumsResp.ok) {
+      throw new CLIError(`Failed to download checksums (HTTP ${checksumsResp.status}).`);
+    }
+
+    await Bun.write(tarballPath, tarballResp);
+    const checksumsContent = await checksumsResp.text();
+
+    return { tarballPath, checksumsContent, tmpDir };
+  } catch (err) {
+    cleanupTmpDir(tmpDir);
+    throw err;
   }
-  if (!checksumsResp.ok) {
-    throw new CLIError(`Failed to download checksums (HTTP ${checksumsResp.status}).`);
-  }
-
-  await Bun.write(tarballPath, tarballResp);
-  const checksumsContent = await checksumsResp.text();
-
-  return { tarballPath, checksumsContent, tmpDir };
 }
 
 // ==============================================================================
