@@ -100,6 +100,14 @@ describe("parseNameStatusOutput", () => {
     expect(parseNameStatusOutput("\n")).toEqual([]);
   });
 
+  test("handles copy status (destination path not captured)", () => {
+    const output = "C100\tsrc/original.ts\tsrc/copy.ts\n";
+    const result = parseNameStatusOutput(output);
+    expect(result).toEqual([
+      { status: "C", path: "src/original.ts" },
+    ]);
+  });
+
   test("handles mixed statuses including renames", () => {
     const output = "M\tREADME.md\nR100\tsrc/a.ts\tsrc/b.ts\nA\tsrc/c.ts\n";
     const result = parseNameStatusOutput(output);
