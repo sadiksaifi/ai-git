@@ -35,6 +35,7 @@ import {
   showUpdateNotification,
 } from "../lib/update-check.ts";
 import { assertConfiguredModelAllowed } from "../providers/api/models/index.ts";
+import type { SupportedAPIProviderId } from "../providers/api/models/types.ts";
 
 // ── Helper: resolve config into a ConfigResolutionResult ─────────────
 
@@ -77,11 +78,7 @@ async function resolveFullConfig(
     modelName = modelId;
     try {
       await assertConfiguredModelAllowed(
-        providerDef.id as
-          | "openrouter"
-          | "openai"
-          | "anthropic"
-          | "google-ai-studio",
+        providerDef.id as SupportedAPIProviderId,
         model,
       );
     } catch (error) {

@@ -16,7 +16,7 @@ describe("pushMachine", () => {
       input: { push: true, dangerouslyAutoApprove: false, isInteractiveMode: false },
     });
     actor.start();
-    const snap = await waitFor(actor, (s) => s.status === "done");
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(snap.output!.pushed).toBe(true);
     expect(snap.output!.exitCode).toBe(0);
   });
@@ -35,7 +35,7 @@ describe("pushMachine", () => {
       input: { push: true, dangerouslyAutoApprove: false, isInteractiveMode: false },
     });
     actor.start();
-    const snap = await waitFor(actor, (s) => s.status === "done");
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(snap.output!.pushed).toBe(false);
   });
 
@@ -61,7 +61,7 @@ describe("pushMachine", () => {
       input: { push: true, dangerouslyAutoApprove: false, isInteractiveMode: true },
     });
     actor.start();
-    const snap = await waitFor(actor, (s) => s.status === "done");
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(snap.output!.pushed).toBe(true);
   });
 
@@ -81,7 +81,7 @@ describe("pushMachine", () => {
       input: { push: true, dangerouslyAutoApprove: false, isInteractiveMode: false },
     });
     actor.start();
-    const snap = await waitFor(actor, (s) => s.status === "done");
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(snap.output!.pushed).toBe(false);
   });
 
@@ -111,7 +111,7 @@ describe("pushMachine", () => {
       input: { push: true, dangerouslyAutoApprove: false, isInteractiveMode: true },
     });
     actor.start();
-    const snap = await waitFor(actor, (s) => s.status === "done");
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(snap.output!.pushed).toBe(false);
   });
 
@@ -137,7 +137,7 @@ describe("pushMachine", () => {
       input: { push: true, dangerouslyAutoApprove: false, isInteractiveMode: true },
     });
     actor.start();
-    const snap = await waitFor(actor, (s) => s.status === "done");
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(snap.output!.pushed).toBe(false);
   });
 
@@ -159,7 +159,7 @@ describe("pushMachine", () => {
       input: { push: true, dangerouslyAutoApprove: false, isInteractiveMode: true },
     });
     actor.start();
-    const snap = await waitFor(actor, (s) => s.status === "done");
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(snap.output!.pushed).toBe(false);
   });
 
@@ -177,7 +177,7 @@ describe("pushMachine", () => {
       input: { push: false, dangerouslyAutoApprove: false, isInteractiveMode: true },
     });
     actor.start();
-    const snap = await waitFor(actor, (s) => s.status === "done");
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(snap.output!.pushed).toBe(true);
   });
 
@@ -193,7 +193,7 @@ describe("pushMachine", () => {
       input: { push: false, dangerouslyAutoApprove: false, isInteractiveMode: true },
     });
     actor.start();
-    const snap = await waitFor(actor, (s) => s.status === "done");
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(snap.output!.pushed).toBe(false);
   });
 
@@ -203,7 +203,7 @@ describe("pushMachine", () => {
       input: { push: false, dangerouslyAutoApprove: false, isInteractiveMode: false },
     });
     actor.start();
-    const snap = await waitFor(actor, (s) => s.status === "done");
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(snap.output!.pushed).toBe(false);
   });
 
@@ -221,7 +221,7 @@ describe("pushMachine", () => {
       input: { push: false, dangerouslyAutoApprove: false, isInteractiveMode: true },
     });
     actor.start();
-    const snap = await waitFor(actor, (s) => s.status === "done");
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(snap.output!.pushed).toBe(false);
   });
 
@@ -237,7 +237,7 @@ describe("pushMachine", () => {
       input: { push: false, dangerouslyAutoApprove: true, isInteractiveMode: true },
     });
     actor.start();
-    const snap = await waitFor(actor, (s) => s.status === "done");
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(snap.output!.pushed).toBe(true);
   });
 });

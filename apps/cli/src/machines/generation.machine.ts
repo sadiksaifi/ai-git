@@ -18,6 +18,7 @@ import { buildSystemPrompt, buildUserPrompt } from "../prompt.ts";
 import { extractErrorMessage } from "../lib/errors.ts";
 import type { CommitResult } from "../lib/git.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
+import type { PromptCustomization } from "../config.ts";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -32,6 +33,8 @@ export interface GenerationInput {
   };
   slowWarningThresholdMs: number;
   adapter?: ProviderAdapter;
+  promptCustomization?: PromptCustomization;
+  editor?: string;
 }
 
 export interface GenerationContext {
@@ -46,6 +49,8 @@ export interface GenerationContext {
   };
   slowWarningThresholdMs: number;
   adapter?: ProviderAdapter;
+  promptCustomization?: PromptCustomization;
+  editor?: string;
 
   // State
   branchName: string | null;
