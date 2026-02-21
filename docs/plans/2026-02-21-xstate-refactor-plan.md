@@ -219,7 +219,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add apps/cli/src/lib/utils.ts apps/cli/src/lib/utils.test.ts
+git add apps/cli/src/lib/errors.ts apps/cli/src/lib/errors.test.ts
 git commit -m "feat: add extractErrorMessage utility for unified error handling"
 ```
 

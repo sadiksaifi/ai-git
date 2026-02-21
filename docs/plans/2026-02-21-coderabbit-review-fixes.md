@@ -29,6 +29,8 @@
 
 ---
 
+## Tasks
+
 ### Task 1: Add onError handlers to staging.machine.ts
 
 **Files:**
@@ -1134,7 +1136,7 @@ git commit -m "test: improve test coverage and assertions per review feedback"
 **Step 1: Fix states.mmd — add machine file references**
 
 After the existing source files list, add:
-```
+```text
 %%   apps/cli/src/machines/cli.machine.ts   — CLI orchestrator state machine
 %%   apps/cli/src/machines/cli.wired.ts     — Production actor wiring
 %%   apps/cli/src/machines/staging.machine.ts  — Staging state machine
@@ -1217,7 +1219,7 @@ Map of comment IDs to fixes (fill in hashes after push):
 |---|---|---|---|
 | 2835639770 | index.ts:23 | "fix: await runMatchedCommand..." | "Fixed in `<hash>`. Added 10-minute timeout to both production `waitFor` calls as a safety net." |
 | 2835639771 | errors.ts:24 | "fix: add name override..." | "Fixed in `<hash>`. Added `override name = \"CLIError\" as const`." |
-| 2835639778 | cli.wired.ts:176 | "fix: nullable config types..." | "Fixed in `<hash>`. Changed `providerDef` and `adapter` to nullable types (`| null`) instead of empty object casts." |
+| 2835639778 | cli.wired.ts:176 | "fix: nullable config types..." | "Fixed in `<hash>`. Changed `providerDef` and `adapter` to nullable types (`\| null`) instead of empty object casts." |
 | 2835639779 | cli.wired.ts:344 | "fix: nullable config types..." | "Fixed in `<hash>`. Added comment explaining why `pushed: true` is correct — `handlePush` doesn't return push status, it handles errors internally." |
 | 2835639780 | generation.machine.ts:1 | "fix: replace @ts-nocheck..." | "Fixed in `<hash>`. Removed `@ts-nocheck` and added targeted `@ts-expect-error` comments on specific lines." |
 | 2835639782 | generation.machine.ts:200 | "fix: generation machine..." | "Fixed in `<hash>`. `storeErrorMessage` now appends to `generationErrors` instead of replacing." |
