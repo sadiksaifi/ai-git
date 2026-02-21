@@ -19,7 +19,7 @@ cli.command("upgrade", "Upgrade ai-git to the latest version")
   .action(async () => {
     const actor = createActor(upgradeMachine, { input: { version: VERSION } });
     actor.start();
-    const snapshot = await waitFor(actor, (s) => s.status === "done");
+    const snapshot = await waitFor(actor, (s) => s.status === "done", { timeout: 600_000 });
     process.exit(snapshot.output!.exitCode);
   });
 
@@ -70,7 +70,7 @@ cli.command("")
       input: { options, version: VERSION },
     });
     actor.start();
-    const snapshot = await waitFor(actor, (s) => s.status === "done");
+    const snapshot = await waitFor(actor, (s) => s.status === "done", { timeout: 600_000 });
     process.exit(snapshot.output!.exitCode);
   });
 
@@ -110,7 +110,7 @@ try {
   } else if (parsed.options.help) {
     process.exit(0);
   } else {
-    cli.runMatchedCommand();
+    await cli.runMatchedCommand();
   }
 } catch (error) {
   if (error instanceof Error && error.message.startsWith("Unknown option")) {
