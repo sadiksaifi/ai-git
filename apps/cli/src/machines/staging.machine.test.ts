@@ -483,7 +483,7 @@ describe("stagingMachine", () => {
     expect(snap.output!.aborted).toBe(false);
   });
 
-  // ST-ERR2: stageAllExcept error in auto-stage → aborted
+  // ST-ERR2: stageAllExcept error in hasStaged path → aborted
   test("ST-ERR2: stageAllExcept error in hasStaged path aborts", async () => {
     const machine = stagingMachine.provide({
       actors: {
