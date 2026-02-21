@@ -456,6 +456,7 @@ describe("stagingMachine", () => {
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
     expect(stageCallCount).toBe(1);
+    expect(snap.output!.stagedFiles).toEqual(["a.ts", "b.ts"]);
     expect(snap.output!.aborted).toBe(false);
   });
 
