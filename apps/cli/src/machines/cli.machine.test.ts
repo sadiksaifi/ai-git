@@ -24,7 +24,7 @@ const defaultInput = (overrides?: Partial<CLIInput["options"]>): CLIInput => ({
   version: "1.0.0",
 });
 
-/** Mock resolved config data returned by loadAndResolveConfigActor */
+/** Test-only fixture — these are not real provider/model IDs */
 const mockConfigResult = (): ConfigResolutionResult => ({
   config: {
     provider: "claude-code",

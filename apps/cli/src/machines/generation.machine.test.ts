@@ -2,13 +2,22 @@ import { describe, test, expect } from "bun:test";
 import { createActor, waitFor, fromPromise } from "xstate";
 import { generationMachine } from "./generation.machine.ts";
 
-const mockInput = (overrides = {}) => ({
-  model: "test-model",
-  modelName: "Test Model",
-  options: { commit: false, dangerouslyAutoApprove: false, dryRun: false, hint: undefined as string | undefined },
-  slowWarningThresholdMs: 0,
-  ...overrides,
-});
+const mockInput = (overrides: Record<string, unknown> = {}) => {
+  const { options: optOverrides, ...rest } = overrides as { options?: Record<string, unknown> };
+  return {
+    model: "test-model",
+    modelName: "Test Model",
+    options: {
+      commit: false,
+      dangerouslyAutoApprove: false,
+      dryRun: false,
+      hint: undefined as string | undefined,
+      ...optOverrides,
+    },
+    slowWarningThresholdMs: 0,
+    ...rest,
+  };
+};
 
 describe("generationMachine", () => {
   // GN4: valid message → prompt → commit → done (happy path)

@@ -3,6 +3,10 @@ import { createActor, waitFor, fromPromise } from "xstate";
 import { upgradeMachine } from "./upgrade.machine.ts";
 
 describe("upgradeMachine", () => {
+  // Note: upgradeMachine maps all onDone outcomes to exitCode: 0 because
+  // delegation is handled entirely within runUpgrade(). These tests verify
+  // the machine completes successfully regardless of the internal path taken.
+
   // UP1-UP3: package manager delegation
   test("UP1: brew install delegates to brew", async () => {
     const machine = upgradeMachine.provide({

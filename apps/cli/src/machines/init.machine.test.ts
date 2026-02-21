@@ -117,6 +117,7 @@ describe("initMachine", () => {
     const actor = createActor(machine, { input: {} });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(confirmCount).toBe(2); // overwrite + tryNow
     expect(snap.output!.continue).toBe(true);
   });
 

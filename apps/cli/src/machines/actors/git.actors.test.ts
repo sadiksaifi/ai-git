@@ -9,6 +9,10 @@ import {
   createStageFilesActor,
   createCommitActor,
   createPushActor,
+  createAddRemoteAndPushActor,
+  createGetBranchNameActor,
+  createSetBranchNameActor,
+  createGatherContextActor,
 } from "./git.actors.ts";
 import { CLIError } from "../../lib/errors.ts";
 
@@ -138,5 +142,62 @@ describe("createPushActor", () => {
     ref.start();
     const snap = await waitFor(ref, (s) => s.status === "done");
     expect(snap.status).toBe("done");
+  });
+});
+
+describe("createAddRemoteAndPushActor", () => {
+  test("calls resolver with url input", async () => {
+    let calledWith = "";
+    const actor = createAddRemoteAndPushActor(async (url) => {
+      calledWith = url;
+    });
+    const ref = createActor(actor, { input: { url: "git@github.com:user/repo.git" } });
+    ref.start();
+    const snap = await waitFor(ref, (s) => s.status === "done");
+    expect(snap.status).toBe("done");
+    expect(calledWith).toBe("git@github.com:user/repo.git");
+  });
+});
+
+describe("createGetBranchNameActor", () => {
+  test("returns branch name from resolver", async () => {
+    const actor = createGetBranchNameActor(async () => "feature/test");
+    const ref = createActor(actor);
+    ref.start();
+    const snap = await waitFor(ref, (s) => s.status === "done");
+    expect(snap.output).toBe("feature/test");
+  });
+
+  test("returns null from resolver", async () => {
+    const actor = createGetBranchNameActor(async () => null);
+    const ref = createActor(actor);
+    ref.start();
+    const snap = await waitFor(ref, (s) => s.status === "done");
+    expect(snap.output).toBeNull();
+  });
+});
+
+describe("createSetBranchNameActor", () => {
+  test("calls resolver with name input", async () => {
+    let calledWith = "";
+    const actor = createSetBranchNameActor(async (name) => {
+      calledWith = name;
+    });
+    const ref = createActor(actor, { input: { name: "feature/new" } });
+    ref.start();
+    const snap = await waitFor(ref, (s) => s.status === "done");
+    expect(snap.status).toBe("done");
+    expect(calledWith).toBe("feature/new");
+  });
+});
+
+describe("createGatherContextActor", () => {
+  test("returns gathered context from resolver", async () => {
+    const mockContext = { diff: "diff content", commits: "commit1\ncommit2", fileList: "file1.ts\nfile2.ts" };
+    const actor = createGatherContextActor(async () => mockContext);
+    const ref = createActor(actor);
+    ref.start();
+    const snap = await waitFor(ref, (s) => s.status === "done");
+    expect(snap.output).toEqual(mockContext);
   });
 });
