@@ -13,6 +13,16 @@ export interface PushOptions {
   isInteractiveMode: boolean;
 }
 
+/** Returns trimmed stderr string for Bun shell errors, or "" for everything else. */
+function getShellStderr(error: unknown): string {
+  if (error === null || typeof error !== "object" || !("stderr" in error))
+    return "";
+  const { stderr } = error as { stderr: unknown };
+  return (
+    stderr instanceof Buffer ? stderr.toString() : typeof stderr === "string" ? stderr : ""
+  ).trim();
+}
+
 /**
  * Safely push changes to remote.
  * Handles missing remote repository by prompting user to add one.
@@ -30,11 +40,7 @@ export async function safePush(isAutomated: boolean): Promise<void> {
     s.stop("Push failed");
 
     // Check for missing remote error
-    const stderr =
-      error !== null && typeof error === "object" && "stderr" in error
-        ? (error as { stderr: unknown }).stderr
-        : undefined;
-    const stderrStr = stderr instanceof Buffer ? stderr.toString() : typeof stderr === "string" ? stderr : "";
+    const stderrStr = getShellStderr(error);
     if (
       stderrStr.includes("No configured push destination") ||
       stderrStr.includes("no remote repository specified")
