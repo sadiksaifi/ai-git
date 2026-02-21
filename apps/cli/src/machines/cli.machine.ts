@@ -142,7 +142,7 @@ export const cliMachine = setup({
       },
     ),
 
-    // ── Clean tree warning ──────────────────────────────────────────
+    // ── Clean tree warning ───────────────────────────────────────────
     warnCleanTreeActor: fromPromise(async (): Promise<void> => {
       // Default implementation — replaced in production wiring
     }),
@@ -466,7 +466,7 @@ export const cliMachine = setup({
     },
 
     // ══════════════════════════════════════════════════════════════════
-    // ── CLEAN TREE WARNING ──────────────────────────────────────────
+    // ── CLEAN TREE WARNING ────────────────────────────────────────────
     // ══════════════════════════════════════════════════════════════════
     warnCleanTree: {
       invoke: {
