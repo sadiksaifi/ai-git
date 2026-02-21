@@ -50,7 +50,7 @@ describe("createFetchReleaseActor", () => {
     ref.start();
     try {
       await waitFor(ref, (s) => s.status === "done");
-      expect(true).toBe(false); // should not reach
+      throw new Error("Expected actor to throw");
     } catch (e) {
       expect(e).toBeInstanceOf(CLIError);
     }
@@ -80,7 +80,7 @@ describe("createDetectPlatformActor", () => {
     ref.start();
     try {
       await waitFor(ref, (s) => s.status === "done");
-      expect(true).toBe(false);
+      throw new Error("Expected actor to throw");
     } catch (e) {
       expect(e).toBeInstanceOf(CLIError);
     }
@@ -134,7 +134,7 @@ describe("createVerifyChecksumActor", () => {
     ref.start();
     try {
       await waitFor(ref, (s) => s.status === "done");
-      expect(true).toBe(false);
+      throw new Error("Expected actor to throw");
     } catch (e) {
       expect(e).toBeInstanceOf(CLIError);
     }
@@ -174,7 +174,7 @@ describe("createInstallBinaryActor", () => {
     ref.start();
     try {
       await waitFor(ref, (s) => s.status === "done");
-      expect(true).toBe(false);
+      throw new Error("Expected actor to throw");
     } catch (e) {
       expect(e).toBeInstanceOf(CLIError);
     }
