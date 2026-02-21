@@ -248,7 +248,9 @@ export const stagingMachine = setup({
             guard: ({ event }) =>
               // @ts-expect-error — XState v5 invoke type inference
               Array.isArray(event.output) && event.output.length === 0,
-            // 0 selected → proceed with existing staged
+            // ST13: 0 selected files is intentional when pre-staged files exist —
+            // the user chose "select files" but decided not to add more, so we
+            // proceed with whatever is already staged rather than aborting.
             target: "showResult",
           },
           {
