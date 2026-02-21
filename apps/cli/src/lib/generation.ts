@@ -12,6 +12,7 @@ import { DEFAULT_SLOW_WARNING_THRESHOLD_MS, type PromptCustomization } from "../
 import type { ProviderAdapter } from "../providers/types.ts";
 import { getStagedDiff, getBranchName, setBranchName, commit, getRecentCommits, getStagedFileList, type CommitResult } from "./git.ts";
 import { validateCommitMessage, buildRetryContext, type ValidationError } from "./validation.ts";
+import { displayCommitMessage } from "./display.ts";
 import { wrapText } from "./utils.ts";
 import { TEMP_MSG_FILE } from "./paths.ts";
 import { CLIError } from "./errors.ts";
@@ -362,10 +363,7 @@ export async function runGenerationLoop(
         // Auto-commit flow (--commit flag)
         if (options.commit) {
           // Always display the generated message before committing
-          const autoNoteTitle = state.validationFailed
-            ? "Generated Commit Message (with warnings)"
-            : "Generated Commit Message";
-          note(currentMessage, autoNoteTitle);
+          displayCommitMessage(currentMessage, state.validationFailed);
 
           if (state.validationFailed) {
             log.warn(pc.yellow("Committing with validation warnings (--commit flag active)."));
@@ -383,10 +381,7 @@ export async function runGenerationLoop(
         }
 
         // Interactive flow
-        const noteTitle = state.validationFailed
-          ? "Generated Commit Message (with warnings)"
-          : "Generated Commit Message";
-        note(currentMessage, noteTitle);
+        displayCommitMessage(currentMessage, state.validationFailed);
 
         const commitLabel = state.validationFailed ? "Commit (with warnings)" : "Commit";
 
