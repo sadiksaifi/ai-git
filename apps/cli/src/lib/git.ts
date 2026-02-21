@@ -95,10 +95,12 @@ export async function getStagedFilesWithStatus(): Promise<FileWithStatus[]> {
       .filter(Boolean)
       .map((line) => {
         const parts = line.split("\t");
-        return {
-          status: (parts[0] ?? "M").trim().charAt(0),
-          path: (parts[1] ?? "").trim(),
-        };
+        const status = (parts[0] ?? "M").trim().charAt(0);
+        // Renames: git outputs "R100\told-path\tnew-path" — show both paths
+        const path = status === "R" && parts[2]
+          ? `${(parts[1] ?? "").trim()} → ${parts[2].trim()}`
+          : (parts[1] ?? "").trim();
+        return { status, path };
       })
       .filter((f) => f.path);
   } catch {
