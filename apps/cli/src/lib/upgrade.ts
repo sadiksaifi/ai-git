@@ -210,11 +210,18 @@ export function installBinary(extractedBinPath: string): void {
     );
   }
 
-  // Copy to temp location next to target, then rename (atomic on same filesystem)
+  // Atomic replace: copy → chmod → rename. Guard ensures the .tmp file
+  // is cleaned up if chmod or rename fails after the copy succeeds.
   const tmpTarget = `${targetPath}.tmp.${process.pid}`;
   fs.copyFileSync(extractedBinPath, tmpTarget);
-  fs.chmodSync(tmpTarget, 0o755);
-  fs.renameSync(tmpTarget, targetPath);
+  let installed = false;
+  try {
+    fs.chmodSync(tmpTarget, 0o755);
+    fs.renameSync(tmpTarget, targetPath);
+    installed = true;
+  } finally {
+    if (!installed) fs.rmSync(tmpTarget, { force: true });
+  }
 }
 
 // ==============================================================================
