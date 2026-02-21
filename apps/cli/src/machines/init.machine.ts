@@ -1,4 +1,3 @@
-// @ts-nocheck — XState v5 invoke src/input type inference is overly strict
 import { setup, assign, fromPromise, type ActorLogicFrom } from "xstate";
 import {
   loadProjectConfig,
@@ -147,6 +146,7 @@ export const initMachine = setup({
       invoke: {
         src: "confirmActor",
         input: {
+          // @ts-expect-error — XState v5 invoke type inference
           message: "Project config (.ai-git.json) already exists. Overwrite?",
           initialValue: false,
         },
@@ -200,6 +200,7 @@ export const initMachine = setup({
       invoke: {
         src: "confirmActor",
         input: {
+          // @ts-expect-error — XState v5 invoke type inference
           message: "No global config found. Run setup wizard?",
           initialValue: true,
         },
@@ -223,6 +224,7 @@ export const initMachine = setup({
       invoke: {
         src: "selectActor",
         input: {
+          // @ts-expect-error — XState v5 invoke type inference
           message: "How would you like to initialize this project?",
           options: [
             { value: "copy", label: "Copy from global config" },
@@ -300,6 +302,7 @@ export const initMachine = setup({
       invoke: {
         src: "confirmActor",
         input: {
+          // @ts-expect-error — XState v5 invoke type inference
           message: "Run ai-git now?",
           initialValue: true,
         },

@@ -1,4 +1,3 @@
-// @ts-nocheck — XState v5 invoke src/input type inference is overly strict
 import { setup, assign, type ActorLogicFrom } from "xstate";
 import {
   pushActor as defaultPushActor,
@@ -131,6 +130,7 @@ export const pushMachine = setup({
     promptPush: {
       invoke: {
         src: "confirmActor",
+        // @ts-expect-error — XState v5 invoke type inference
         input: { message: "Push to remote?" },
         onDone: [
           {
@@ -150,6 +150,7 @@ export const pushMachine = setup({
 
     // ── PU1: attempt git push ────────────────────────────────────────
     pushing: {
+      // @ts-expect-error — XState v5 invoke type inference
       invoke: {
         src: "pushActor",
         onDone: {
@@ -189,6 +190,7 @@ export const pushMachine = setup({
     askAddRemote: {
       invoke: {
         src: "confirmActor",
+        // @ts-expect-error — XState v5 invoke type inference
         input: { message: "No remote configured. Add one now?" },
         onDone: [
           {
@@ -212,6 +214,7 @@ export const pushMachine = setup({
       invoke: {
         src: "textActor",
         input: {
+          // @ts-expect-error — XState v5 invoke type inference
           message: "Remote URL:",
           placeholder: "git@github.com:user/repo.git",
           validate: (value: string) => {
@@ -232,6 +235,7 @@ export const pushMachine = setup({
 
     // ── PU4/PU5: add remote and push ─────────────────────────────────
     addRemoteAndPush: {
+      // @ts-expect-error — XState v5 invoke type inference
       invoke: {
         src: "addRemoteAndPushActor",
         input: ({ context }) => ({ url: context.remoteUrl }),

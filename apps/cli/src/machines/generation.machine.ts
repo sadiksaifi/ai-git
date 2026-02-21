@@ -1,4 +1,3 @@
-// @ts-nocheck — XState v5 invoke src/input type inference is overly strict
 import { setup, assign, type ActorLogicFrom } from "xstate";
 import {
   getBranchNameActor as defaultGetBranchNameActor,
@@ -247,6 +246,7 @@ export const generationMachine = setup({
       states: {
         // ── GN1/GN2: Fetch branch name ─────────────────────────────
         fetchContext: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "getBranchNameActor",
             onDone: {
@@ -261,6 +261,7 @@ export const generationMachine = setup({
 
         // ── Gather diff, commits, file list ────────────────────────
         gatherContext: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "gatherContextActor",
             onDone: {
@@ -294,6 +295,7 @@ export const generationMachine = setup({
 
         // ── GN8-GN10: Invoke AI provider ───────────────────────────
         invokeAI: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "invokeAIActor",
             input: ({ context }) => {
@@ -448,6 +450,7 @@ export const generationMachine = setup({
 
         // ── GN15: Auto-commit (--commit or --dangerouslyAutoApprove)
         autoCommit: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "commitActor",
             input: ({ context }) => ({ message: context.currentMessage }),
@@ -464,6 +467,7 @@ export const generationMachine = setup({
 
         // ── GN18-GN23: Interactive menu ────────────────────────────
         showMenu: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "selectActor",
             input: ({ context }) => ({
@@ -507,6 +511,7 @@ export const generationMachine = setup({
 
         // ── GN18: Try commit from menu ─────────────────────────────
         tryCommit: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "commitActor",
             input: ({ context }) => ({ message: context.currentMessage }),
@@ -585,6 +590,7 @@ export const generationMachine = setup({
       invoke: {
         src: "textActor",
         input: {
+          // @ts-expect-error — XState v5 invoke type inference
           message:
             "Enter instructions to refine (or leave blank to retry as-is):",
           placeholder:

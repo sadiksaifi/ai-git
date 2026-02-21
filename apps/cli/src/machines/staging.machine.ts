@@ -1,4 +1,3 @@
-// @ts-nocheck — XState v5 invoke src/input type inference is overly strict
 import { setup, assign, type ActorLogicFrom } from "xstate";
 import {
   getStagedFilesActor as defaultGetStagedFilesActor,
@@ -98,6 +97,7 @@ export const stagingMachine = setup({
   states: {
     // ── Entry: fetch staged files to determine path ──────────────────
     checkStaged: {
+      // @ts-expect-error — XState v5 invoke type inference
       invoke: {
         src: "getStagedFilesActor",
         onDone: {
@@ -113,6 +113,7 @@ export const stagingMachine = setup({
 
     // ── Fetch unstaged files before deciding path ────────────────────
     checkUnstaged: {
+      // @ts-expect-error — XState v5 invoke type inference
       invoke: {
         src: "getUnstagedFilesActor",
         onDone: {
@@ -172,6 +173,7 @@ export const stagingMachine = setup({
 
         // ── ST5/ST6: invoke stageAllExcept then refresh ────────────
         autoStageMore: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "stageAllExceptActor",
             input: ({ context }) => ({ exclude: context.exclude }),
@@ -183,6 +185,7 @@ export const stagingMachine = setup({
         },
 
         refreshStagedAfterAutoMore: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "getStagedFilesActor",
             onDone: {
@@ -197,6 +200,7 @@ export const stagingMachine = setup({
 
         // ── ST2/ST3/ST4/ST12: interactive prompt ───────────────────
         promptMore: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "selectActor",
             input: ({ context }) => ({
@@ -247,6 +251,7 @@ export const stagingMachine = setup({
 
         // ── ST3: multi-select files to stage ───────────────────────
         multiSelectMore: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "multiselectActor",
             input: ({ context }) => ({
@@ -259,6 +264,7 @@ export const stagingMachine = setup({
             onDone: [
               {
                 guard: ({ event }) =>
+                  // @ts-expect-error — XState v5 invoke type inference
                   Array.isArray(event.output) && event.output.length === 0,
                 // ST13: 0 chosen → proceed with existing staged
                 target: "done",
@@ -275,6 +281,7 @@ export const stagingMachine = setup({
 
         // ── Stage the selected files ───────────────────────────────
         stageSelectedMore: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "stageFilesActor",
             input: ({ event }) => ({
@@ -288,6 +295,7 @@ export const stagingMachine = setup({
         },
 
         refreshStagedAfterSelectMore: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "getStagedFilesActor",
             onDone: {
@@ -302,6 +310,7 @@ export const stagingMachine = setup({
 
         // ── ST4: stage all remaining ───────────────────────────────
         stageAllMore: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "stageAllExceptActor",
             input: ({ context }) => ({ exclude: context.exclude }),
@@ -313,6 +322,7 @@ export const stagingMachine = setup({
         },
 
         refreshStagedAfterStageAllMore: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "getStagedFilesActor",
             onDone: {
@@ -376,6 +386,7 @@ export const stagingMachine = setup({
 
         // ── ST8: invoke stageAllExcept then refresh ────────────────
         autoStageAll: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "stageAllExceptActor",
             input: ({ context }) => ({ exclude: context.exclude }),
@@ -387,6 +398,7 @@ export const stagingMachine = setup({
         },
 
         refreshStagedAfterAutoAll: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "getStagedFilesActor",
             onDone: {
@@ -401,6 +413,7 @@ export const stagingMachine = setup({
 
         // ── ST9/ST10/ST11/ST12: interactive prompt ─────────────────
         promptAction: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "selectActor",
             input: ({ context }) => ({
@@ -443,6 +456,7 @@ export const stagingMachine = setup({
 
         // ── ST9: stage all ─────────────────────────────────────────
         stageAll: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "stageAllExceptActor",
             input: ({ context }) => ({ exclude: context.exclude }),
@@ -454,6 +468,7 @@ export const stagingMachine = setup({
         },
 
         refreshStagedAfterStageAll: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "getStagedFilesActor",
             onDone: {
@@ -468,6 +483,7 @@ export const stagingMachine = setup({
 
         // ── ST10: select files ─────────────────────────────────────
         selectFiles: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "multiselectActor",
             input: ({ context }) => ({
@@ -480,6 +496,7 @@ export const stagingMachine = setup({
             onDone: [
               {
                 guard: ({ event }) =>
+                  // @ts-expect-error — XState v5 invoke type inference
                   Array.isArray(event.output) && event.output.length === 0,
                 target: "done",
               },
@@ -495,6 +512,7 @@ export const stagingMachine = setup({
 
         // ── Stage the selected files ───────────────────────────────
         stageSelected: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "stageFilesActor",
             input: ({ event }) => ({
@@ -508,6 +526,7 @@ export const stagingMachine = setup({
         },
 
         refreshStagedAfterSelect: {
+          // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "getStagedFilesActor",
             onDone: {
