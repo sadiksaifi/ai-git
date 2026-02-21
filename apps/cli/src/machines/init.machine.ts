@@ -244,8 +244,8 @@ export const initMachine = setup({
           },
         ],
         onError: {
-          // IN8: Ctrl+C / cancel
-          target: "exitErr",
+          // Ctrl+C at initChoice — user cancelled, exit cleanly (consistent with other prompts)
+          target: "exitOk",
         },
       },
     },
@@ -254,9 +254,13 @@ export const initMachine = setup({
     copyGlobal: {
       invoke: {
         src: "saveProjectConfigActor",
-        input: ({ context }) => ({
-          config: context.globalConfig!,
-        }),
+        input: ({ context }) => {
+          // Invariant: copyGlobal only reachable when isGlobalConfigComplete is true
+          if (!context.globalConfig) {
+            throw new Error("globalConfig is null in copyGlobal (should be unreachable)");
+          }
+          return { config: context.globalConfig };
+        },
         onDone: {
           target: "askTryNow",
         },

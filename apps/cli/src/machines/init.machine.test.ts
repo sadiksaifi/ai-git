@@ -116,8 +116,8 @@ describe("initMachine", () => {
     expect(snap.output.exitCode).toBe(0);
   });
 
-  // IN8: cancel at init choice → exit error
-  test("IN8: cancel at init choice → exit error", async () => {
+  // IN8: cancel at init choice → exit ok (user cancelled cleanly)
+  test("IN8: cancel at init choice → exit ok", async () => {
     const machine = initMachine.provide({
       actors: {
         loadProjectConfigActor: fromPromise(async () => null),
@@ -128,7 +128,7 @@ describe("initMachine", () => {
     const actor = createActor(machine, { input: {} });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output.exitCode).toBe(1);
+    expect(snap.output.exitCode).toBe(0);
   });
 
   // Bug #4: wizard fails → exit error (no process.exit!)
