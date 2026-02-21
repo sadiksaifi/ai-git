@@ -12,6 +12,12 @@ export class UserCancelledError extends Error {
 /**
  * Typed CLI error with exit code and optional user-facing suggestion.
  * Replaces scattered process.exit() calls throughout the codebase.
+ *
+ * @param message - Human-readable error description shown to the user.
+ * @param exitCode - Process exit code (default: 1). Use 130 for user interrupts.
+ * @param suggestion - Optional actionable hint displayed after the error
+ *   (e.g. "Install git: https://git-scm.com/downloads"). Callers are
+ *   responsible for displaying this — it is NOT auto-printed.
  */
 export class CLIError extends Error {
   override name = "CLIError" as const;

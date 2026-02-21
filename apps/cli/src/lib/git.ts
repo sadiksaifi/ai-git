@@ -16,6 +16,7 @@ export async function checkGitInstalled(): Promise<void> {
     await $`git --version`.quiet();
   } catch {
     console.error(pc.red("Error: 'git' is not installed."));
+    console.error(pc.dim("Install git: https://git-scm.com/downloads"));
     throw new CLIError("'git' is not installed.", 1, "Install git: https://git-scm.com/downloads");
   }
 }
@@ -29,6 +30,7 @@ export async function checkInsideRepo(): Promise<void> {
     await $`git rev-parse --is-inside-work-tree`.quiet();
   } catch {
     console.error(pc.red("Error: Not a git repository."));
+    console.error(pc.dim("Run this command inside a git repository."));
     throw new CLIError("Not a git repository.", 1, "Run this command inside a git repository.");
   }
 }
