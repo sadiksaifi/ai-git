@@ -182,6 +182,20 @@ describe("upgradeMachine", () => {
     expect(snap.output!.exitCode).toBe(0);
   });
 
+  // errorCleanup failure preserves original error
+  test("errorCleanup failure preserves error output", async () => {
+    const snap = await runMachine({
+      fetchReleaseActor: fromPromise(async () => {
+        throw new Error("fetch failed");
+      }),
+      cleanupActor: fromPromise(async () => {
+        throw new Error("cleanup also failed");
+      }),
+    });
+    expect(snap.output!.exitCode).toBe(1);
+    expect(snap.output!.errorMessage).toContain("fetch failed");
+  });
+
   // Cleanup runs on success path
   test("cleanup runs on success path", async () => {
     let cleanupCalled = false;
