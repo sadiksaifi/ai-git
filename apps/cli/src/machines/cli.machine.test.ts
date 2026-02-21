@@ -177,8 +177,9 @@ describe("cliMachine", () => {
     expect(snap.output!.exitCode).toBe(1);
   });
 
-  // Clean working directory -> exit 0
-  test("clean working directory exits with code 0", async () => {
+  // Clean working directory -> warns and exits with code 0
+  test("clean working directory invokes warnCleanTreeActor and exits with code 0", async () => {
+    let warnActorCalled = false;
     const machine = cliMachine.provide({
       actors: {
         ...happyPathActors(),
@@ -186,6 +187,33 @@ describe("cliMachine", () => {
           stagedFiles: [] as string[],
           aborted: false as boolean,
         })),
+        warnCleanTreeActor: fromPromise(async () => {
+          warnActorCalled = true;
+        }),
+      },
+    });
+    const actor = createActor(machine, { input: defaultInput() });
+    actor.start();
+
+    const snap = await waitFor(actor, (s) => s.status === "done", {
+      timeout: 5000,
+    });
+    expect(snap.output!.exitCode).toBe(0);
+    expect(warnActorCalled).toBe(true);
+  });
+
+  // warnCleanTreeActor error is non-fatal
+  test("warnCleanTreeActor error still exits with code 0", async () => {
+    const machine = cliMachine.provide({
+      actors: {
+        ...happyPathActors(),
+        stagingMachine: fromPromise(async () => ({
+          stagedFiles: [] as string[],
+          aborted: false as boolean,
+        })),
+        warnCleanTreeActor: fromPromise(async (): Promise<void> => {
+          throw new Error("display error");
+        }),
       },
     });
     const actor = createActor(machine, { input: defaultInput() });

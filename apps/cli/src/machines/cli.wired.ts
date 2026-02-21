@@ -8,6 +8,7 @@
 
 import { fromPromise } from "xstate";
 import pc from "picocolors";
+import { log } from "@clack/prompts";
 import { cliMachine, type ConfigResolutionResult, type OnboardingActorResult } from "./cli.machine.ts";
 import { initMachine } from "./init.machine.ts";
 import { stagingMachine } from "./staging.machine.ts";
@@ -322,6 +323,11 @@ export const wiredCliMachine = cliMachine.provide({
 
     // ── Staging ──────────────────────────────────────────────────────
     stagingMachine: stagingMachine,
+
+    // ── Clean tree warning ────────────────────────────────────────
+    warnCleanTreeActor: fromPromise(async () => {
+      log.warn("Nothing to commit — working tree is clean.");
+    }),
 
     // ── Generation ───────────────────────────────────────────────────
     generationMachine: fromPromise(
