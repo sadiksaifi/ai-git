@@ -341,23 +341,23 @@ describe("ai-git CLI", () => {
     expect(result.exitCode).toBe(0);
   });
 
-  it("should reject invalid effort model like haiku-high", async () => {
-    const homeDir = createTestHome({
-      provider: "claude-code",
-      model: "haiku-high",
-    });
-    const noProviderPath = await createPathWithoutProviderCLI();
-    const repoDir = createGitRepo();
+  it.each(["haiku-high", "haiku-medium", "haiku-low"])(
+    "should reject %s as invalid model",
+    async (model) => {
+      const homeDir = createTestHome({ provider: "claude-code", model });
+      const noProviderPath = await createPathWithoutProviderCLI();
+      const repoDir = createGitRepo();
 
-    const result = await runCLI([], {
-      cwd: repoDir,
-      homeDir,
-      pathEnv: noProviderPath,
-    });
+      const result = await runCLI([], {
+        cwd: repoDir,
+        homeDir,
+        pathEnv: noProviderPath,
+      });
 
-    // Config validation should fail because haiku-high is not in the registry,
-    // triggering the setup wizard instead of proceeding normally
-    expect(result.stdout).toContain("Select AI provider");
-    expect(result.exitCode).toBe(0);
-  });
+      expect(result.stderr).toContain(model);
+      expect(result.stderr).toContain("Unknown model");
+      expect(result.stderr).toContain("--setup");
+      expect(result.exitCode).toBe(1);
+    },
+  );
 });

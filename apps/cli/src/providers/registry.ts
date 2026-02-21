@@ -62,7 +62,8 @@ export const PROVIDERS: ProviderDefinition[] = [
       { id: "opus-low", name: "Claude Opus (low)" },
       { id: "opus-medium", name: "Claude Opus (medium)" },
       { id: "opus-high", name: "Claude Opus (high)" },
-      // doesn't have an effort level
+      // Haiku does NOT support effort levels — do not add haiku-low/medium/high variants.
+      // The --effort flag is only for Sonnet and Opus (see parseClaudeModelId in cli/claude-code.ts).
       { id: "haiku", name: "Claude Haiku" },
     ],
   },
