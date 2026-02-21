@@ -14,6 +14,7 @@ import { getStagedDiff, getBranchName, setBranchName, commit, getRecentCommits, 
 import { validateCommitMessage, buildRetryContext, type ValidationError } from "./validation.ts";
 import { wrapText } from "./utils.ts";
 import { TEMP_MSG_FILE } from "./paths.ts";
+import { CLIError } from "./errors.ts";
 
 // ==============================================================================
 // AI GENERATION ENGINE
@@ -275,7 +276,7 @@ export async function runGenerationLoop(
           } else {
             console.error(pc.red(errorMessage));
           }
-          process.exit(1);
+          throw new CLIError(errorMessage);
         }
 
         // Cleanup message
@@ -286,7 +287,7 @@ export async function runGenerationLoop(
 
         if (!cleanMsg) {
           console.error(pc.red("Error: AI returned empty message."));
-          process.exit(1);
+          throw new CLIError("AI returned empty message.");
         }
 
         state = { type: "validate", message: cleanMsg };

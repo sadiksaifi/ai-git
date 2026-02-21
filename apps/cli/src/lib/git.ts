@@ -1,6 +1,7 @@
 import { $ } from "bun";
 import pc from "picocolors";
 import { LOCKFILES, filterExcludedFiles } from "./utils.ts";
+import { CLIError } from "./errors.ts";
 
 // ==============================================================================
 // GIT OPERATIONS
@@ -15,7 +16,7 @@ export async function checkGitInstalled(): Promise<void> {
     await $`git --version`.quiet();
   } catch {
     console.error(pc.red("Error: 'git' is not installed."));
-    process.exit(1);
+    throw new CLIError("'git' is not installed.", 1, "Install git: https://git-scm.com/downloads");
   }
 }
 
@@ -28,7 +29,7 @@ export async function checkInsideRepo(): Promise<void> {
     await $`git rev-parse --is-inside-work-tree`.quiet();
   } catch {
     console.error(pc.red("Error: Not a git repository."));
-    process.exit(1);
+    throw new CLIError("Not a git repository.", 1, "Run this command inside a git repository.");
   }
 }
 
