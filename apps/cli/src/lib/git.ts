@@ -4,6 +4,19 @@ import { LOCKFILES, filterExcludedFiles } from "./utils.ts";
 import { CLIError } from "./errors.ts";
 
 // ==============================================================================
+// TYPES
+// ==============================================================================
+
+/**
+ * A file path with its git status indicator.
+ */
+export interface FileWithStatus {
+  /** Git status: "M" (modified), "A" (added), "D" (deleted), "R" (renamed), "?" (untracked) */
+  status: string;
+  path: string;
+}
+
+// ==============================================================================
 // GIT OPERATIONS
 // ==============================================================================
 
@@ -67,6 +80,63 @@ export async function getUnstagedFiles(): Promise<string[]> {
     .map((f) => f.trim())
     .filter(Boolean)
     .filter((v, i, a) => a.indexOf(v) === i); // unique
+}
+
+/**
+ * Get staged files with their status (M/A/D/R).
+ * Uses `git diff --cached --name-status`.
+ */
+export async function getStagedFilesWithStatus(): Promise<FileWithStatus[]> {
+  try {
+    const output = await $`git diff --cached --name-status`.text();
+    return output
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => {
+        const parts = line.split("\t");
+        return {
+          status: (parts[0] ?? "M").trim().charAt(0),
+          path: (parts[1] ?? "").trim(),
+        };
+      })
+      .filter((f) => f.path);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Get unstaged files with their status.
+ * Modified tracked files → "M", deleted → "D", untracked → "?".
+ */
+export async function getUnstagedFilesWithStatus(): Promise<FileWithStatus[]> {
+  try {
+    const modified = await $`git diff --name-status`.text();
+    const untracked = await $`git ls-files -o --exclude-standard`.text();
+
+    const files: FileWithStatus[] = [];
+
+    // Parse modified/deleted (format: "M\tfile.ts" or "D\tfile.ts")
+    for (const line of modified.trim().split("\n").filter(Boolean)) {
+      const parts = line.split("\t");
+      files.push({
+        status: (parts[0] ?? "M").trim().charAt(0),
+        path: (parts[1] ?? "").trim(),
+      });
+    }
+
+    // Untracked files
+    for (const path of untracked.trim().split("\n").filter(Boolean)) {
+      if (!files.some((f) => f.path === path.trim())) {
+        files.push({ status: "?", path: path.trim() });
+      }
+    }
+
+    return files.filter((f) => f.path);
+  } catch {
+    return [];
+  }
 }
 
 /**
