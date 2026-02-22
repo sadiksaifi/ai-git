@@ -24,6 +24,10 @@
       "cache": false,
       "persistent": true
     },
+    "preview": {
+      "cache": false,
+      "persistent": true
+    },
     "deploy": {
       "cache": false
     },
