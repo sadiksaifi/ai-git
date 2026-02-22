@@ -48,9 +48,7 @@ export function shouldExitAfterOnboarding(continueToRun: boolean): boolean {
  * 1. Setup wizard
  * 2. Ask if user wants to try now
  */
-export async function runOnboarding(
-  options: OnboardingOptions
-): Promise<OnboardingResult> {
+export async function runOnboarding(options: OnboardingOptions): Promise<OnboardingResult> {
   const { defaults, target = "global" } = options;
 
   // Step 1: Setup wizard

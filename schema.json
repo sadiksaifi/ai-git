@@ -11,11 +11,7 @@
     "editor": {
       "type": "string",
       "description": "Preferred editor command (e.g. 'vim', 'nvim', 'nano'). Overrides $EDITOR environment variable.",
-      "examples": [
-        "vim",
-        "nvim",
-        "nano"
-      ]
+      "examples": ["vim", "nvim", "nano"]
     },
     "provider": {
       "type": "string",
@@ -137,10 +133,7 @@
       "additionalProperties": false
     }
   },
-  "required": [
-    "provider",
-    "model"
-  ],
+  "required": ["provider", "model"],
   "additionalProperties": false,
   "allOf": [
     {

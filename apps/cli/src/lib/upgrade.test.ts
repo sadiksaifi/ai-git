@@ -15,9 +15,7 @@ describe("detectPlatform", () => {
   test("archiveName follows naming convention", () => {
     const result = detectPlatform();
     if (result) {
-      expect(result.archiveName).toBe(
-        `ai-git-${result.os}-${result.arch}.tar.gz`,
-      );
+      expect(result.archiveName).toBe(`ai-git-${result.os}-${result.arch}.tar.gz`);
     }
   });
 });

@@ -95,9 +95,10 @@ export function parseNameStatusOutput(output: string): FileWithStatus[] {
       const parts = line.split("\t");
       const status = (parts[0] ?? "M").trim().charAt(0);
       // Renames: git outputs "R100\told-path\tnew-path" — show both paths
-      const path = status === "R" && parts[2]
-        ? `${(parts[1] ?? "").trim()} → ${parts[2].trim()}`
-        : (parts[1] ?? "").trim();
+      const path =
+        status === "R" && parts[2]
+          ? `${(parts[1] ?? "").trim()} → ${parts[2].trim()}`
+          : (parts[1] ?? "").trim();
       return { status, path };
     })
     .filter((f) => f.path);
@@ -166,9 +167,7 @@ export async function getUnstagedFilesWithStatus(): Promise<FileWithStatus[]> {
  */
 export async function getBranchName(): Promise<string | null> {
   try {
-    const branchName = (
-      await $`git rev-parse --abbrev-ref HEAD`.text()
-    ).trim();
+    const branchName = (await $`git rev-parse --abbrev-ref HEAD`.text()).trim();
     return branchName;
   } catch {
     return null;
@@ -198,8 +197,7 @@ export async function getStagedDiff(): Promise<string> {
   // Truncate if massive
   const lines = diffOutput.split("\n");
   if (lines.length > 2500) {
-    diffOutput =
-      lines.slice(0, 2500).join("\n") + "\n... [DIFF TRUNCATED] ...";
+    diffOutput = lines.slice(0, 2500).join("\n") + "\n... [DIFF TRUNCATED] ...";
   }
 
   return diffOutput;
@@ -249,9 +247,7 @@ export async function stageAll(): Promise<void> {
 /**
  * Stage all changes except those matching exclusion patterns.
  */
-export async function stageAllExcept(
-  excludePatterns?: string[]
-): Promise<void> {
+export async function stageAllExcept(excludePatterns?: string[]): Promise<void> {
   if (!excludePatterns || excludePatterns.length === 0) {
     await stageAll();
     return;
@@ -299,13 +295,13 @@ export async function commit(message: string): Promise<CommitResult> {
   // Parse the commit output
   // Format: "[branch hash] message\n files changed, insertions, deletions\n create mode ... file\n ..."
   const lines = stdout.trim().split("\n");
-  
+
   // Parse first line: "[main abc1234] commit message" or "[main (root-commit) abc1234] message"
   const headerMatch = lines[0]?.match(/^\[([^\s\]]+)(?:\s+\([^)]+\))?\s+([a-f0-9]+)\]/);
   const branch = headerMatch?.[1] ?? "unknown";
   const hash = headerMatch?.[2] ?? "unknown";
   const isRoot = lines[0]?.includes("(root-commit)") ?? false;
-  
+
   // Parse subject from the header line
   const subjectMatch = lines[0]?.match(/\]\s+(.+)$/);
   const subject = subjectMatch?.[1] ?? message.split("\n")[0] ?? "";
@@ -314,9 +310,11 @@ export async function commit(message: string): Promise<CommitResult> {
   let filesChanged = 0;
   let insertions = 0;
   let deletions = 0;
-  
+
   for (const line of lines) {
-    const statsMatch = line.match(/(\d+)\s+files?\s+changed(?:,\s+(\d+)\s+insertions?\(\+\))?(?:,\s+(\d+)\s+deletions?\(-\))?/);
+    const statsMatch = line.match(
+      /(\d+)\s+files?\s+changed(?:,\s+(\d+)\s+insertions?\(\+\))?(?:,\s+(\d+)\s+deletions?\(-\))?/,
+    );
     if (statsMatch) {
       filesChanged = parseInt(statsMatch[1] ?? "0", 10);
       insertions = parseInt(statsMatch[2] ?? "0", 10);

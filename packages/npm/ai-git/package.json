@@ -2,14 +2,28 @@
   "name": "@ai-git/cli",
   "version": "0.0.0",
   "description": "AI-powered git commit message generator",
+  "keywords": [
+    "ai",
+    "cli",
+    "commit",
+    "conventional-commits",
+    "git"
+  ],
+  "homepage": "https://ai-git.xyz",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/sadiksaifi/ai-git"
   },
-  "homepage": "https://ai-git.xyz",
   "bin": {
     "ai-git": "bin/ai-git"
+  },
+  "files": [
+    "bin/",
+    "scripts/"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js"
   },
   "optionalDependencies": {
     "@ai-git/darwin-arm64": "0.0.0",
@@ -17,19 +31,5 @@
     "@ai-git/linux-arm64": "0.0.0",
     "@ai-git/linux-x64": "0.0.0",
     "@ai-git/win32-x64": "0.0.0"
-  },
-  "scripts": {
-    "postinstall": "node scripts/postinstall.js"
-  },
-  "files": [
-    "bin/",
-    "scripts/"
-  ],
-  "keywords": [
-    "git",
-    "ai",
-    "commit",
-    "conventional-commits",
-    "cli"
-  ]
+  }
 }

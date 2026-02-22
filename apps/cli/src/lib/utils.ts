@@ -27,7 +27,7 @@ export const LOCKFILES = [
  */
 export function wrapText(text: string, width: number): string {
   if (width <= 0) return text;
-  
+
   const lines = text.split("\n");
   const wrappedLines: string[] = [];
 
@@ -66,7 +66,9 @@ export function parseRegexPattern(pattern: string): RegExp | null {
       return new RegExp(slashMatch[1], slashMatch[2] ?? "");
     } catch (e) {
       console.warn(
-        pc.yellow(`Warning: Invalid regex pattern "${pattern}": ${e instanceof Error ? e.message : e}`)
+        pc.yellow(
+          `Warning: Invalid regex pattern "${pattern}": ${e instanceof Error ? e.message : e}`,
+        ),
       );
       return null;
     }
@@ -79,7 +81,9 @@ export function parseRegexPattern(pattern: string): RegExp | null {
       return new RegExp(regexBody);
     } catch (e) {
       console.warn(
-        pc.yellow(`Warning: Invalid regex pattern "${pattern}": ${e instanceof Error ? e.message : e}`)
+        pc.yellow(
+          `Warning: Invalid regex pattern "${pattern}": ${e instanceof Error ? e.message : e}`,
+        ),
       );
       return null;
     }
@@ -103,10 +107,7 @@ function isGlobPattern(pattern: string): boolean {
  * - Glob patterns (*, ?, [...])
  * - Regex patterns (/pattern/flags or regex:pattern)
  */
-export function matchesExcludePattern(
-  filePath: string,
-  patterns: string[]
-): boolean {
+export function matchesExcludePattern(filePath: string, patterns: string[]): boolean {
   for (const pattern of patterns) {
     // Skip empty patterns
     if (!pattern) continue;
@@ -146,11 +147,7 @@ export function matchesExcludePattern(
 /**
  * Filter out files that match any exclusion pattern.
  */
-export function filterExcludedFiles(
-  files: string[],
-  patterns: string[]
-): string[] {
+export function filterExcludedFiles(files: string[], patterns: string[]): string[] {
   if (!patterns || patterns.length === 0) return files;
   return files.filter((f) => !matchesExcludePattern(f, patterns));
 }
-

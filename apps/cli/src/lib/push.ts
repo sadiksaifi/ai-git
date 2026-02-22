@@ -15,8 +15,7 @@ export interface PushOptions {
 
 /** Returns trimmed stderr string for Bun shell errors, or "" for everything else. */
 function getShellStderr(error: unknown): string {
-  if (error === null || typeof error !== "object" || !("stderr" in error))
-    return "";
+  if (error === null || typeof error !== "object" || !("stderr" in error)) return "";
   const { stderr } = error as { stderr: unknown };
   return (
     stderr instanceof Buffer ? stderr.toString() : typeof stderr === "string" ? stderr : ""

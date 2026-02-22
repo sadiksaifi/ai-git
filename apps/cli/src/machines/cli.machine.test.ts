@@ -231,10 +231,12 @@ describe("cliMachine", () => {
     const machine = cliMachine.provide({
       actors: {
         ...happyPathActors(),
-        loadAndResolveConfigActor: fromPromise(async (): Promise<ConfigResolutionResult> => ({
-          ...mockConfigResult(),
-          needsSetup: true,
-        })),
+        loadAndResolveConfigActor: fromPromise(
+          async (): Promise<ConfigResolutionResult> => ({
+            ...mockConfigResult(),
+            needsSetup: true,
+          }),
+        ),
         runOnboardingActor: fromPromise(async (): Promise<OnboardingActorResult> => {
           setupCalled = true;
           return { completed: true, continueToRun: false };
@@ -301,14 +303,18 @@ describe("cliMachine", () => {
     const machine = cliMachine.provide({
       actors: {
         ...happyPathActors(),
-        loadAndResolveConfigActor: fromPromise(async (): Promise<ConfigResolutionResult> => ({
-          ...mockConfigResult(),
-          needsSetup: true,
-        })),
-        runOnboardingActor: fromPromise(async (): Promise<OnboardingActorResult> => ({
-          completed: false,
-          continueToRun: false,
-        })),
+        loadAndResolveConfigActor: fromPromise(
+          async (): Promise<ConfigResolutionResult> => ({
+            ...mockConfigResult(),
+            needsSetup: true,
+          }),
+        ),
+        runOnboardingActor: fromPromise(
+          async (): Promise<OnboardingActorResult> => ({
+            completed: false,
+            continueToRun: false,
+          }),
+        ),
       },
     });
     const actor = createActor(machine, {
@@ -365,14 +371,18 @@ describe("cliMachine", () => {
     const machine = cliMachine.provide({
       actors: {
         ...happyPathActors(),
-        loadAndResolveConfigActor: fromPromise(async (): Promise<ConfigResolutionResult> => ({
-          ...mockConfigResult(),
-          needsSetup: true,
-        })),
-        runOnboardingActor: fromPromise(async (): Promise<OnboardingActorResult> => ({
-          completed: true,
-          continueToRun: true,
-        })),
+        loadAndResolveConfigActor: fromPromise(
+          async (): Promise<ConfigResolutionResult> => ({
+            ...mockConfigResult(),
+            needsSetup: true,
+          }),
+        ),
+        runOnboardingActor: fromPromise(
+          async (): Promise<OnboardingActorResult> => ({
+            completed: true,
+            continueToRun: true,
+          }),
+        ),
         // After onboarding, we need to re-resolve config
         reloadConfigActor: fromPromise(async () => mockConfigResult()),
       },

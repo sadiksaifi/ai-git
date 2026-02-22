@@ -2,11 +2,7 @@ import { generateText } from "ai";
 import { createCerebras } from "@ai-sdk/cerebras";
 import type { APIProviderAdapter, APIModelDefinition, InvokeOptions } from "../types.ts";
 import { getApiKey, createTimeoutController, COMMON_HEADERS } from "./utils.ts";
-import {
-  dedupeProviderModels,
-  getModelCatalog,
-  rankProviderModels,
-} from "./models/index.ts";
+import { dedupeProviderModels, getModelCatalog, rankProviderModels } from "./models/index.ts";
 
 // ==============================================================================
 // CEREBRAS API ADAPTER
@@ -118,11 +114,10 @@ export const cerebrasAdapter: APIProviderAdapter = {
       const data = (await response.json()) as CerebrasModelsResponse;
       const catalog = await getModelCatalog();
 
-      const models: APIModelDefinition[] = data.data
-        .map((m) => ({
-          id: m.id,
-          name: getModelDisplayName(m.id),
-        }));
+      const models: APIModelDefinition[] = data.data.map((m) => ({
+        id: m.id,
+        name: getModelDisplayName(m.id),
+      }));
 
       const ranked = rankProviderModels("cerebras", models, catalog);
       return dedupeProviderModels("cerebras", ranked);

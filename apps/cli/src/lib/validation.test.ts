@@ -5,7 +5,7 @@ describe("validateCommitMessage", () => {
   // Critical: header length
   test("rejects header over 50 chars", () => {
     const result = validateCommitMessage(
-      "feat(authentication): implement user authentication with OAuth2 flow"
+      "feat(authentication): implement user authentication with OAuth2 flow",
     );
     expect(result.valid).toBe(false);
     expect(result.errors.some((e) => e.rule === "header-length")).toBe(true);
@@ -27,7 +27,19 @@ describe("validateCommitMessage", () => {
   });
 
   test("accepts all valid types", () => {
-    const types = ["feat", "fix", "refactor", "perf", "style", "docs", "test", "build", "ci", "chore", "revert"];
+    const types = [
+      "feat",
+      "fix",
+      "refactor",
+      "perf",
+      "style",
+      "docs",
+      "test",
+      "build",
+      "ci",
+      "chore",
+      "revert",
+    ];
     for (const type of types) {
       const result = validateCommitMessage(`${type}: do something`);
       expect(result.errors.some((e) => e.rule === "valid-type")).toBe(false);
@@ -104,7 +116,8 @@ describe("validateCommitMessage", () => {
   });
 
   test("accepts valid message with body", () => {
-    const msg = "feat(auth): add biometric auth\n\n- implement fingerprint recognition\n- add fallback to PIN";
+    const msg =
+      "feat(auth): add biometric auth\n\n- implement fingerprint recognition\n- add fallback to PIN";
     const result = validateCommitMessage(msg);
     expect(result.valid).toBe(true);
   });
@@ -122,7 +135,8 @@ describe("validateCommitMessage", () => {
   });
 
   test("no warning when both ! and BREAKING CHANGE present", () => {
-    const msg = "feat(api)!: remove v1 endpoints\n\n- remove all v1 routes\n\nBREAKING CHANGE: v1 API no longer available";
+    const msg =
+      "feat(api)!: remove v1 endpoints\n\n- remove all v1 routes\n\nBREAKING CHANGE: v1 API no longer available";
     const result = validateCommitMessage(msg);
     expect(result.errors.some((e) => e.rule === "breaking-change-consistency")).toBe(false);
   });

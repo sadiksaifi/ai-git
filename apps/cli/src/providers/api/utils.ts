@@ -14,10 +14,7 @@ import { getApiKey as getApiKeyFromSecrets } from "../../lib/secrets/index.ts";
  * @returns The API key
  * @throws Error if no API key is found
  */
-export async function getApiKey(
-  providerId: string,
-  providedKey?: string
-): Promise<string> {
+export async function getApiKey(providerId: string, providedKey?: string): Promise<string> {
   // If key is provided directly (during setup validation), use it
   if (providedKey) {
     return providedKey;
@@ -27,8 +24,7 @@ export async function getApiKey(
   const key = await getApiKeyFromSecrets(providerId);
   if (!key) {
     throw new Error(
-      `No API key found for ${providerId}. ` +
-        `Run 'ai-git --setup' to configure your API key.`
+      `No API key found for ${providerId}. ` + `Run 'ai-git --setup' to configure your API key.`,
     );
   }
   return key;
@@ -44,9 +40,10 @@ export const API_TIMEOUT_MS = 60000;
  * @param timeoutMs - Timeout in milliseconds (default: 60s)
  * @returns Abort controller and cleanup function
  */
-export function createTimeoutController(
-  timeoutMs: number = API_TIMEOUT_MS
-): { controller: AbortController; cleanup: () => void } {
+export function createTimeoutController(timeoutMs: number = API_TIMEOUT_MS): {
+  controller: AbortController;
+  cleanup: () => void;
+} {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 

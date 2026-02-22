@@ -141,9 +141,7 @@ export function getProviderById(id: string): ProviderDefinition | undefined {
  * Find a provider by its binary name (e.g., "gemini", "claude").
  * Only applicable for CLI mode providers.
  */
-export function getProviderByBinary(
-  binary: string,
-): ProviderDefinition | undefined {
+export function getProviderByBinary(binary: string): ProviderDefinition | undefined {
   return PROVIDERS.find((p) => p.mode === "cli" && p.binary === binary);
 }
 

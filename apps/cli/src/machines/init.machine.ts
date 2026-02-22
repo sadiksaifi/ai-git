@@ -56,25 +56,18 @@ export const initMachine = setup({
       const config = await loadUserConfig();
       return (config ?? null) as UserConfig | null;
     }),
-    saveProjectConfigActor: fromPromise(
-      async ({ input }: { input: { config: UserConfig } }) => {
-        await saveProjectConfig(input.config);
-      }
-    ),
+    saveProjectConfigActor: fromPromise(async ({ input }: { input: { config: UserConfig } }) => {
+      await saveProjectConfig(input.config);
+    }),
     setupWizardMachine: defaultSetupWizardMachine as ActorLogicFrom<
       typeof defaultSetupWizardMachine
     >,
-    confirmActor: defaultConfirmActor as ActorLogicFrom<
-      typeof defaultConfirmActor
-    >,
-    selectActor: defaultSelectActor as ActorLogicFrom<
-      typeof defaultSelectActor
-    >,
+    confirmActor: defaultConfirmActor as ActorLogicFrom<typeof defaultConfirmActor>,
+    selectActor: defaultSelectActor as ActorLogicFrom<typeof defaultSelectActor>,
   },
   guards: {
     hasProjectConfig: ({ context }) => context.projectConfig !== null,
-    isGlobalConfigComplete: ({ context }) =>
-      hasProviderAndModel(context.globalConfig),
+    isGlobalConfigComplete: ({ context }) => hasProviderAndModel(context.globalConfig),
     isWizardCompleted: ({ event }) => {
       const output = (event as { output?: { completed?: boolean } }).output;
       return output?.completed === true;

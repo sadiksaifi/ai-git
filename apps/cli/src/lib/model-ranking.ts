@@ -1,15 +1,11 @@
 import type { CachedModel } from "./model-cache.ts";
-import {
-  createSnapshotModelCatalog,
-} from "../providers/api/models/catalog.ts";
+import { createSnapshotModelCatalog } from "../providers/api/models/catalog.ts";
 import {
   dedupeProviderModels,
   findRecommendedModel,
   rankProviderModels,
 } from "../providers/api/models/ranking.ts";
-import type {
-  SupportedAPIProviderId,
-} from "../providers/api/models/types.ts";
+import type { SupportedAPIProviderId } from "../providers/api/models/types.ts";
 
 // ==============================================================================
 // COMPATIBILITY WRAPPER
@@ -25,12 +21,7 @@ export const FEATURED_MODELS: Record<string, string[]> = {
     "anthropic/claude-opus-4-6",
     "anthropic/claude-3.7-sonnet",
   ],
-  openai: [
-    "openai/gpt-5.2",
-    "openai/gpt-5-mini",
-    "openai/o3",
-    "openai/gpt-4.1",
-  ],
+  openai: ["openai/gpt-5.2", "openai/gpt-5-mini", "openai/o3", "openai/gpt-4.1"],
   google: [
     "google/gemini-3-pro-preview",
     "google/gemini-2.5-pro",
@@ -96,7 +87,7 @@ export function rankModels(models: CachedModel[]): CachedModel[] {
 
   const ranked = dedupeProviderModels(
     "openrouter",
-    rankProviderModels("openrouter", normalized, SNAPSHOT_CATALOG)
+    rankProviderModels("openrouter", normalized, SNAPSHOT_CATALOG),
   );
 
   return ranked.map((model, index) => ({
@@ -109,10 +100,7 @@ export function rankModels(models: CachedModel[]): CachedModel[] {
 /**
  * Find the default/recommended model in a list.
  */
-export function findDefaultModel(
-  models: CachedModel[],
-  providerId: string
-): string | null {
+export function findDefaultModel(models: CachedModel[], providerId: string): string | null {
   if (models.length === 0) return null;
 
   if (isSupportedProvider(providerId)) {

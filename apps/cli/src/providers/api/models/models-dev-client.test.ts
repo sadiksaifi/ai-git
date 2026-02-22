@@ -2,10 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
-import {
-  clearModelCatalogForTests,
-  getModelCatalog,
-} from "./index.ts";
+import { clearModelCatalogForTests, getModelCatalog } from "./index.ts";
 import { getModelsDevCacheFilePath } from "../../../lib/paths.ts";
 import { createCatalogFromRaw } from "./models-dev-client.ts";
 
@@ -116,7 +113,7 @@ describe("models-dev catalog client", () => {
     const catalog = await getModelCatalog({ forceRefresh: true });
     expect(catalog.source).toBe("cache");
     expect(catalog.providers.anthropic.models["claude-3-7-sonnet-latest"]?.name).toBe(
-      "Claude 3.7 Sonnet"
+      "Claude 3.7 Sonnet",
     );
   });
 

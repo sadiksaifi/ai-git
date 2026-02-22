@@ -38,7 +38,7 @@ export const setupWizardMachine = setup({
         input: { target: "global" | "project"; defaults?: Partial<UserConfig> };
       }): Promise<WizardResult> => {
         return runWizard({ target: input.target, defaults: input.defaults });
-      }
+      },
     ),
   },
 }).createMachine({

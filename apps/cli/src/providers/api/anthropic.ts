@@ -2,11 +2,7 @@ import { generateText } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import type { APIProviderAdapter, APIModelDefinition, InvokeOptions } from "../types.ts";
 import { getApiKey, createTimeoutController, COMMON_HEADERS } from "./utils.ts";
-import {
-  dedupeProviderModels,
-  getModelCatalog,
-  rankProviderModels,
-} from "./models/index.ts";
+import { dedupeProviderModels, getModelCatalog, rankProviderModels } from "./models/index.ts";
 
 // ==============================================================================
 // ANTHROPIC API ADAPTER
@@ -110,11 +106,10 @@ export const anthropicAdapter: APIProviderAdapter = {
       const chatModels = data.data.filter((m) => m.type === "model");
 
       // Map, rank, and dedupe through shared model catalog utilities.
-      const models: APIModelDefinition[] = chatModels
-        .map((m) => ({
-          id: m.id,
-          name: getModelDisplayName(m),
-        }));
+      const models: APIModelDefinition[] = chatModels.map((m) => ({
+        id: m.id,
+        name: getModelDisplayName(m),
+      }));
 
       const ranked = rankProviderModels("anthropic", models, catalog);
       return dedupeProviderModels("anthropic", ranked);

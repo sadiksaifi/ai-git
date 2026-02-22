@@ -3,14 +3,7 @@
 // Enhanced setup flow with better error handling.
 // ==============================================================================
 
-import {
-  select,
-  note,
-  isCancel,
-  log,
-  password,
-  spinner,
-} from "@clack/prompts";
+import { select, note, isCancel, log, password, spinner } from "@clack/prompts";
 import pc from "picocolors";
 import prompts from "prompts";
 import { PROVIDERS, getProviderById } from "../../providers/registry.ts";
@@ -23,23 +16,13 @@ import {
   getProjectConfigPath,
   type UserConfig,
 } from "../../config.ts";
-import {
-  setApiKey,
-  getApiKey,
-} from "../secrets/index.ts";
-import {
-  getCachedModels,
-  cacheModels,
-  type CachedModel,
-} from "../model-cache.ts";
+import { setApiKey, getApiKey } from "../secrets/index.ts";
+import { getCachedModels, cacheModels, type CachedModel } from "../model-cache.ts";
 import { INSTALL_INFO, ERROR_MESSAGES } from "./constants.ts";
-import {
-  findRecommendedModel,
-  getModelCatalog,
-} from "../../providers/api/models/index.ts";
+import { findRecommendedModel, getModelCatalog } from "../../providers/api/models/index.ts";
 
 const SPEED_HINT = pc.dim(
-  "Generation speed varies by provider and model — some models may be slow."
+  "Generation speed varies by provider and model — some models may be slow.",
 );
 
 // ==============================================================================
@@ -77,8 +60,7 @@ interface FlowContext {
  */
 export async function runWizard(options: WizardOptions): Promise<WizardResult> {
   const { defaults, target } = options;
-  const configFile =
-    target === "global" ? CONFIG_FILE : await getProjectConfigPath();
+  const configFile = target === "global" ? CONFIG_FILE : await getProjectConfigPath();
   const configType = target === "global" ? "Global" : "Project";
 
   // Pre-check CLI provider availability
@@ -88,11 +70,9 @@ export async function runWizard(options: WizardOptions): Promise<WizardResult> {
       const adapter = getAdapter(p.id);
       const available = adapter ? await adapter.checkAvailable() : false;
       return { providerId: p.id, available };
-    })
+    }),
   );
-  const cliAvailabilityMap = new Map(
-    cliAvailability.map((a) => [a.providerId, a.available])
-  );
+  const cliAvailabilityMap = new Map(cliAvailability.map((a) => [a.providerId, a.available]));
 
   // Build unified provider options with type hints
   const providerOptions = PROVIDERS.map((p) => {
@@ -167,7 +147,7 @@ export async function runWizard(options: WizardOptions): Promise<WizardResult> {
 async function setupCLIFlow(
   ctx: FlowContext,
   providerId: string,
-  availabilityMap: Map<string, boolean>
+  availabilityMap: Map<string, boolean>,
 ): Promise<InternalFlowResult> {
   const { defaults, target, configFile, configType } = ctx;
 
@@ -183,10 +163,7 @@ async function setupCLIFlow(
   if (!isAvailable) {
     // Show helpful installation instructions
     const installKey = providerId as keyof typeof INSTALL_INFO;
-    const errorInfo = ERROR_MESSAGES.cliNotInstalled(
-      providerDef.binary!,
-      installKey
-    );
+    const errorInfo = ERROR_MESSAGES.cliNotInstalled(providerDef.binary!, installKey);
 
     note(
       [
@@ -195,7 +172,7 @@ async function setupCLIFlow(
         pc.bold("To install:"),
         ...errorInfo.solutions.map((s) => `  ${pc.cyan(">")} ${s}`),
       ].join("\n"),
-      pc.red(errorInfo.title)
+      pc.red(errorInfo.title),
     );
 
     // Ask if they want to try a different option
@@ -222,8 +199,7 @@ async function setupCLIFlow(
       label: m.name,
       hint: m.isDefault ? "recommended" : undefined,
     })),
-    initialValue:
-      defaults?.model ?? providerDef.models.find((m) => m.isDefault)?.id,
+    initialValue: defaults?.model ?? providerDef.models.find((m) => m.isDefault)?.id,
   });
 
   if (isCancel(modelResult)) {
@@ -256,10 +232,7 @@ async function setupCLIFlow(
 // API MODE FLOW
 // ==============================================================================
 
-async function setupAPIFlow(
-  ctx: FlowContext,
-  providerId: string
-): Promise<WizardResult> {
+async function setupAPIFlow(ctx: FlowContext, providerId: string): Promise<WizardResult> {
   const { defaults, target, configFile, configType } = ctx;
 
   const providerDef = getProviderById(providerId);
@@ -312,9 +285,7 @@ async function setupAPIFlow(
 
     if (fetchedModels.length === 0) {
       s.stop(pc.red("Error: No models available"));
-      log.error(
-        pc.red("The API returned no models. Please check your API key.")
-      );
+      log.error(pc.red("The API returned no models. Please check your API key."));
       return { config: null, completed: false };
     }
 
@@ -335,11 +306,7 @@ async function setupAPIFlow(
   } catch (error) {
     s.stop(pc.red("Error validating API key"));
     log.error("");
-    log.error(
-      pc.red(
-        `API Error: ${error instanceof Error ? error.message : "Unknown error"}`
-      )
-    );
+    log.error(pc.red(`API Error: ${error instanceof Error ? error.message : "Unknown error"}`));
     log.error("");
     log.error(pc.dim("Please check your API key and try again."));
 
@@ -420,7 +387,7 @@ async function promptForApiKey(providerName: string): Promise<string> {
 async function selectModel(
   models: CachedModel[],
   providerId: string,
-  defaultModel?: string
+  defaultModel?: string,
 ): Promise<string | null> {
   // Find the recommended default model
   let recommendedModel = defaultModel;
@@ -437,12 +404,8 @@ async function selectModel(
           : null;
 
       if (supportedProviderId) {
-        recommendedModel = findRecommendedModel(
-          supportedProviderId,
-          models,
-          catalog,
-          "balanced"
-        ) ?? undefined;
+        recommendedModel =
+          findRecommendedModel(supportedProviderId, models, catalog, "balanced") ?? undefined;
       }
     } catch {
       // Recommendation is non-critical; continue with the first model fallback.
@@ -473,9 +436,7 @@ async function selectModel(
   log.info(pc.dim("Type to search models. Use arrow keys to navigate."));
 
   // Find index of recommended model for initial selection
-  const initialIndex = recommendedModel
-    ? models.findIndex((m) => m.id === recommendedModel)
-    : 0;
+  const initialIndex = recommendedModel ? models.findIndex((m) => m.id === recommendedModel) : 0;
 
   const result = await prompts({
     type: "autocomplete",
@@ -493,8 +454,7 @@ async function selectModel(
 
       return choices.filter(
         (c) =>
-          c.title.toLowerCase().includes(term) ||
-          (c.value as string).toLowerCase().includes(term)
+          c.title.toLowerCase().includes(term) || (c.value as string).toLowerCase().includes(term),
       );
     },
   });

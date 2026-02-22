@@ -27,18 +27,13 @@ function colorStatus(status: string): string {
  */
 export function formatFileList(files: FileWithStatus[]): string {
   if (files.length === 0) return "";
-  return files
-    .map((f) => `  ${colorStatus(f.status)} ${f.path}`)
-    .join("\n");
+  return files.map((f) => `  ${colorStatus(f.status)} ${f.path}`).join("\n");
 }
 
 /**
  * Display a titled file list using clack's log.info().
  */
-export function displayFileList(
-  title: string,
-  files: FileWithStatus[],
-): void {
+export function displayFileList(title: string, files: FileWithStatus[]): void {
   if (files.length === 0) return;
   const header = `${title} (${files.length}):`;
   log.info(`${header}\n${formatFileList(files)}`);
@@ -48,10 +43,7 @@ export function displayFileList(
  * Display the generated commit message in a note box.
  * Used in both interactive and auto-commit modes.
  */
-export function displayCommitMessage(
-  message: string,
-  hasWarnings: boolean = false,
-): void {
+export function displayCommitMessage(message: string, hasWarnings: boolean = false): void {
   const title = hasWarnings
     ? "Generated Commit Message (with warnings)"
     : "Generated Commit Message";

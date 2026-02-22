@@ -11,7 +11,7 @@ function toModelDefinition(modelId: string): APIModelDefinition {
 
 export async function assertConfiguredModelAllowed(
   providerId: SupportedAPIProviderId,
-  modelId: string
+  modelId: string,
 ): Promise<void> {
   const catalog = await getModelCatalog();
   const metadata = getCatalogModelMetadata(providerId, toModelDefinition(modelId), catalog);
@@ -20,7 +20,7 @@ export async function assertConfiguredModelAllowed(
     const displayName = metadata?.name || modelId;
     throw new Error(
       `Configured model '${displayName}' (${modelId}) is deprecated for provider '${providerId}'. ` +
-        "Run 'ai-git --setup' to choose a supported model."
+        "Run 'ai-git --setup' to choose a supported model.",
     );
   }
 }

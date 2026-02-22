@@ -6,7 +6,7 @@ A CLI tool that leverages AI to automatically generate semantically correct, con
 
 ## Features
 
-- 🤖 **AI-Powered** - Analyzes diffs and understands the *intent* of your changes
+- 🤖 **AI-Powered** - Analyzes diffs and understands the _intent_ of your changes
 - 📝 **Conventional Commits** - Strictly adheres to [v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification
 - 🎨 **Interactive TUI** - Beautiful prompts for staging, editing, and confirming
 - 🪙 **Token Efficient** - Uses [TOON](https://toonformat.dev/) to minimize prompt size and cost
@@ -115,16 +115,16 @@ ai-git --dry-run -a
 
 ## Supported Providers
 
-| Provider | ID | Type | Requirements |
-| :--- | :--- | :--- | :--- |
-| Claude Code | `claude-code` | CLI | [Install CLI](https://claude.com/claude-code) |
-| Gemini CLI | `gemini-cli` | CLI | [Install CLI](https://ai.google.dev/gemini-api/docs/cli) |
-| Codex | `codex` | CLI | [Install CLI](https://developers.openai.com/codex/cli) (`npm install -g @openai/codex`) |
-| OpenRouter | `openrouter` | API | [Get API Key](https://openrouter.ai/keys) |
-| OpenAI | `openai` | API | [Get API Key](https://platform.openai.com/api-keys) |
-| Google AI Studio | `google-ai-studio` | API | [Get API Key](https://aistudio.google.com/app/apikey) |
-| Anthropic | `anthropic` | API | [Get API Key](https://console.anthropic.com/settings/keys) |
-| Cerebras | `cerebras` | API | [Get API Key](https://cloud.cerebras.ai/) |
+| Provider         | ID                 | Type | Requirements                                                                            |
+| :--------------- | :----------------- | :--- | :-------------------------------------------------------------------------------------- |
+| Claude Code      | `claude-code`      | CLI  | [Install CLI](https://claude.com/claude-code)                                           |
+| Gemini CLI       | `gemini-cli`       | CLI  | [Install CLI](https://ai.google.dev/gemini-api/docs/cli)                                |
+| Codex            | `codex`            | CLI  | [Install CLI](https://developers.openai.com/codex/cli) (`npm install -g @openai/codex`) |
+| OpenRouter       | `openrouter`       | API  | [Get API Key](https://openrouter.ai/keys)                                               |
+| OpenAI           | `openai`           | API  | [Get API Key](https://platform.openai.com/api-keys)                                     |
+| Google AI Studio | `google-ai-studio` | API  | [Get API Key](https://aistudio.google.com/app/apikey)                                   |
+| Anthropic        | `anthropic`        | API  | [Get API Key](https://console.anthropic.com/settings/keys)                              |
+| Cerebras         | `cerebras`         | API  | [Get API Key](https://cloud.cerebras.ai/)                                               |
 
 Configure with `ai-git --setup`
 
@@ -169,11 +169,11 @@ The default prompt works excellently for most projects. Customize only for proje
 
 ### Customization Options
 
-| Field | Description | Example |
-| :--- | :--- | :--- |
-| `prompt.context` | Project-specific information | `"React Native app. Jira tickets: PROJ-123"` |
-| `prompt.style` | Style/format preferences | `"Always include scope. Keep body under 5 points."` |
-| `prompt.examples` | Custom commit examples (replaces defaults) | Array of commit message strings |
+| Field             | Description                                | Example                                             |
+| :---------------- | :----------------------------------------- | :-------------------------------------------------- |
+| `prompt.context`  | Project-specific information               | `"React Native app. Jira tickets: PROJ-123"`        |
+| `prompt.style`    | Style/format preferences                   | `"Always include scope. Keep body under 5 points."` |
+| `prompt.examples` | Custom commit examples (replaces defaults) | Array of commit message strings                     |
 
 ### Example: Monorepo with Scopes
 
@@ -211,10 +211,10 @@ The default prompt works excellently for most projects. Customize only for proje
 bun install
 
 # Run in development
-bun start
+bun run dev
 
 # Test prompt generation without AI call
-bun start --dry-run -a
+bun run dev --dry-run -a
 
 # Disable update-check network calls (useful for tests/CI)
 AI_GIT_DISABLE_UPDATE_CHECK=1 bun test

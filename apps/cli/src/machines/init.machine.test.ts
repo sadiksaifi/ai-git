@@ -12,10 +12,15 @@ describe("initMachine", () => {
         // @ts-expect-error — XState v5 test mock type inference
         loadProjectConfigActor: fromPromise(async () => null), // no existing project config
         // @ts-expect-error — XState v5 test mock type inference
-        loadGlobalConfigActor: fromPromise(async () => ({ provider: "claude-code", model: "claude-sonnet-4-5-20250514" })),
+        loadGlobalConfigActor: fromPromise(async () => ({
+          provider: "claude-code",
+          model: "claude-sonnet-4-5-20250514",
+        })),
         // @ts-expect-error — XState v5 test mock type inference
         selectActor: fromPromise(async () => "copy"),
-        saveProjectConfigActor: fromPromise(async ({ input }: any) => { savedConfig = input.config; }),
+        saveProjectConfigActor: fromPromise(async ({ input }: any) => {
+          savedConfig = input.config;
+        }),
         // @ts-expect-error — XState v5 test mock type inference
         confirmActor: fromPromise(async () => true), // "try now?" → yes
       },
@@ -34,7 +39,10 @@ describe("initMachine", () => {
         // @ts-expect-error — XState v5 test mock type inference
         loadProjectConfigActor: fromPromise(async () => null),
         // @ts-expect-error — XState v5 test mock type inference
-        loadGlobalConfigActor: fromPromise(async () => ({ provider: "claude-code", model: "claude-sonnet-4-5-20250514" })),
+        loadGlobalConfigActor: fromPromise(async () => ({
+          provider: "claude-code",
+          model: "claude-sonnet-4-5-20250514",
+        })),
         // @ts-expect-error — XState v5 test mock type inference
         selectActor: fromPromise(async () => "wizard"),
         // @ts-expect-error — XState v5 test mock type inference
@@ -108,7 +116,10 @@ describe("initMachine", () => {
           return true; // overwrite=yes, tryNow=yes
         }),
         // @ts-expect-error — XState v5 test mock type inference
-        loadGlobalConfigActor: fromPromise(async () => ({ provider: "claude-code", model: "claude-sonnet-4-5-20250514" })),
+        loadGlobalConfigActor: fromPromise(async () => ({
+          provider: "claude-code",
+          model: "claude-sonnet-4-5-20250514",
+        })),
         // @ts-expect-error — XState v5 test mock type inference
         selectActor: fromPromise(async () => "copy"),
         saveProjectConfigActor: fromPromise(async () => {}),
@@ -145,9 +156,14 @@ describe("initMachine", () => {
         // @ts-expect-error — XState v5 test mock type inference
         loadProjectConfigActor: fromPromise(async () => null),
         // @ts-expect-error — XState v5 test mock type inference
-        loadGlobalConfigActor: fromPromise(async () => ({ provider: "claude-code", model: "claude-sonnet-4-5-20250514" })),
+        loadGlobalConfigActor: fromPromise(async () => ({
+          provider: "claude-code",
+          model: "claude-sonnet-4-5-20250514",
+        })),
         // @ts-expect-error — XState v5 test mock type inference
-        selectActor: fromPromise(async () => { throw new UserCancelledError(); }),
+        selectActor: fromPromise(async () => {
+          throw new UserCancelledError();
+        }),
       },
     });
     const actor = createActor(machine, { input: {} });

@@ -2,7 +2,12 @@ import * as path from "node:path";
 import { getProviderById } from "./providers/registry.ts";
 import { getRepoRoot } from "./lib/git.ts";
 import { CONFIG_DIR, CONFIG_FILE } from "./lib/paths.ts";
-import { migrateConfig, backupConfigFile, showMigrationNotice, type MigrationNotice } from "./lib/migration.ts";
+import {
+  migrateConfig,
+  backupConfigFile,
+  showMigrationNotice,
+  type MigrationNotice,
+} from "./lib/migration.ts";
 
 // ==============================================================================
 // CONFIG FILE MANAGEMENT
@@ -168,8 +173,7 @@ export async function loadProjectConfig(): Promise<UserConfig | undefined> {
 /**
  * JSON Schema URL for editor autocomplete and validation.
  */
-const CONFIG_SCHEMA_URL =
-  "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json";
+const CONFIG_SCHEMA_URL = "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json";
 
 /**
  * Save user configuration to the config file.
@@ -267,7 +271,7 @@ export const DEFAULT_SLOW_WARNING_THRESHOLD_MS = 5_000;
  * so the config file contains valid provider and model values.
  */
 export async function resolveConfigAsync(
-  cliOptions: Partial<ResolvedConfig>
+  cliOptions: Partial<ResolvedConfig>,
 ): Promise<ResolvedConfig> {
   const userConfig = await loadUserConfig();
   const projectConfig = await loadProjectConfig();
@@ -275,12 +279,15 @@ export async function resolveConfigAsync(
   // Config file must exist and be valid (setup wizard ensures this)
   // We check userConfig primarily, but if projectConfig exists and is complete, that's fine too.
   // However, usually we expect at least a user config to exist after setup.
-  if ((!userConfig || !isConfigComplete(userConfig)) && (!projectConfig || !isConfigComplete(projectConfig))) {
+  if (
+    (!userConfig || !isConfigComplete(userConfig)) &&
+    (!projectConfig || !isConfigComplete(projectConfig))
+  ) {
     throw new Error("Configuration is incomplete. Please run: ai-git --setup");
   }
 
   // Base config is user config, or empty if not present (but one of them must be present per above check)
-  const baseConfig = userConfig || {} as UserConfig;
+  const baseConfig = userConfig || ({} as UserConfig);
 
   // Merge project config on top of user config
   const mergedConfig = {
@@ -297,7 +304,8 @@ export async function resolveConfigAsync(
     defaults: { ...DEFAULT_WORKFLOW_OPTIONS, ...mergedConfig.defaults },
     prompt: mergedConfig.prompt,
     editor: mergedConfig.editor,
-    slowWarningThresholdMs: mergedConfig.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS,
+    slowWarningThresholdMs:
+      mergedConfig.slowWarningThresholdMs ?? DEFAULT_SLOW_WARNING_THRESHOLD_MS,
   };
 
   // Apply CLI options (highest priority - overrides config file)

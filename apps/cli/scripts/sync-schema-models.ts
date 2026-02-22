@@ -62,7 +62,7 @@ function unique<T>(values: T[]): T[] {
 
 function pickProviderExample(
   provider: "openai" | "anthropic" | "google",
-  payload: ModelsDevPayload
+  payload: ModelsDevPayload,
 ): string {
   const rawModels = payload[provider]?.models ?? {};
 
@@ -101,7 +101,7 @@ async function fetchModelsDev(): Promise<ModelsDevPayload> {
   const response = await fetch(MODELS_DEV_API_URL, {
     headers: {
       "User-Agent": "ai-git-cli",
-      "Accept": "application/json",
+      Accept: "application/json",
     },
   });
 
@@ -115,7 +115,7 @@ async function fetchModelsDev(): Promise<ModelsDevPayload> {
 function updateProviderDescription(
   schema: Record<string, unknown>,
   providerId: string,
-  example: string
+  example: string,
 ): void {
   const allOf = schema.allOf as Array<Record<string, unknown>>;
   const match = allOf.find((entry) => {

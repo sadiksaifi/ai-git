@@ -92,10 +92,7 @@ async function createPathWithoutProviderCLI(): Promise<string> {
   return binDir;
 }
 
-async function runCLI(
-  args: string[],
-  options: RunCLIOptions
-): Promise<RunCLIResult> {
+async function runCLI(args: string[], options: RunCLIOptions): Promise<RunCLIResult> {
   const proc = spawn([process.execPath, "run", CLI_PATH, ...args], {
     cwd: options.cwd,
     stdout: "pipe",
@@ -194,7 +191,7 @@ describe("ai-git CLI", () => {
     expect(result.stdout).toContain("DRY RUN: SYSTEM PROMPT");
     expect(result.stdout).toContain("DRY RUN: USER PROMPT");
     expect(result.stdout).toContain(
-      'You generate git commit messages following Conventional Commits v1.0.0.'
+      "You generate git commit messages following Conventional Commits v1.0.0.",
     );
     expect(result.stderr).not.toContain("CLI is not installed");
     expect(result.exitCode).toBe(0);
@@ -244,8 +241,8 @@ describe("ai-git CLI", () => {
           google: { models: {} },
         },
         null,
-        2
-      )
+        2,
+      ),
     );
 
     const result = await runCLI([], {
@@ -291,13 +288,11 @@ describe("ai-git CLI", () => {
     // Verify backup file was created
     const configDir = path.dirname(configPath);
     const configBase = path.basename(configPath);
-    const backupFile = fs.readdirSync(configDir).find(
-      (f) => f.startsWith(`${configBase}.`) && f.endsWith(".bak")
-    );
+    const backupFile = fs
+      .readdirSync(configDir)
+      .find((f) => f.startsWith(`${configBase}.`) && f.endsWith(".bak"));
     expect(backupFile).toBeDefined();
-    const backupConfig = JSON.parse(
-      fs.readFileSync(path.join(configDir, backupFile!), "utf8")
-    );
+    const backupConfig = JSON.parse(fs.readFileSync(path.join(configDir, backupFile!), "utf8"));
     expect(backupConfig.model).toBe("sonnet");
   });
 

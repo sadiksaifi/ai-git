@@ -137,7 +137,7 @@ describe("API adapters use shared model ranking", () => {
             { id: "gpt-audio", object: "model", created: 1, owned_by: "openai" },
           ],
         }),
-        { status: 200 }
+        { status: 200 },
       );
     }) as unknown as typeof fetch;
 
@@ -156,7 +156,7 @@ describe("API adapters use shared model ranking", () => {
           ],
           has_more: false,
         }),
-        { status: 200 }
+        { status: 200 },
       );
     }) as unknown as typeof fetch;
 
@@ -186,7 +186,7 @@ describe("API adapters use shared model ranking", () => {
             },
           ],
         }),
-        { status: 200 }
+        { status: 200 },
       );
     }) as unknown as typeof fetch;
 
@@ -206,7 +206,7 @@ describe("API adapters use shared model ranking", () => {
             { id: "google/gemini-2.5-pro", name: "Gemini 2.5 Pro" },
           ],
         }),
-        { status: 200 }
+        { status: 200 },
       );
     }) as unknown as typeof fetch;
 
@@ -226,13 +226,23 @@ describe("API adapters use shared model ranking", () => {
           data: [
             { id: "llama-3.3-70b", object: "model", created: 1, owned_by: "cerebras" },
             { id: "llama3.1-8b", object: "model", created: 1, owned_by: "cerebras" },
-            { id: "qwen-3-235b-a22b-thinking-2507", object: "model", created: 1, owned_by: "cerebras" },
-            { id: "qwen-3-235b-a22b-instruct-2507", object: "model", created: 1, owned_by: "cerebras" },
+            {
+              id: "qwen-3-235b-a22b-thinking-2507",
+              object: "model",
+              created: 1,
+              owned_by: "cerebras",
+            },
+            {
+              id: "qwen-3-235b-a22b-instruct-2507",
+              object: "model",
+              created: 1,
+              owned_by: "cerebras",
+            },
             { id: "qwen-3-32b", object: "model", created: 1, owned_by: "cerebras" },
             { id: "some-embedding-model", object: "model", created: 1, owned_by: "cerebras" },
           ],
         }),
-        { status: 200 }
+        { status: 200 },
       );
     }) as unknown as typeof fetch;
 

@@ -21,7 +21,7 @@ let inFlightCatalog: Promise<ModelCatalog> | null = null;
 
 function toProviderCatalog(
   providerId: CatalogProviderId,
-  models: Record<string, CatalogModelDefinition>
+  models: Record<string, CatalogModelDefinition>,
 ): ProviderModelCatalog {
   const normalizedModelIndex: Record<string, string> = {};
 
@@ -119,9 +119,7 @@ async function resolveCatalog(forceRefresh: boolean): Promise<ModelCatalog> {
   }
 }
 
-export async function getModelCatalog(options?: {
-  forceRefresh?: boolean;
-}): Promise<ModelCatalog> {
+export async function getModelCatalog(options?: { forceRefresh?: boolean }): Promise<ModelCatalog> {
   const forceRefresh = options?.forceRefresh ?? false;
 
   if (!forceRefresh && inMemoryCatalog) {
@@ -143,7 +141,7 @@ export async function getModelCatalog(options?: {
 
 function resolveCatalogProvider(
   providerId: SupportedAPIProviderId,
-  model: APIModelDefinition
+  model: APIModelDefinition,
 ): { provider: CatalogProviderId; modelId: string } | null {
   if (providerId === "openrouter") {
     const providerFromModel = model.provider || model.id.split("/")[0] || "";
@@ -203,7 +201,7 @@ function findCatalogModelId(provider: ProviderModelCatalog, modelId: string): st
 export function getCatalogModelMetadata(
   providerId: SupportedAPIProviderId,
   model: APIModelDefinition,
-  catalog: ModelCatalog
+  catalog: ModelCatalog,
 ): CatalogModelDefinition | null {
   const resolved = resolveCatalogProvider(providerId, model);
   if (!resolved) return null;

@@ -154,9 +154,7 @@ describe("stagingMachine", () => {
     const machine = stagingMachine.provide({
       actors: {
         // @ts-expect-error — XState v5 test mock type inference
-        getStagedFilesActor: fromPromise(async () =>
-          staged ? ["a.ts", "b.ts"] : [],
-        ),
+        getStagedFilesActor: fromPromise(async () => (staged ? ["a.ts", "b.ts"] : [])),
         // @ts-expect-error — XState v5 test mock type inference
         getUnstagedFilesActor: fromPromise(async () => ["a.ts", "b.ts"]),
         // @ts-expect-error — XState v5 test mock type inference
@@ -182,9 +180,7 @@ describe("stagingMachine", () => {
     const machine = stagingMachine.provide({
       actors: {
         // @ts-expect-error — XState v5 test mock type inference
-        getStagedFilesActor: fromPromise(
-          async () => (stagedFiles.length > 0 ? stagedFiles : []),
-        ),
+        getStagedFilesActor: fromPromise(async () => (stagedFiles.length > 0 ? stagedFiles : [])),
         // @ts-expect-error — XState v5 test mock type inference
         getUnstagedFilesActor: fromPromise(async () => ["a.ts", "b.ts", "c.ts"]),
         // @ts-expect-error — XState v5 test mock type inference
@@ -192,11 +188,9 @@ describe("stagingMachine", () => {
         // @ts-expect-error — XState v5 test mock type inference
         multiselectActor: fromPromise(async () => ["a.ts", "c.ts"]),
         // @ts-expect-error — XState v5 test mock type inference
-        stageFilesActor: fromPromise(
-          async ({ input }: { input: { files: string[] } }) => {
-            stagedFiles = input.files;
-          },
-        ),
+        stageFilesActor: fromPromise(async ({ input }: { input: { files: string[] } }) => {
+          stagedFiles = input.files;
+        }),
         ...displayMocks,
       },
     });
@@ -246,11 +240,9 @@ describe("stagingMachine", () => {
         // @ts-expect-error — XState v5 test mock type inference
         multiselectActor: fromPromise(async () => ["b.ts"]),
         // @ts-expect-error — XState v5 test mock type inference
-        stageFilesActor: fromPromise(
-          async ({ input }: { input: { files: string[] } }) => {
-            stagedFiles = input.files;
-          },
-        ),
+        stageFilesActor: fromPromise(async ({ input }: { input: { files: string[] } }) => {
+          stagedFiles = input.files;
+        }),
         ...displayMocks,
       },
     });
@@ -352,11 +344,9 @@ describe("stagingMachine", () => {
         // @ts-expect-error — XState v5 test mock type inference
         getUnstagedFilesActor: fromPromise(async () => ["a.ts", "b.ts"]),
         // @ts-expect-error — XState v5 test mock type inference
-        stageAllExceptActor: fromPromise(
-          async ({ input }: { input: { exclude?: string[] } }) => {
-            receivedExclude = input.exclude;
-          },
-        ),
+        stageAllExceptActor: fromPromise(async ({ input }: { input: { exclude?: string[] } }) => {
+          receivedExclude = input.exclude;
+        }),
         ...displayMocks,
       },
     });
@@ -408,11 +398,9 @@ describe("stagingMachine", () => {
         // @ts-expect-error — XState v5 test mock type inference
         getUnstagedFilesActor: fromPromise(async () => ["b.ts", "c.lock"]),
         // @ts-expect-error — XState v5 test mock type inference
-        stageAllExceptActor: fromPromise(
-          async ({ input }: { input: { exclude?: string[] } }) => {
-            receivedExclude = input.exclude;
-          },
-        ),
+        stageAllExceptActor: fromPromise(async ({ input }: { input: { exclude?: string[] } }) => {
+          receivedExclude = input.exclude;
+        }),
         ...displayMocks,
       },
     });
@@ -437,12 +425,10 @@ describe("stagingMachine", () => {
         // @ts-expect-error — XState v5 test mock type inference
         getUnstagedFilesActor: fromPromise(async () => ["b.ts"]),
         // @ts-expect-error — XState v5 test mock type inference
-        stageAllExceptActor: fromPromise(
-          async ({ input }: { input: { exclude?: string[] } }) => {
-            receivedExclude = input.exclude;
-            stageAllCalled = true;
-          },
-        ),
+        stageAllExceptActor: fromPromise(async ({ input }: { input: { exclude?: string[] } }) => {
+          receivedExclude = input.exclude;
+          stageAllCalled = true;
+        }),
         ...displayMocks,
       },
     });

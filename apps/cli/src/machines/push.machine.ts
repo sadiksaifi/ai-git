@@ -41,8 +41,7 @@ export interface PushMachineOutput {
 function isMissingRemoteError(error: unknown): boolean {
   const msg = extractErrorMessage(error);
   return (
-    msg.includes("No configured push destination") ||
-    msg.includes("no remote repository specified")
+    msg.includes("No configured push destination") || msg.includes("no remote repository specified")
   );
 }
 
@@ -59,14 +58,11 @@ export const pushMachine = setup({
     addRemoteAndPushActor: defaultAddRemoteAndPushActor as ActorLogicFrom<
       typeof defaultAddRemoteAndPushActor
     >,
-    confirmActor: defaultConfirmActor as ActorLogicFrom<
-      typeof defaultConfirmActor
-    >,
+    confirmActor: defaultConfirmActor as ActorLogicFrom<typeof defaultConfirmActor>,
     textActor: defaultTextActor as ActorLogicFrom<typeof defaultTextActor>,
   },
   guards: {
-    isPushFlagOrAutoApprove: ({ context }) =>
-      context.push || context.dangerouslyAutoApprove,
+    isPushFlagOrAutoApprove: ({ context }) => context.push || context.dangerouslyAutoApprove,
     isInteractiveMode: ({ context }) => context.isInteractiveMode,
     isMissingRemote: ({ event }) => {
       const error = (event as { error?: unknown }).error;

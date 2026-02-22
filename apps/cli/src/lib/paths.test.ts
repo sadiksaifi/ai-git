@@ -26,7 +26,8 @@ describe("paths", () => {
       });
 
       it("CACHE_DIR uses LOCALAPPDATA on Windows", () => {
-        const localAppdata = process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
+        const localAppdata =
+          process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
         expect(CACHE_DIR).toBe(path.join(localAppdata, "ai-git"));
       });
     } else {
@@ -65,9 +66,7 @@ describe("paths", () => {
 
       it("resolveConfigDir falls back to homedir when APPDATA is unset", () => {
         delete process.env.APPDATA;
-        expect(resolveConfigDir()).toBe(
-          path.join(os.homedir(), "AppData", "Roaming", "ai-git"),
-        );
+        expect(resolveConfigDir()).toBe(path.join(os.homedir(), "AppData", "Roaming", "ai-git"));
       });
 
       it("resolveCacheDir uses LOCALAPPDATA when set", () => {
@@ -77,9 +76,7 @@ describe("paths", () => {
 
       it("resolveCacheDir falls back to homedir when LOCALAPPDATA is unset", () => {
         delete process.env.LOCALAPPDATA;
-        expect(resolveCacheDir()).toBe(
-          path.join(os.homedir(), "AppData", "Local", "ai-git"),
-        );
+        expect(resolveCacheDir()).toBe(path.join(os.homedir(), "AppData", "Local", "ai-git"));
       });
     } else {
       const originalXdgConfig = process.env.XDG_CONFIG_HOME;
@@ -105,9 +102,7 @@ describe("paths", () => {
 
       it("resolveConfigDir falls back to ~/.config when XDG_CONFIG_HOME is unset", () => {
         delete process.env.XDG_CONFIG_HOME;
-        expect(resolveConfigDir()).toBe(
-          path.join(os.homedir(), ".config", "ai-git"),
-        );
+        expect(resolveConfigDir()).toBe(path.join(os.homedir(), ".config", "ai-git"));
       });
 
       it("resolveCacheDir respects XDG_CACHE_HOME", () => {
@@ -117,9 +112,7 @@ describe("paths", () => {
 
       it("resolveCacheDir falls back to ~/.cache when XDG_CACHE_HOME is unset", () => {
         delete process.env.XDG_CACHE_HOME;
-        expect(resolveCacheDir()).toBe(
-          path.join(os.homedir(), ".cache", "ai-git"),
-        );
+        expect(resolveCacheDir()).toBe(path.join(os.homedir(), ".cache", "ai-git"));
       });
     }
   });
@@ -136,12 +129,8 @@ describe("paths", () => {
     });
 
     it("getModelCacheFile returns provider-specific path", () => {
-      expect(getModelCacheFile("openrouter")).toBe(
-        path.join(CACHE_DIR, "models-openrouter.json")
-      );
-      expect(getModelCacheFile("anthropic")).toBe(
-        path.join(CACHE_DIR, "models-anthropic.json")
-      );
+      expect(getModelCacheFile("openrouter")).toBe(path.join(CACHE_DIR, "models-openrouter.json"));
+      expect(getModelCacheFile("anthropic")).toBe(path.join(CACHE_DIR, "models-anthropic.json"));
     });
 
     describe("getModelsDevCacheFilePath", () => {
@@ -157,9 +146,7 @@ describe("paths", () => {
 
       it("returns default path when env var is not set", () => {
         delete process.env.AI_GIT_MODELS_DEV_CACHE_FILE;
-        expect(getModelsDevCacheFilePath()).toBe(
-          path.join(CACHE_DIR, "models-dev-catalog.json")
-        );
+        expect(getModelsDevCacheFilePath()).toBe(path.join(CACHE_DIR, "models-dev-catalog.json"));
       });
 
       it("respects AI_GIT_MODELS_DEV_CACHE_FILE override", () => {
