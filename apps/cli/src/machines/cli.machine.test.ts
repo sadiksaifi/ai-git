@@ -63,10 +63,12 @@ const happyPathActors = () => ({
     committed: true as boolean,
     aborted: false as boolean,
   })),
-  pushMachine: fromPromise(async () => ({
-    pushed: false as boolean,
-    exitCode: 0 as const,
-  })),
+  pushMachine: fromPromise(
+    async (): Promise<{ pushed: boolean; exitCode: 0 | 1 }> => ({
+      pushed: false,
+      exitCode: 0,
+    }),
+  ),
 });
 
 // ── Tests ────────────────────────────────────────────────────────────
@@ -82,6 +84,28 @@ describe("cliMachine", () => {
       timeout: 5000,
     });
     expect(snap.output!.exitCode).toBe(0);
+  });
+
+  // Push machine returns exitCode 1 → cli exits with code 1
+  test("pushFailed guard propagates push exitCode 1 to cli exit", async () => {
+    const machine = cliMachine.provide({
+      actors: {
+        ...happyPathActors(),
+        pushMachine: fromPromise(
+          async (): Promise<{ pushed: boolean; exitCode: 0 | 1 }> => ({
+            pushed: false,
+            exitCode: 1,
+          }),
+        ),
+      },
+    });
+    const actor = createActor(machine, { input: defaultInput() });
+    actor.start();
+
+    const snap = await waitFor(actor, (s) => s.status === "done", {
+      timeout: 5000,
+    });
+    expect(snap.output!.exitCode).toBe(1);
   });
 
   // Bug #2: unknown provider -> error with dynamic provider list

@@ -45,7 +45,7 @@ All workflow orchestration is handled by composable XState v5 state machines. `i
 - **`setup-wizard.machine.ts`** - Provider/model setup wizard (wraps `lib/onboarding/wizard.ts`)
 - **`staging.machine.ts`** - File staging decisions (ST1-ST14 scenarios)
 - **`generation.machine.ts`** - 7-state AI generation loop (GN1-GN29 scenarios)
-- **`push.machine.ts`** - Push decisions and remote recovery (PU1-PU11 scenarios)
+- **`push.machine.ts`** - Push decisions, remote sync check, and remote recovery (PU1-PU18 scenarios)
 - **`upgrade.machine.ts`** - Self-update and package manager delegation (UP1-UP11 scenarios)
 
 **Production wiring:**

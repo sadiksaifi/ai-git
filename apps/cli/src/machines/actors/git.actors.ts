@@ -8,6 +8,9 @@ import {
   commit,
   push,
   addRemoteAndPush,
+  fetchRemote,
+  getRemoteAheadCount,
+  pullRebase,
   getBranchName,
   setBranchName,
   getStagedDiff,
@@ -119,6 +122,22 @@ export function createGatherContextActor(
   return fromPromise(async () => (resolver ?? defaultResolver)());
 }
 
+export function createFetchRemoteActor(resolver: () => Promise<void> = fetchRemote) {
+  return fromPromise(async () => {
+    await resolver();
+  });
+}
+
+export function createCheckRemoteAheadActor(resolver: () => Promise<number> = getRemoteAheadCount) {
+  return fromPromise(async () => resolver());
+}
+
+export function createPullRebaseActor(resolver: () => Promise<void> = pullRebase) {
+  return fromPromise(async () => {
+    await resolver();
+  });
+}
+
 // ── Production Singleton Actors ──────────────────────────────────────
 
 export const checkGitInstalledActor = createCheckGitInstalledActor();
@@ -132,4 +151,7 @@ export const pushActor = createPushActor();
 export const addRemoteAndPushActor = createAddRemoteAndPushActor();
 export const getBranchNameActor = createGetBranchNameActor();
 export const setBranchNameActor = createSetBranchNameActor();
+export const fetchRemoteActor = createFetchRemoteActor();
+export const checkRemoteAheadActor = createCheckRemoteAheadActor();
+export const pullRebaseActor = createPullRebaseActor();
 export const gatherContextActor = createGatherContextActor();
