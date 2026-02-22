@@ -161,6 +161,12 @@ export const cliMachine = setup({
       const output = (event as { output?: { aborted: boolean } }).output;
       return output?.aborted === true;
     },
+    hasIncompleteProviderModelFlags: ({ context }) => {
+      const { provider, model } = context.options;
+      const hasProvider = provider !== undefined;
+      const hasModel = model !== undefined;
+      return hasProvider !== hasModel;
+    },
   },
   actions: {
     expandAutoApproveFlags: assign({
@@ -182,6 +188,12 @@ export const cliMachine = setup({
     setExitOk: assign({ exitCode: 0 as const }),
     setExitError: assign({ exitCode: 1 as const }),
     setExitInterrupt: assign({ exitCode: 130 as const }),
+    logProviderModelFlagError: ({ context }) => {
+      const missing = context.options.provider !== undefined ? "--model" : "--provider";
+      const present = context.options.provider !== undefined ? "--provider" : "--model";
+      console.error(`Error: ${missing} is also required when using ${present}.`);
+      console.error("Provide both --provider and --model, or neither (to use your configuration).");
+    },
   },
 }).createMachine({
   id: "cli",
@@ -201,9 +213,16 @@ export const cliMachine = setup({
     // ══════════════════════════════════════════════════════════════════
     processFlags: {
       entry: "expandAutoApproveFlags",
-      always: {
-        target: "loadConfig",
-      },
+      always: [
+        {
+          guard: "hasIncompleteProviderModelFlags",
+          target: "exit",
+          actions: ["logProviderModelFlagError", "setExitError"],
+        },
+        {
+          target: "loadConfig",
+        },
+      ],
     },
 
     // ══════════════════════════════════════════════════════════════════

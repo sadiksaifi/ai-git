@@ -464,7 +464,7 @@ export const generationMachine = setup({
                 },
                 { value: "retry", label: "Retry" },
                 { value: "edit", label: "Edit" },
-                { value: "cancel", label: "Cancel" },
+                { value: "cancel", label: "Quit" },
               ],
             }),
             onDone: [

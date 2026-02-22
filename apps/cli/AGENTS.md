@@ -97,7 +97,7 @@ Self-correcting generator-discriminator pattern implemented as an XState state m
 3. Clean response (strip Markdown code blocks)
 4. Validate against Conventional Commits (`src/lib/validation.ts`)
 5. Auto-retry up to 3x on critical validation errors
-6. Present interactive menu (Commit / Retry / Edit / Cancel)
+6. Present interactive menu (Commit / Retry / Edit / Quit)
 
 Utility functions (prompt building, validation, commit display) remain in `src/lib/generation.ts` and `src/lib/validation.ts`.
 

@@ -6,7 +6,7 @@
 import { select, note, isCancel, log, password, spinner } from "@clack/prompts";
 import pc from "picocolors";
 import prompts from "prompts";
-import { PROVIDERS, getProviderById } from "../../providers/registry.ts";
+import { PROVIDERS, getProviderById, sortRecommendedFirst } from "../../providers/registry.ts";
 import { getAdapter } from "../../providers/index.ts";
 import { getAPIAdapter } from "../../providers/api/index.ts";
 import {
@@ -75,7 +75,7 @@ export async function runWizard(options: WizardOptions): Promise<WizardResult> {
   const cliAvailabilityMap = new Map(cliAvailability.map((a) => [a.providerId, a.available]));
 
   // Build unified provider options with type hints
-  const providerOptions = PROVIDERS.map((p) => {
+  const providerOptions = sortRecommendedFirst(PROVIDERS).map((p) => {
     const isCli = p.mode === "cli";
     const isApi = p.mode === "api";
 
@@ -84,11 +84,11 @@ export async function runWizard(options: WizardOptions): Promise<WizardResult> {
       const available = cliAvailabilityMap.get(p.id);
       if (!available) {
         hint = pc.yellow("not installed");
-      } else if (p.isDefault) {
+      } else if (p.isRecommended) {
         hint = "recommended";
       }
     } else if (isApi) {
-      if (p.isDefault) {
+      if (p.isRecommended) {
         hint = "recommended";
       }
     }
@@ -104,8 +104,8 @@ export async function runWizard(options: WizardOptions): Promise<WizardResult> {
   // Find default provider (prefer CLI default, then API default)
   const defaultProvider =
     defaults?.provider ??
-    PROVIDERS.find((p) => p.mode === "cli" && p.isDefault)?.id ??
-    PROVIDERS.find((p) => p.isDefault)?.id;
+    PROVIDERS.find((p) => p.mode === "cli" && p.isRecommended)?.id ??
+    PROVIDERS.find((p) => p.isRecommended)?.id;
 
   const providerResult = await select({
     message: "Select AI provider:",
@@ -200,12 +200,12 @@ async function setupCLIFlow(
 
   const modelResult = await select({
     message: "Select model:",
-    options: providerDef.models.map((m) => ({
+    options: sortRecommendedFirst(providerDef.models).map((m) => ({
       value: m.id,
       label: m.name,
-      hint: m.isDefault ? "recommended" : undefined,
+      hint: m.isRecommended ? "recommended" : undefined,
     })),
-    initialValue: defaults?.model ?? providerDef.models.find((m) => m.isDefault)?.id,
+    initialValue: defaults?.model ?? providerDef.models.find((m) => m.isRecommended)?.id,
   });
 
   if (isCancel(modelResult)) {
