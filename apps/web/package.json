@@ -7,9 +7,22 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "typecheck": "astro check && tsc --noEmit",
+    "check": "oxlint && oxfmt --check",
+    "check:fix": "oxlint --fix && oxfmt --write",
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^5.17.1"
+    "astro": "^5.17.1",
+    "tailwindcss": "^4.1.0"
+  },
+  "devDependencies": {
+    "@ai-git/config": "workspace:*",
+    "@astrojs/check": "^0.9.6",
+    "@tailwindcss/vite": "^4.1.0",
+    "alchemy": "^0.82.1",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:"
   }
 }
