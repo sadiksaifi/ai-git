@@ -4,6 +4,9 @@ dist/
 # generated types
 .astro/
 
+# alchemy
+.alchemy/
+
 # dependencies
 node_modules/
 
