@@ -269,7 +269,7 @@ export async function runGenerationLoop(ctx: GenerationContext): Promise<Generat
                 "This usually means the model ID is incorrect or you don't have access to it.",
               ),
             );
-            console.error(pc.dim(`Try running 'ai-git --setup' to select a different model.`));
+            console.error(pc.dim(`Try running 'ai-git configure' to select a different model.`));
           } else if (isApiMode) {
             console.error(pc.red(`${providerName} API Error:`));
             console.error(pc.yellow(errorMessage));
@@ -277,7 +277,7 @@ export async function runGenerationLoop(ctx: GenerationContext): Promise<Generat
             console.error(pc.dim("This error is from the API provider, not ai-git."));
             console.error(pc.dim("You may need to:"));
             console.error(pc.dim("  - Check your API key and account settings"));
-            console.error(pc.dim("  - Try a different model (run: ai-git --setup)"));
+            console.error(pc.dim("  - Try a different model (run: ai-git configure)"));
             console.error(pc.dim("  - Check the provider's status page or documentation"));
           } else {
             console.error(pc.red(errorMessage));

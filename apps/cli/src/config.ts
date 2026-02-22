@@ -283,7 +283,7 @@ export async function resolveConfigAsync(
     (!userConfig || !isConfigComplete(userConfig)) &&
     (!projectConfig || !isConfigComplete(projectConfig))
   ) {
-    throw new Error("Configuration is incomplete. Please run: ai-git --setup");
+    throw new Error("Configuration is incomplete. Please run: ai-git configure");
   }
 
   // Base config is user config, or empty if not present (but one of them must be present per above check)

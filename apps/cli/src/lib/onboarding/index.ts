@@ -55,7 +55,7 @@ export async function runOnboarding(options: OnboardingOptions): Promise<Onboard
   const wizardResult = await runWizard({ defaults, target });
 
   if (!wizardResult.completed || !wizardResult.config) {
-    outro(pc.dim("Run ai-git --setup to try again"));
+    outro(pc.dim("Run ai-git configure to try again"));
     return { config: null, completed: false, continueToRun: false };
   }
 
