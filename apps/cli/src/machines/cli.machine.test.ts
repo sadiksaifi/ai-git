@@ -351,33 +351,39 @@ describe("cliMachine", () => {
   // --provider without --model → exit 1
   test("--provider without --model exits with code 1", async () => {
     const spy = spyOn(console, "error").mockImplementation(() => {});
-    const machine = cliMachine.provide({ actors: happyPathActors() });
-    const actor = createActor(machine, {
-      input: defaultInput({ provider: "codex" }),
-    });
-    actor.start();
+    try {
+      const machine = cliMachine.provide({ actors: happyPathActors() });
+      const actor = createActor(machine, {
+        input: defaultInput({ provider: "codex" }),
+      });
+      actor.start();
 
-    const snap = await waitFor(actor, (s) => s.status === "done", {
-      timeout: 5000,
-    });
-    expect(snap.output!.exitCode).toBe(1);
-    spy.mockRestore();
+      const snap = await waitFor(actor, (s) => s.status === "done", {
+        timeout: 5000,
+      });
+      expect(snap.output!.exitCode).toBe(1);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   // --model without --provider → exit 1
   test("--model without --provider exits with code 1", async () => {
     const spy = spyOn(console, "error").mockImplementation(() => {});
-    const machine = cliMachine.provide({ actors: happyPathActors() });
-    const actor = createActor(machine, {
-      input: defaultInput({ model: "sonnet-low" }),
-    });
-    actor.start();
+    try {
+      const machine = cliMachine.provide({ actors: happyPathActors() });
+      const actor = createActor(machine, {
+        input: defaultInput({ model: "sonnet-low" }),
+      });
+      actor.start();
 
-    const snap = await waitFor(actor, (s) => s.status === "done", {
-      timeout: 5000,
-    });
-    expect(snap.output!.exitCode).toBe(1);
-    spy.mockRestore();
+      const snap = await waitFor(actor, (s) => s.status === "done", {
+        timeout: 5000,
+      });
+      expect(snap.output!.exitCode).toBe(1);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   // Both --provider and --model → proceeds normally
