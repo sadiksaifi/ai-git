@@ -9,6 +9,7 @@ git commit messages. Monorepo managed with Turborepo and Bun.
 |-----------|-------------|
 | `apps/cli` | Main CLI application (XState v5, Bun, TypeScript) |
 | `packages/config` | Shared TypeScript configuration (`tsconfig.base.json`) |
+| `packages/meta` | Shared CLI metadata, flag/command definitions, provider docs (`@ai-git/meta`) |
 | `packages/npm/ai-git` | Main npm distribution package with postinstall |
 | `packages/npm/darwin-*`, `linux-*`, `win32-*` | Platform-specific binary packages |
 
