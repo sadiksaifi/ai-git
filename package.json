@@ -29,6 +29,7 @@
     "dev:web": "turbo -F web dev",
     "build": "turbo build",
     "build:cli": "turbo -F cli build",
+    "build:web": "turbo -F web build",
     "typecheck": "turbo typecheck",
     "check": "turbo check",
     "check:fix": "turbo check:fix",
