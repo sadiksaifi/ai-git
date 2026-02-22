@@ -97,7 +97,7 @@ describe("cliMachine", () => {
       },
     });
     const actor = createActor(machine, {
-      input: defaultInput({ provider: "invalid" }),
+      input: defaultInput({ provider: "invalid", model: "some-model" }),
     });
     actor.start();
 
@@ -337,6 +337,62 @@ describe("cliMachine", () => {
         reloadConfigActor: fromPromise(async () => mockConfigResult()),
       },
     });
+    const actor = createActor(machine, {
+      input: defaultInput(),
+    });
+    actor.start();
+
+    const snap = await waitFor(actor, (s) => s.status === "done", {
+      timeout: 5000,
+    });
+    expect(snap.output!.exitCode).toBe(0);
+  });
+
+  // --provider without --model → exit 1
+  test("--provider without --model exits with code 1", async () => {
+    const machine = cliMachine.provide({ actors: happyPathActors() });
+    const actor = createActor(machine, {
+      input: defaultInput({ provider: "codex" }),
+    });
+    actor.start();
+
+    const snap = await waitFor(actor, (s) => s.status === "done", {
+      timeout: 5000,
+    });
+    expect(snap.output!.exitCode).toBe(1);
+  });
+
+  // --model without --provider → exit 1
+  test("--model without --provider exits with code 1", async () => {
+    const machine = cliMachine.provide({ actors: happyPathActors() });
+    const actor = createActor(machine, {
+      input: defaultInput({ model: "sonnet-low" }),
+    });
+    actor.start();
+
+    const snap = await waitFor(actor, (s) => s.status === "done", {
+      timeout: 5000,
+    });
+    expect(snap.output!.exitCode).toBe(1);
+  });
+
+  // Both --provider and --model → proceeds normally
+  test("both --provider and --model proceeds normally", async () => {
+    const machine = cliMachine.provide({ actors: happyPathActors() });
+    const actor = createActor(machine, {
+      input: defaultInput({ provider: "claude-code", model: "sonnet-low" }),
+    });
+    actor.start();
+
+    const snap = await waitFor(actor, (s) => s.status === "done", {
+      timeout: 5000,
+    });
+    expect(snap.output!.exitCode).toBe(0);
+  });
+
+  // Neither --provider nor --model → proceeds normally (uses config)
+  test("neither --provider nor --model proceeds normally", async () => {
+    const machine = cliMachine.provide({ actors: happyPathActors() });
     const actor = createActor(machine, {
       input: defaultInput(),
     });
