@@ -176,3 +176,15 @@ export function getModelById(
 ): ModelDefinition | undefined {
   return provider.models.find((m) => m.id === modelId);
 }
+
+/**
+ * Stable sort that moves items with `isRecommended: true` to the front.
+ * Preserves original order among recommended and non-recommended items.
+ */
+export function sortRecommendedFirst<T extends { isRecommended?: boolean }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    if (a.isRecommended && !b.isRecommended) return -1;
+    if (!a.isRecommended && b.isRecommended) return 1;
+    return 0;
+  });
+}
