@@ -70,30 +70,18 @@ jobs:
         run: shasum -a 256 *.tar.gz *.zip > checksums.txt
 
       - name: Generate Changelog
+        uses: orhun/git-cliff-action@v4
         id: changelog
-        run: |
-          THIS_TAG=${{ github.ref_name }}
-          PREV_TAG=$(git describe --tags --abbrev=0 "$THIS_TAG"^ 2>/dev/null || echo "")
-
-          echo "Generating changelog from $PREV_TAG to $THIS_TAG"
-
-          if [ -z "$PREV_TAG" ]; then
-            LOGS=$(git log --pretty=format:"- %s [view](https://github.com/${{ github.repository }}/commit/%H)" --no-merges "$THIS_TAG")
-          else
-            LOGS=$(git log --pretty=format:"- %s [view](https://github.com/${{ github.repository }}/commit/%H)" --no-merges "$PREV_TAG..$THIS_TAG")
-          fi
-
-          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          echo "body<<$EOF" >> "$GITHUB_OUTPUT"
-          echo "## Changelog" >> "$GITHUB_OUTPUT"
-          echo "" >> "$GITHUB_OUTPUT"
-          echo "$LOGS" >> "$GITHUB_OUTPUT"
-          echo "$EOF" >> "$GITHUB_OUTPUT"
+        with:
+          config: cliff.toml
+          args: --latest --strip header --github-repo ${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          body: ${{ steps.changelog.outputs.body }}
+          body: ${{ steps.changelog.outputs.content }}
           generate_release_notes: false
           files: |
             apps/cli/dist/ai-git-darwin-arm64.tar.gz
