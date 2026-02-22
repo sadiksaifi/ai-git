@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect, spyOn } from "bun:test";
 import { createActor, waitFor, fromPromise } from "xstate";
 import { cliMachine } from "./cli.machine.ts";
 import type { CLIInput, ConfigResolutionResult, OnboardingActorResult } from "./cli.machine.ts";
@@ -350,6 +350,7 @@ describe("cliMachine", () => {
 
   // --provider without --model → exit 1
   test("--provider without --model exits with code 1", async () => {
+    const spy = spyOn(console, "error").mockImplementation(() => {});
     const machine = cliMachine.provide({ actors: happyPathActors() });
     const actor = createActor(machine, {
       input: defaultInput({ provider: "codex" }),
@@ -360,10 +361,12 @@ describe("cliMachine", () => {
       timeout: 5000,
     });
     expect(snap.output!.exitCode).toBe(1);
+    spy.mockRestore();
   });
 
   // --model without --provider → exit 1
   test("--model without --provider exits with code 1", async () => {
+    const spy = spyOn(console, "error").mockImplementation(() => {});
     const machine = cliMachine.provide({ actors: happyPathActors() });
     const actor = createActor(machine, {
       input: defaultInput({ model: "sonnet-low" }),
@@ -374,6 +377,7 @@ describe("cliMachine", () => {
       timeout: 5000,
     });
     expect(snap.output!.exitCode).toBe(1);
+    spy.mockRestore();
   });
 
   // Both --provider and --model → proceeds normally

@@ -180,6 +180,7 @@ export function getModelById(
 /**
  * Stable sort that moves items with `isRecommended: true` to the front.
  * Preserves original order among recommended and non-recommended items.
+ * Relies on ES2019+ stable Array.prototype.sort (guaranteed in Bun/V8).
  */
 export function sortRecommendedFirst<T extends { isRecommended?: boolean }>(items: T[]): T[] {
   return [...items].sort((a, b) => {
