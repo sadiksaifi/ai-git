@@ -394,6 +394,7 @@ describe("pushMachine", () => {
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(snap.output!.pushed).toBe(false);
+    expect(snap.output!.exitCode).toBe(0);
   });
 
   // PU17: remote ahead + non-interactive → exit code 1
