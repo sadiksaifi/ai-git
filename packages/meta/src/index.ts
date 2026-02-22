@@ -4,3 +4,4 @@ export * from "./flags.ts";
 export * from "./commands.ts";
 export * from "./providers.ts";
 export * from "./errors.ts";
+export * from "./utils.ts";
