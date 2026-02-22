@@ -240,4 +240,162 @@ describe("pushMachine", () => {
     const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(snap.output!.pushed).toBe(true);
   });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Remote sync check scenarios (PU12-PU18)
+  // ═══════════════════════════════════════════════════════════════════
+
+  // PU12: fetch succeeds, remote not ahead → push proceeds
+  test("PU12: remote not ahead → push proceeds normally", async () => {
+    const machine = pushMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        checkRemoteAheadActor: fromPromise(async () => 0),
+        // @ts-expect-error — XState v5 test mock type inference
+        pushActor: fromPromise(async () => {}),
+      },
+    });
+    const actor = createActor(machine, {
+      input: { push: true, dangerouslyAutoApprove: false, isInteractiveMode: false },
+    });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
+    expect(snap.output!.pushed).toBe(true);
+    expect(snap.output!.exitCode).toBe(0);
+  });
+
+  // PU13: fetch succeeds, remote ahead, interactive → warn prompt shown
+  test("PU13: remote ahead in interactive → warn and prompt", async () => {
+    const machine = pushMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        confirmActor: fromPromise(async () => true),
+        // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        checkRemoteAheadActor: fromPromise(async () => 3),
+        // @ts-expect-error — XState v5 test mock type inference
+        pullRebaseActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        pushActor: fromPromise(async () => {}),
+      },
+    });
+    const actor = createActor(machine, {
+      input: { push: false, dangerouslyAutoApprove: false, isInteractiveMode: true },
+    });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
+    expect(snap.output!.pushed).toBe(true);
+  });
+
+  // PU14: user confirms pull rebase → success → push
+  test("PU14: confirm pull rebase → rebase succeeds → push", async () => {
+    const machine = pushMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        checkRemoteAheadActor: fromPromise(async () => 5),
+        // @ts-expect-error — XState v5 test mock type inference
+        confirmActor: fromPromise(async () => true),
+        // @ts-expect-error — XState v5 test mock type inference
+        pullRebaseActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        pushActor: fromPromise(async () => {}),
+      },
+    });
+    const actor = createActor(machine, {
+      input: { push: true, dangerouslyAutoApprove: false, isInteractiveMode: true },
+    });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
+    expect(snap.output!.pushed).toBe(true);
+    expect(snap.output!.exitCode).toBe(0);
+  });
+
+  // PU15: user confirms pull rebase → rebase fails (conflicts)
+  test("PU15: pull rebase fails → error, not pushed", async () => {
+    const machine = pushMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        checkRemoteAheadActor: fromPromise(async () => 2),
+        // @ts-expect-error — XState v5 test mock type inference
+        confirmActor: fromPromise(async () => true),
+        // @ts-expect-error — XState v5 test mock type inference
+        pullRebaseActor: fromPromise(async () => {
+          throw new Error("merge conflict");
+        }),
+      },
+    });
+    const actor = createActor(machine, {
+      input: { push: true, dangerouslyAutoApprove: false, isInteractiveMode: true },
+    });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
+    expect(snap.output!.pushed).toBe(false);
+    expect(snap.output!.exitCode).toBe(1);
+  });
+
+  // PU16: user declines pull rebase → skip push
+  test("PU16: decline pull rebase → skip push", async () => {
+    const machine = pushMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        checkRemoteAheadActor: fromPromise(async () => 2),
+        // @ts-expect-error — XState v5 test mock type inference
+        confirmActor: fromPromise(async () => false),
+      },
+    });
+    const actor = createActor(machine, {
+      input: { push: true, dangerouslyAutoApprove: false, isInteractiveMode: true },
+    });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
+    expect(snap.output!.pushed).toBe(false);
+  });
+
+  // PU17: remote ahead + non-interactive → exit code 1
+  test("PU17: remote ahead in non-interactive → fail with exit 1", async () => {
+    const machine = pushMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        checkRemoteAheadActor: fromPromise(async () => 3),
+      },
+    });
+    const actor = createActor(machine, {
+      input: { push: true, dangerouslyAutoApprove: false, isInteractiveMode: false },
+    });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
+    expect(snap.output!.pushed).toBe(false);
+    expect(snap.output!.exitCode).toBe(1);
+  });
+
+  // PU18: fetch fails (no remote/no upstream/network) → skip check, proceed to push
+  test("PU18: fetch fails → skip check, proceed to push", async () => {
+    const machine = pushMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {
+          throw new Error("fatal: no remote");
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        pushActor: fromPromise(async () => {}),
+      },
+    });
+    const actor = createActor(machine, {
+      input: { push: true, dangerouslyAutoApprove: false, isInteractiveMode: false },
+    });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
+    expect(snap.output!.pushed).toBe(true);
+  });
 });
