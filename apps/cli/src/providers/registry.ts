@@ -17,13 +17,13 @@ export const PROVIDERS: ProviderDefinition[] = [
     name: "Codex",
     mode: "cli",
     binary: "codex",
-    isDefault: true,
+    isRecommended: true,
     models: [
       // gpt-5.3-codex (xhigh, high, medium, low)
       { id: "gpt-5.3-codex-xhigh", name: "GPT-5.3 Codex (xhigh)" },
       { id: "gpt-5.3-codex-high", name: "GPT-5.3 Codex (high)" },
       { id: "gpt-5.3-codex-medium", name: "GPT-5.3 Codex (medium)" },
-      { id: "gpt-5.3-codex-low", name: "GPT-5.3 Codex (low)", isDefault: true },
+      { id: "gpt-5.3-codex-low", name: "GPT-5.3 Codex (low)", isRecommended: true },
       // gpt-5.2-codex (xhigh, high, medium, low)
       { id: "gpt-5.2-codex-xhigh", name: "GPT-5.2 Codex (xhigh)" },
       { id: "gpt-5.2-codex-high", name: "GPT-5.2 Codex (high)" },
@@ -55,7 +55,7 @@ export const PROVIDERS: ProviderDefinition[] = [
     binary: "claude",
     models: [
       // sonnet (low, medium, high)
-      { id: "sonnet-low", name: "Claude Sonnet (low)", isDefault: true },
+      { id: "sonnet-low", name: "Claude Sonnet (low)", isRecommended: true },
       { id: "sonnet-medium", name: "Claude Sonnet (medium)" },
       { id: "sonnet-high", name: "Claude Sonnet (high)" },
       // opus (low, medium, high)
@@ -76,7 +76,7 @@ export const PROVIDERS: ProviderDefinition[] = [
       {
         id: "gemini-3-flash-preview",
         name: "Gemini 3 Flash Preview",
-        isDefault: true,
+        isRecommended: true,
       },
       { id: "gemini-3-pro-preview", name: "Gemini 3 Pro Preview" },
       { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite" },
@@ -92,7 +92,7 @@ export const PROVIDERS: ProviderDefinition[] = [
     id: "openrouter",
     name: "OpenRouter",
     mode: "api",
-    isDefault: true, // Recommended API provider
+    isRecommended: true,
     dynamicModels: true,
     models: [], // Populated dynamically via fetchModels()
   },
