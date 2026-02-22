@@ -22,12 +22,6 @@ export interface CLIOptions {
   hint?: string;
   exclude?: string | string[];
   dryRun: boolean;
-
-  // Meta
-  setup: boolean;
-  init: boolean;
-  version: boolean;
-  help: boolean;
 }
 
 /**
@@ -89,12 +83,6 @@ export const cliMachine = setup({
     output: {} as CLIOutput,
   },
   actors: {
-    // ── Init flow ────────────────────────────────────────────────────
-    initMachine: fromPromise(async (): Promise<{ continue: boolean; exitCode: 0 | 1 }> => {
-      // Default implementation — replaced by actual initMachine in production
-      return { continue: false, exitCode: 0 };
-    }),
-
     // ── Config resolution ────────────────────────────────────────────
     loadAndResolveConfigActor: fromPromise(async (): Promise<ConfigResolutionResult> => {
       // Default implementation — replaced in production with real config logic
@@ -152,13 +140,7 @@ export const cliMachine = setup({
     }),
   },
   guards: {
-    isInitFlag: ({ context }) => context.options.init,
-    initContinues: ({ event }) => {
-      const output = (event as { output?: { continue: boolean } }).output;
-      return output?.continue === true;
-    },
-    needsSetup: ({ context }) =>
-      context.options.setup || (context.configResult?.needsSetup ?? false),
+    needsSetup: ({ context }) => context.configResult?.needsSetup ?? false,
     onboardingCompleted: ({ event }) => {
       const output = (event as { output?: OnboardingActorResult }).output;
       return output?.completed === true;
@@ -219,43 +201,8 @@ export const cliMachine = setup({
     // ══════════════════════════════════════════════════════════════════
     processFlags: {
       entry: "expandAutoApproveFlags",
-      always: [
-        {
-          guard: "isInitFlag",
-          target: "init",
-        },
-        {
-          target: "loadConfig",
-        },
-      ],
-    },
-
-    // ══════════════════════════════════════════════════════════════════
-    // ── INIT (--init flag) ────────────────────────────────────────────
-    // ══════════════════════════════════════════════════════════════════
-    init: {
-      invoke: {
-        src: "initMachine",
-        onDone: [
-          {
-            guard: "initContinues",
-            target: "loadConfig",
-          },
-          {
-            // Init completed without wanting to continue — use init's exitCode
-            target: "exit",
-            actions: assign({
-              exitCode: ({ event }) => {
-                const output = (event as { output?: { exitCode: 0 | 1 } }).output;
-                return output?.exitCode ?? 0;
-              },
-            }),
-          },
-        ],
-        onError: {
-          target: "exit",
-          actions: "setExitError",
-        },
+      always: {
+        target: "loadConfig",
       },
     },
 
@@ -290,7 +237,7 @@ export const cliMachine = setup({
         input: ({ context }) => ({
           version: context.version,
           configResult: context.configResult,
-          needsSetup: context.options.setup || (context.configResult?.needsSetup ?? false),
+          needsSetup: context.configResult?.needsSetup ?? false,
         }),
         onDone: [
           {
