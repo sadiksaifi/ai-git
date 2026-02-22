@@ -40,6 +40,8 @@ export interface PushMachineOutput {
 
 /**
  * Detect "no remote" git errors by matching known English error strings.
+ * Relies on extractErrorMessage's stderr-first extraction to match
+ * Bun shell error messages from failed git push commands.
  * Note: This is locale-dependent and won't match non-English git output.
  * A future improvement could probe `git config branch.<name>.remote` instead.
  */
