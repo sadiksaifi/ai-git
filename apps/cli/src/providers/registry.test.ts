@@ -5,11 +5,7 @@ type Item = { id: string; isRecommended?: boolean };
 
 describe("sortRecommendedFirst", () => {
   test("moves recommended items to front", () => {
-    const items: Item[] = [
-      { id: "a" },
-      { id: "b", isRecommended: true },
-      { id: "c" },
-    ];
+    const items: Item[] = [{ id: "a" }, { id: "b", isRecommended: true }, { id: "c" }];
     const sorted = sortRecommendedFirst(items);
     expect(sorted.map((i) => i.id)).toEqual(["b", "a", "c"]);
   });
