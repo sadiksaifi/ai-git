@@ -84,7 +84,6 @@ export const pushMachine = setup({
     },
     isConfirmed: ({ event }) => (event as { output?: boolean }).output === true,
     isRemoteNotAhead: ({ context }) => context.remoteAheadCount === 0,
-    isRemoteAhead: ({ context }) => context.remoteAheadCount > 0,
   },
   actions: {
     markPushed: assign({ pushed: true }),
