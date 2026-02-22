@@ -135,7 +135,7 @@ export const cliMachine = setup({
       },
     ),
 
-    pushMachine: fromPromise(async (): Promise<{ pushed: boolean; exitCode: 0 }> => {
+    pushMachine: fromPromise(async (): Promise<{ pushed: boolean; exitCode: 0 | 1 }> => {
       return { pushed: false, exitCode: 0 };
     }),
   },
@@ -160,6 +160,10 @@ export const cliMachine = setup({
     generationAborted: ({ event }) => {
       const output = (event as { output?: { aborted: boolean } }).output;
       return output?.aborted === true;
+    },
+    pushFailed: ({ event }) => {
+      const output = (event as { output?: { exitCode?: number } }).output;
+      return output?.exitCode === 1;
     },
     hasIncompleteProviderModelFlags: ({ context }) => {
       const { provider, model } = context.options;
@@ -482,10 +486,17 @@ export const cliMachine = setup({
             isInteractiveMode,
           };
         },
-        onDone: {
-          target: "exit",
-          actions: "setExitOk",
-        },
+        onDone: [
+          {
+            guard: "pushFailed",
+            target: "exit",
+            actions: "setExitError",
+          },
+          {
+            target: "exit",
+            actions: "setExitOk",
+          },
+        ],
         onError: {
           // Push errors are non-fatal (push machine handles its own error states)
           target: "exit",

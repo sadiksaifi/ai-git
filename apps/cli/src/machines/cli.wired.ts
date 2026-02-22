@@ -29,9 +29,10 @@ import {
 } from "../config.ts";
 import { PROVIDERS } from "../providers/registry.ts";
 import { getAdapter } from "../providers/index.ts";
-import { checkGitInstalled, checkInsideRepo } from "../lib/git.ts";
+import { checkGitInstalled, checkInsideRepo, push, addRemoteAndPush, fetchRemote, getRemoteAheadCount, pullRebase } from "../lib/git.ts";
 import { runGenerationLoop } from "../lib/generation.ts";
-import { handlePush } from "../lib/push.ts";
+import { pushMachine } from "./push.machine.ts";
+import { confirmActor, textActor } from "./actors/clack.actors.ts";
 import { showWelcomeScreen, type WelcomeOptions } from "../lib/ui/welcome.ts";
 import { startUpdateCheck, showUpdateNotification } from "../lib/update-check.ts";
 import { assertConfiguredModelAllowed } from "../providers/api/models/index.ts";
@@ -313,17 +314,59 @@ export const wiredCliMachine = cliMachine.provide({
     }),
 
     // ── Push ─────────────────────────────────────────────────────────
-    pushMachine: fromPromise(async ({ input }: { input: Record<string, unknown> }) => {
-      const ctx = input as {
-        push: boolean;
-        dangerouslyAutoApprove: boolean;
-        isInteractiveMode: boolean;
-      };
-      // Note: handlePush manages its own error display and doesn't return push status.
-      // The pushed: true here indicates the push flow completed without throwing.
-      // A future refactor should make handlePush return { pushed: boolean }.
-      await handlePush(ctx);
-      return { pushed: true, exitCode: 0 as const };
+    pushMachine: pushMachine.provide({
+      actors: {
+        pushActor: fromPromise(async () => {
+          const s = (await import("@clack/prompts")).spinner();
+          s.start("Pushing changes...");
+          try {
+            await push();
+            s.stop("Pushed successfully");
+          } catch (error) {
+            s.stop("Push failed");
+            throw error;
+          }
+        }),
+        addRemoteAndPushActor: fromPromise(async ({ input }: { input: { url: string } }) => {
+          const s = (await import("@clack/prompts")).spinner();
+          s.start("Adding remote and pushing...");
+          try {
+            await addRemoteAndPush(input.url);
+            s.stop("Remote added and pushed successfully");
+          } catch (error) {
+            s.stop("Failed to push to new remote");
+            throw error;
+          }
+        }),
+        fetchRemoteActor: fromPromise(async () => {
+          const s = (await import("@clack/prompts")).spinner();
+          s.start("Looking for upstream changes...");
+          try {
+            await fetchRemote();
+            s.stop("Checked remote");
+          } catch (error) {
+            s.stop("Could not reach remote");
+            throw error;
+          }
+        }),
+        checkRemoteAheadActor: fromPromise(async () => {
+          return await getRemoteAheadCount();
+        }),
+        pullRebaseActor: fromPromise(async () => {
+          const s = (await import("@clack/prompts")).spinner();
+          s.start("Pulling and rebasing...");
+          try {
+            await pullRebase();
+            s.stop("Rebased successfully");
+          } catch (error) {
+            s.stop("Rebase failed");
+            throw error;
+          }
+        }),
+        confirmActor,
+        textActor,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
     }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any,
