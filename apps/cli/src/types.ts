@@ -17,8 +17,8 @@ export interface ModelDefinition {
   id: string;
   /** Human-readable model name (e.g., "Claude Haiku") */
   name: string;
-  /** Whether this is the default model for the provider */
-  isDefault?: boolean;
+  /** Whether this model is recommended for new users */
+  isRecommended?: boolean;
 }
 
 /**
@@ -35,8 +35,8 @@ export interface ProviderDefinition {
   binary?: string;
   /** Available models for this provider (empty for dynamicModels providers) */
   models: ModelDefinition[];
-  /** Whether this is the default provider */
-  isDefault?: boolean;
+  /** Whether this provider is recommended for new users */
+  isRecommended?: boolean;
   /** Whether models should be fetched dynamically via API (for API mode providers) */
   dynamicModels?: boolean;
 }
