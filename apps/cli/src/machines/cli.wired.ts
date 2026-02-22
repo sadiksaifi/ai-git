@@ -8,7 +8,7 @@
 
 import { fromPromise } from "xstate";
 import pc from "picocolors";
-import { log } from "@clack/prompts";
+import { log, spinner } from "@clack/prompts";
 import { ERROR_TEMPLATES } from "@ai-git/meta";
 import {
   cliMachine,
@@ -325,35 +325,35 @@ export const wiredCliMachine = cliMachine.provide({
     pushMachine: pushMachine.provide({
       actors: {
         pushActor: fromPromise(async () => {
-          const s = (await import("@clack/prompts")).spinner();
+          const s = spinner();
           s.start("Pushing changes...");
           try {
             await push();
             s.stop("Pushed successfully");
           } catch (error) {
-            s.stop("Push failed");
+            s.stop("Push failed", 1);
             throw error;
           }
         }),
         addRemoteAndPushActor: fromPromise(async ({ input }: { input: { url: string } }) => {
-          const s = (await import("@clack/prompts")).spinner();
+          const s = spinner();
           s.start("Adding remote and pushing...");
           try {
             await addRemoteAndPush(input.url);
             s.stop("Remote added and pushed successfully");
           } catch (error) {
-            s.stop("Failed to push to new remote");
+            s.stop("Failed to push to new remote", 1);
             throw error;
           }
         }),
         fetchRemoteActor: fromPromise(async () => {
-          const s = (await import("@clack/prompts")).spinner();
+          const s = spinner();
           s.start("Looking for upstream changes...");
           try {
             await fetchRemote();
             s.stop("Checked remote");
           } catch (error) {
-            s.stop("Could not reach remote");
+            s.stop("Could not reach remote", 1);
             throw error;
           }
         }),
@@ -361,13 +361,13 @@ export const wiredCliMachine = cliMachine.provide({
           return await getRemoteAheadCount();
         }),
         pullRebaseActor: fromPromise(async () => {
-          const s = (await import("@clack/prompts")).spinner();
+          const s = spinner();
           s.start("Pulling and rebasing...");
           try {
             await pullRebase();
             s.stop("Rebased successfully");
           } catch (error) {
-            s.stop("Rebase failed");
+            s.stop("Rebase failed", 1);
             throw error;
           }
         }),
