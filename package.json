@@ -16,6 +16,7 @@
     ],
     "catalog": {
       "@types/bun": "latest",
+      "alchemy": "^0.82.1",
       "oxfmt": "^0.26.0",
       "oxlint": "^1.41.0",
       "turbo": "^2.6.3",
@@ -25,12 +26,15 @@
   "scripts": {
     "dev": "turbo dev",
     "dev:cli": "turbo -F cli dev",
+    "dev:web": "turbo -F web dev",
     "build": "turbo build",
     "build:cli": "turbo -F cli build",
     "typecheck": "turbo typecheck",
     "check": "turbo check",
     "check:fix": "turbo check:fix",
     "test": "turbo test",
+    "deploy": "turbo -F @ai-git/infra deploy",
+    "destroy": "turbo -F @ai-git/infra destroy",
     "sync:catalog": "turbo -F cli sync:catalog",
     "sync:schema": "turbo -F cli sync:schema",
     "sync:models": "turbo -F cli sync:models"
