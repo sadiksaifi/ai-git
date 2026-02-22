@@ -183,7 +183,7 @@ export const stagingMachine = setup({
                 context.stagedFiles.length > 0 ? "Stage all remaining files" : "Stage all files",
             },
             { value: "select_files", label: "Select files to stage" },
-            { value: "cancel", label: "Cancel" },
+            { value: "cancel", label: "Quit" },
           ],
         }),
         onDone: [

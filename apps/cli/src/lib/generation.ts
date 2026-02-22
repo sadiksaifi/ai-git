@@ -407,7 +407,7 @@ export async function runGenerationLoop(ctx: GenerationContext): Promise<Generat
             { value: "commit", label: commitLabel },
             { value: "retry", label: "Retry" },
             { value: "edit", label: "Edit" },
-            { value: "cancel", label: "Cancel" },
+            { value: "cancel", label: "Quit" },
           ],
         });
 
