@@ -28,40 +28,40 @@ jobs:
       - name: Build for macOS ARM64
         working-directory: apps/cli
         run: |
-          bun compile --target bun-darwin-arm64
-          test -f dist/ai-git || { echo "ERROR: dist/ai-git not found after compile"; exit 1; }
+          bun run build --target bun-darwin-arm64
+          test -f dist/ai-git || { echo "ERROR: dist/ai-git not found after build"; exit 1; }
           cd dist
           tar -czf ai-git-darwin-arm64.tar.gz ai-git
 
       - name: Build for macOS x64
         working-directory: apps/cli
         run: |
-          bun compile --target bun-darwin-x64
-          test -f dist/ai-git || { echo "ERROR: dist/ai-git not found after compile"; exit 1; }
+          bun run build --target bun-darwin-x64
+          test -f dist/ai-git || { echo "ERROR: dist/ai-git not found after build"; exit 1; }
           cd dist
           tar -czf ai-git-darwin-x64.tar.gz ai-git
 
       - name: Build for Linux x64
         working-directory: apps/cli
         run: |
-          bun compile --target bun-linux-x64
-          test -f dist/ai-git || { echo "ERROR: dist/ai-git not found after compile"; exit 1; }
+          bun run build --target bun-linux-x64
+          test -f dist/ai-git || { echo "ERROR: dist/ai-git not found after build"; exit 1; }
           cd dist
           tar -czf ai-git-linux-x64.tar.gz ai-git
 
       - name: Build for Linux ARM64
         working-directory: apps/cli
         run: |
-          bun compile --target bun-linux-arm64
-          test -f dist/ai-git || { echo "ERROR: dist/ai-git not found after compile"; exit 1; }
+          bun run build --target bun-linux-arm64
+          test -f dist/ai-git || { echo "ERROR: dist/ai-git not found after build"; exit 1; }
           cd dist
           tar -czf ai-git-linux-arm64.tar.gz ai-git
 
       - name: Build for Windows x64
         working-directory: apps/cli
         run: |
-          bun compile --target bun-windows-x64
-          test -f dist/ai-git.exe || { echo "ERROR: dist/ai-git.exe not found after compile"; exit 1; }
+          bun run build --target bun-windows-x64
+          test -f dist/ai-git.exe || { echo "ERROR: dist/ai-git.exe not found after build"; exit 1; }
           cd dist
           zip ai-git-windows-x64.zip ai-git.exe
 

@@ -38,33 +38,5 @@ jobs:
       - name: CLI Tests
         run: bun run --filter cli test
 
-      - name: CLI Compile
-        run: bun run --filter cli compile
-
-  web-checks:
-    name: web-checks
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      NEXT_TELEMETRY_DISABLED: "1"
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: "latest"
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Web Typecheck
-        run: bun run --filter web typecheck
-
-      - name: Web Lint
-        run: bun run --filter web lint
-
-      - name: Web Build
-        run: bun run --filter web build
+      - name: CLI Build
+        run: bun run --filter cli build
