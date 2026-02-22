@@ -9,6 +9,10 @@ describe("pushMachine", () => {
     const machine = pushMachine.provide({
       actors: {
         // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        checkRemoteAheadActor: fromPromise(async () => 0),
+        // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {}),
       },
     });
@@ -25,6 +29,10 @@ describe("pushMachine", () => {
   test("PU8: push error exits gracefully", async () => {
     const machine = pushMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        checkRemoteAheadActor: fromPromise(async () => 0),
         // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {
           throw new Error("auth failed");
@@ -43,6 +51,10 @@ describe("pushMachine", () => {
   test("PU3: missing remote in interactive mode → prompt to add", async () => {
     const machine = pushMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        checkRemoteAheadActor: fromPromise(async () => 0),
         // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {
           throw Object.assign(new Error(), {
@@ -70,6 +82,10 @@ describe("pushMachine", () => {
     const machine = pushMachine.provide({
       actors: {
         // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        checkRemoteAheadActor: fromPromise(async () => 0),
+        // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {
           throw Object.assign(new Error(), {
             stderr: "No configured push destination",
@@ -91,6 +107,10 @@ describe("pushMachine", () => {
   test("PU5: add remote and push fails → error output", async () => {
     const machine = pushMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        checkRemoteAheadActor: fromPromise(async () => 0),
         // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {
           throw Object.assign(new Error(), {
@@ -120,6 +140,10 @@ describe("pushMachine", () => {
     const machine = pushMachine.provide({
       actors: {
         // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        checkRemoteAheadActor: fromPromise(async () => 0),
+        // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {
           throw Object.assign(new Error(), {
             stderr: "No configured push destination",
@@ -146,6 +170,10 @@ describe("pushMachine", () => {
     const machine = pushMachine.provide({
       actors: {
         // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        checkRemoteAheadActor: fromPromise(async () => 0),
+        // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {
           throw Object.assign(new Error(), {
             stderr: "No configured push destination",
@@ -169,6 +197,10 @@ describe("pushMachine", () => {
       actors: {
         // @ts-expect-error — XState v5 test mock type inference
         confirmActor: fromPromise(async () => true),
+        // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        checkRemoteAheadActor: fromPromise(async () => 0),
         // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {}),
       },
@@ -229,6 +261,10 @@ describe("pushMachine", () => {
   test("dangerouslyAutoApprove → auto-push without prompt", async () => {
     const machine = pushMachine.provide({
       actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        fetchRemoteActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        checkRemoteAheadActor: fromPromise(async () => 0),
         // @ts-expect-error — XState v5 test mock type inference
         pushActor: fromPromise(async () => {}),
       },
