@@ -21,6 +21,21 @@ const cli = cac("ai-git");
 
 cli.command("configure", COMMANDS.configure.description).action(async () => {
   const result = await runConfigureFlow();
+  if (result.continueToRun) {
+    const defaultOptions: CLIOptions = {
+      stageAll: false,
+      commit: false,
+      push: false,
+      dangerouslyAutoApprove: false,
+      dryRun: false,
+    };
+    const actor = createActor(wiredCliMachine, {
+      input: { options: defaultOptions, version: VERSION },
+    });
+    actor.start();
+    const snapshot = await waitFor(actor, (s) => s.status === "done", { timeout: 600_000 });
+    process.exit(snapshot.output!.exitCode);
+  }
   process.exit(result.exitCode);
 });
 
