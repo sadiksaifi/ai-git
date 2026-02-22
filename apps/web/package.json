@@ -1,8 +1,8 @@
 {
   "name": "web",
-  "type": "module",
-  "private": true,
   "version": "0.0.0-git",
+  "private": true,
+  "type": "module",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
