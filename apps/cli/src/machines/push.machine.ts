@@ -2,6 +2,9 @@ import { setup, assign, type ActorLogicFrom } from "xstate";
 import {
   pushActor as defaultPushActor,
   addRemoteAndPushActor as defaultAddRemoteAndPushActor,
+  fetchRemoteActor as defaultFetchRemoteActor,
+  checkRemoteAheadActor as defaultCheckRemoteAheadActor,
+  pullRebaseActor as defaultPullRebaseActor,
 } from "./actors/git.actors.ts";
 import {
   confirmActor as defaultConfirmActor,
@@ -24,11 +27,13 @@ export interface PushMachineContext {
   pushed: boolean;
   errorMessage: string;
   remoteUrl: string;
+  remoteAheadCount: number;
+  exitCode: 0 | 1;
 }
 
 export interface PushMachineOutput {
   pushed: boolean;
-  exitCode: 0;
+  exitCode: 0 | 1;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -60,6 +65,11 @@ export const pushMachine = setup({
     >,
     confirmActor: defaultConfirmActor as ActorLogicFrom<typeof defaultConfirmActor>,
     textActor: defaultTextActor as ActorLogicFrom<typeof defaultTextActor>,
+    fetchRemoteActor: defaultFetchRemoteActor as ActorLogicFrom<typeof defaultFetchRemoteActor>,
+    checkRemoteAheadActor: defaultCheckRemoteAheadActor as ActorLogicFrom<
+      typeof defaultCheckRemoteAheadActor
+    >,
+    pullRebaseActor: defaultPullRebaseActor as ActorLogicFrom<typeof defaultPullRebaseActor>,
   },
   guards: {
     isPushFlagOrAutoApprove: ({ context }) => context.push || context.dangerouslyAutoApprove,
@@ -73,6 +83,8 @@ export const pushMachine = setup({
       return error instanceof UserCancelledError;
     },
     isConfirmed: ({ event }) => (event as { output?: boolean }).output === true,
+    isRemoteNotAhead: ({ context }) => context.remoteAheadCount === 0,
+    isRemoteAhead: ({ context }) => context.remoteAheadCount > 0,
   },
   actions: {
     markPushed: assign({ pushed: true }),
@@ -88,6 +100,16 @@ export const pushMachine = setup({
         return (event as { output?: string }).output ?? "";
       },
     }),
+    storeRemoteAheadCount: assign({
+      remoteAheadCount: ({ event }) => {
+        return (event as { output?: number }).output ?? 0;
+      },
+    }),
+    storeRemoteAheadError: assign({
+      errorMessage: ({ context }) =>
+        `Remote is ${context.remoteAheadCount} commit(s) ahead. Pull and rebase before pushing.`,
+    }),
+    markExitError: assign({ exitCode: 1 as const }),
   },
 }).createMachine({
   id: "push",
@@ -99,10 +121,12 @@ export const pushMachine = setup({
     pushed: false,
     errorMessage: "",
     remoteUrl: "",
+    remoteAheadCount: 0,
+    exitCode: 0 as const,
   }),
   output: ({ context }) => ({
     pushed: context.pushed,
-    exitCode: 0 as const,
+    exitCode: context.exitCode,
   }),
   states: {
     // ── Entry: check flags to determine path ─────────────────────────
@@ -110,7 +134,7 @@ export const pushMachine = setup({
       always: [
         {
           guard: "isPushFlagOrAutoApprove",
-          target: "pushing",
+          target: "fetchRemote",
         },
         {
           guard: "isInteractiveMode",
@@ -131,7 +155,7 @@ export const pushMachine = setup({
         onDone: [
           {
             guard: "isConfirmed",
-            target: "pushing",
+            target: "fetchRemote",
           },
           {
             target: "done",
@@ -140,6 +164,100 @@ export const pushMachine = setup({
         onError: {
           // PU10: user cancel at push prompt
           target: "done",
+        },
+      },
+    },
+
+    // ── PU12/PU18: fetch remote to check for upstream changes ────────
+    fetchRemote: {
+      // @ts-expect-error — XState v5 invoke type inference
+      invoke: {
+        src: "fetchRemoteActor",
+        onDone: {
+          target: "checkRemoteAhead",
+        },
+        onError: {
+          // PU18: fetch fails (no remote/no upstream/network) → skip check
+          target: "pushing",
+        },
+      },
+    },
+
+    // ── PU12/PU13/PU17: check if remote has new commits ─────────────
+    checkRemoteAhead: {
+      // @ts-expect-error — XState v5 invoke type inference
+      invoke: {
+        src: "checkRemoteAheadActor",
+        onDone: {
+          target: "evaluateRemoteAhead",
+          actions: "storeRemoteAheadCount",
+        },
+        onError: {
+          // Failed to check → skip, proceed to push
+          target: "pushing",
+        },
+      },
+    },
+
+    // ── Evaluate remote ahead count ──────────────────────────────────
+    evaluateRemoteAhead: {
+      always: [
+        {
+          guard: "isRemoteNotAhead",
+          // PU12: not ahead → push
+          target: "pushing",
+        },
+        {
+          guard: "isInteractiveMode",
+          // PU13: ahead + interactive → warn
+          target: "warnRemoteAhead",
+        },
+        {
+          // PU17: ahead + non-interactive → fail
+          target: "done",
+          actions: ["storeRemoteAheadError", "markExitError"],
+        },
+      ],
+    },
+
+    // ── PU13/PU16: warn user remote is ahead, offer pull rebase ─────
+    warnRemoteAhead: {
+      // @ts-expect-error — XState v5 invoke type inference
+      invoke: {
+        src: "confirmActor",
+        input: ({ context }) => ({
+          message: `Remote is ${context.remoteAheadCount} commit(s) ahead. Pull and rebase before pushing?`,
+        }),
+        onDone: [
+          {
+            guard: "isConfirmed",
+            target: "pullRebase",
+          },
+          {
+            // PU16: user declines
+            target: "done",
+          },
+        ],
+        onError: {
+          // User cancelled
+          target: "done",
+        },
+      },
+    },
+
+    // ── PU14/PU15: pull with rebase ─────────────────────────────────
+    pullRebase: {
+      // @ts-expect-error — XState v5 invoke type inference
+      invoke: {
+        src: "pullRebaseActor",
+        onDone: {
+          // PU14: rebase succeeded → push
+          target: "pushing",
+        },
+        onError: {
+          // PU15: rebase failed (conflicts, etc.)
+          target: "done",
+          actions: ["storeErrorMessage", "markExitError"],
         },
       },
     },
