@@ -13,10 +13,6 @@ const defaultOptions = (): CLIInput["options"] => ({
   push: false,
   dangerouslyAutoApprove: false,
   dryRun: false,
-  setup: false,
-  init: false,
-  version: false,
-  help: false,
 });
 
 const defaultInput = (overrides?: Partial<CLIInput["options"]>): CLIInput => ({
@@ -111,52 +107,6 @@ describe("cliMachine", () => {
     expect(snap.output!.exitCode).toBe(1);
   });
 
-  // --init flag -> invokes init machine
-  test("--init invokes init machine", async () => {
-    let initCalled = false;
-    const machine = cliMachine.provide({
-      actors: {
-        ...happyPathActors(),
-        initMachine: fromPromise(async () => {
-          initCalled = true;
-          return { continue: false as boolean, exitCode: 0 as 0 | 1 };
-        }),
-      },
-    });
-    const actor = createActor(machine, {
-      input: defaultInput({ init: true }),
-    });
-    actor.start();
-
-    const snap = await waitFor(actor, (s) => s.status === "done", {
-      timeout: 5000,
-    });
-    expect(initCalled).toBe(true);
-    expect(snap.output!.exitCode).toBe(0);
-  });
-
-  // --init -> continue to normal flow
-  test("--init with continue=true proceeds to normal flow", async () => {
-    const machine = cliMachine.provide({
-      actors: {
-        ...happyPathActors(),
-        initMachine: fromPromise(async () => ({
-          continue: true as boolean,
-          exitCode: 0 as 0 | 1,
-        })),
-      },
-    });
-    const actor = createActor(machine, {
-      input: defaultInput({ init: true }),
-    });
-    actor.start();
-
-    const snap = await waitFor(actor, (s) => s.status === "done", {
-      timeout: 5000,
-    });
-    expect(snap.output!.exitCode).toBe(0);
-  });
-
   // Staging abort -> exit 1
   test("staging abort exits with code 1", async () => {
     const machine = cliMachine.provide({
@@ -225,9 +175,9 @@ describe("cliMachine", () => {
     expect(snap.output!.exitCode).toBe(0);
   });
 
-  // --setup flag triggers setup wizard
-  test("--setup flag triggers setup wizard", async () => {
-    let setupCalled = false;
+  // needsSetup triggers onboarding
+  test("needsSetup triggers onboarding", async () => {
+    let onboardingCalled = false;
     const machine = cliMachine.provide({
       actors: {
         ...happyPathActors(),
@@ -238,20 +188,20 @@ describe("cliMachine", () => {
           }),
         ),
         runOnboardingActor: fromPromise(async (): Promise<OnboardingActorResult> => {
-          setupCalled = true;
+          onboardingCalled = true;
           return { completed: true, continueToRun: false };
         }),
       },
     });
     const actor = createActor(machine, {
-      input: defaultInput({ setup: true }),
+      input: defaultInput(),
     });
     actor.start();
 
     const snap = await waitFor(actor, (s) => s.status === "done", {
       timeout: 5000,
     });
-    expect(setupCalled).toBe(true);
+    expect(onboardingCalled).toBe(true);
     expect(snap.output!.exitCode).toBe(0);
   });
 
@@ -298,7 +248,7 @@ describe("cliMachine", () => {
     expect((capturedInput as unknown as Record<string, unknown>).stageAll).toBe(true);
   });
 
-  // Setup not completed -> exit 1
+  // Onboarding not completed -> exit 1
   test("onboarding not completed exits with code 1", async () => {
     const machine = cliMachine.provide({
       actors: {
@@ -318,7 +268,7 @@ describe("cliMachine", () => {
       },
     });
     const actor = createActor(machine, {
-      input: defaultInput({ setup: true }),
+      input: defaultInput(),
     });
     actor.start();
 
@@ -388,7 +338,7 @@ describe("cliMachine", () => {
       },
     });
     const actor = createActor(machine, {
-      input: defaultInput({ setup: true }),
+      input: defaultInput(),
     });
     actor.start();
 

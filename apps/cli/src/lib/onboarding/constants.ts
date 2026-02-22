@@ -1,63 +1,31 @@
 // ==============================================================================
 // ONBOARDING CONSTANTS
-// Centralized copy, URLs, and configuration for the onboarding experience.
+// Imports from @ai-git/meta for consistency. Re-exports for local convenience.
 // ==============================================================================
+
+import { ERROR_TEMPLATES, PROVIDERS, isCLIProviderDoc } from "@ai-git/meta";
 
 /**
  * Installation information for CLI tools.
+ * Derived from @ai-git/meta provider docs.
+ *
+ * Note: PROVIDERS in @ai-git/meta and the runtime registry in
+ * providers/registry.ts must be kept in sync when adding/removing providers.
  */
-export const INSTALL_INFO = {
-  "claude-code": {
-    name: "Claude Code",
-    binary: "claude",
-    installCommand: "npm install -g @anthropic-ai/claude-code",
-    docsUrl: "https://code.claude.com/docs/en/setup",
-  },
-  "gemini-cli": {
-    name: "Gemini CLI",
-    binary: "gemini",
-    installCommand: "npm install -g @google/gemini-cli",
-    docsUrl: "https://geminicli.com/docs/get-started/installation",
-  },
-} as const;
+export function getInstallInfo(providerId: string) {
+  const doc = PROVIDERS[providerId];
+  if (!doc || !isCLIProviderDoc(doc)) return undefined;
+  return {
+    name: doc.name,
+    binary: doc.binary,
+    installCommand: doc.installCommand,
+    docsUrl: doc.docsUrl,
+  };
+}
 
 /**
- * Error message templates with actionable suggestions.
+ * Error message templates. Re-exported from @ai-git/meta under the legacy
+ * name `ERROR_MESSAGES` to avoid renaming all consumer call sites.
+ * Canonical name is `ERROR_TEMPLATES` in @ai-git/meta.
  */
-export const ERROR_MESSAGES = {
-  noConfig: {
-    message: "No configuration found.",
-    suggestion: "Run: ai-git --setup",
-  },
-  missingProvider: {
-    message: "No AI provider configured.",
-    suggestion: "Run: ai-git --setup to select a provider.",
-  },
-  invalidProvider: (id: string) => ({
-    message: `Unknown provider '${id}'.`,
-    suggestion: "Run: ai-git --setup to choose a valid provider.",
-  }),
-  missingModel: {
-    message: "No model configured.",
-    suggestion: "Run: ai-git --setup to select a model.",
-  },
-  invalidModel: (modelId: string, providerName: string) => ({
-    message: `Unknown model '${modelId}' for ${providerName}.`,
-    suggestion: "Run: ai-git --setup to choose a valid model.",
-  }),
-  cliNotInstalled: (binary: string, providerKey: keyof typeof INSTALL_INFO) => {
-    const info = INSTALL_INFO[providerKey];
-    return {
-      title: `${info?.name ?? binary} CLI not installed`,
-      message: `The '${binary}' command was not found.`,
-      solutions: [
-        info?.installCommand ? `Install: ${info.installCommand}` : null,
-        info?.docsUrl ? `Docs: ${info.docsUrl}` : null,
-      ].filter((s): s is string => s !== null),
-    };
-  },
-  apiKeyMissing: (providerName: string) => ({
-    message: `API key for ${providerName} not found in secure storage.`,
-    suggestion: "Run: ai-git --setup to configure your API key.",
-  }),
-} as const;
+export { ERROR_TEMPLATES as ERROR_MESSAGES };

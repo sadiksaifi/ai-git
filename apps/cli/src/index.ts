@@ -6,16 +6,25 @@ import { VERSION } from "./version.ts";
 import type { CLIOptions } from "./machines/cli.machine.ts";
 import { wiredCliMachine } from "./machines/cli.wired.ts";
 import { upgradeMachine } from "./machines/upgrade.machine.ts";
-import { FLAGS } from "./lib/flags.ts";
+import { FLAGS, COMMANDS } from "@ai-git/meta";
+import { renderHelp } from "./lib/help.ts";
+import { runConfigureFlow } from "./lib/configure.ts";
 
 // Suppress AI SDK warning logs (we handle errors ourselves)
 (globalThis as Record<string, unknown>).AI_SDK_LOG_WARNINGS = false;
 
 const cli = cac("ai-git");
 
-// ── Upgrade Subcommand ───────────────────────────────────────────────
+// ── Subcommands ─────────────────────────────────────────────────────
+// Standalone flows that bypass cliMachine entirely.
+// The main command (empty string) delegates to cliMachine below.
 
-cli.command("upgrade", "Upgrade ai-git to the latest version").action(async () => {
+cli.command("configure", COMMANDS.configure.description).action(async () => {
+  const result = await runConfigureFlow();
+  process.exit(result.exitCode);
+});
+
+cli.command("upgrade", COMMANDS.upgrade.description).action(async () => {
   const actor = createActor(upgradeMachine, { input: { version: VERSION } });
   actor.start();
   const snapshot = await waitFor(actor, (s) => s.status === "done", { timeout: 600_000 });
@@ -23,14 +32,12 @@ cli.command("upgrade", "Upgrade ai-git to the latest version").action(async () =
 });
 
 // ── Main Command ─────────────────────────────────────────────────────
+// Default command (no subcommand). Flag definitions sourced from @ai-git/meta.
 
 cli
   .command("")
-  .option(
-    `${FLAGS.provider.short}, ${FLAGS.provider.long} ${FLAGS.provider.arg}`,
-    FLAGS.provider.description,
-  )
-  .option(`${FLAGS.model.short}, ${FLAGS.model.long} ${FLAGS.model.arg}`, FLAGS.model.description)
+  .option(`${FLAGS.provider.long} ${FLAGS.provider.arg}`, FLAGS.provider.description)
+  .option(`${FLAGS.model.long} ${FLAGS.model.arg}`, FLAGS.model.description)
   .option(`${FLAGS.stageAll.short}, ${FLAGS.stageAll.long}`, FLAGS.stageAll.description)
   .option(`${FLAGS.commit.short}, ${FLAGS.commit.long}`, FLAGS.commit.description)
   .option(`${FLAGS.push.short}, ${FLAGS.push.long}`, FLAGS.push.description)
@@ -41,8 +48,6 @@ cli
   )
   .option(FLAGS.dangerouslyAutoApprove.long, FLAGS.dangerouslyAutoApprove.description)
   .option(FLAGS.dryRun.long, FLAGS.dryRun.description)
-  .option(FLAGS.setup.long, FLAGS.setup.description)
-  .option(FLAGS.init.long, FLAGS.init.description)
   .option(`${FLAGS.version.short}, ${FLAGS.version.long}`, FLAGS.version.description)
   .action(async (options: CLIOptions) => {
     const actor = createActor(wiredCliMachine, {
@@ -53,31 +58,6 @@ cli
     process.exit(snapshot.output!.exitCode);
   });
 
-// ── Help ─────────────────────────────────────────────────────────────
-
-cli.help((sections) => {
-  const newSections = sections.filter(
-    (section) =>
-      section.title !== "Commands" &&
-      section.body.trim() !== "ai-git" &&
-      !section.title?.startsWith("For more info"),
-  );
-
-  const usageSection = newSections.find((section) => section.title === "Usage");
-  if (usageSection) {
-    usageSection.body = "  $ ai-git [options]";
-  }
-
-  const usageIndex = newSections.findIndex((section) => section.title === "Usage");
-  if (usageIndex !== -1) {
-    newSections.splice(usageIndex + 1, 0, {
-      body: "Generate a commit message using AI",
-    });
-  }
-
-  return newSections;
-});
-
 // ── Entry Point ──────────────────────────────────────────────────────
 
 try {
@@ -87,6 +67,7 @@ try {
     console.log(VERSION);
     process.exit(0);
   } else if (parsed.options.help) {
+    console.log(renderHelp());
     process.exit(0);
   } else {
     await cli.runMatchedCommand();

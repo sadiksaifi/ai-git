@@ -9,14 +9,13 @@
 import { fromPromise } from "xstate";
 import pc from "picocolors";
 import { log } from "@clack/prompts";
+import { ERROR_TEMPLATES } from "@ai-git/meta";
 import {
   cliMachine,
   type ConfigResolutionResult,
   type OnboardingActorResult,
 } from "./cli.machine.ts";
-import { initMachine } from "./init.machine.ts";
 import { stagingMachine } from "./staging.machine.ts";
-import type { ProviderDefinition } from "../types.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
 import type { ResolvedConfig, PromptCustomization } from "../config.ts";
 import {
@@ -33,7 +32,6 @@ import { getAdapter } from "../providers/index.ts";
 import { checkGitInstalled, checkInsideRepo } from "../lib/git.ts";
 import { runGenerationLoop } from "../lib/generation.ts";
 import { handlePush } from "../lib/push.ts";
-import { runOnboarding } from "../lib/onboarding/index.ts";
 import { showWelcomeScreen, type WelcomeOptions } from "../lib/ui/welcome.ts";
 import { startUpdateCheck, showUpdateNotification } from "../lib/update-check.ts";
 import { assertConfiguredModelAllowed } from "../providers/api/models/index.ts";
@@ -43,7 +41,7 @@ import type { SupportedAPIProviderId } from "../providers/api/models/types.ts";
 
 async function resolveFullConfig(
   options: { provider?: string; model?: string },
-  version: string,
+  _version: string, // kept for future use (e.g. version-specific model validation)
 ): Promise<ConfigResolutionResult> {
   const resolvedConfig = await resolveConfigAsync({
     provider: options.provider,
@@ -82,7 +80,7 @@ async function resolveFullConfig(
           `Error: ${error instanceof Error ? error.message : "Configured model is not allowed."}`,
         ),
       );
-      console.error(pc.dim("Run `ai-git --setup` to select a supported model."));
+      console.error(pc.dim("Run `ai-git configure` to select a supported model."));
       throw error;
     }
   } else {
@@ -112,14 +110,11 @@ async function resolveFullConfig(
 
 export const wiredCliMachine = cliMachine.provide({
   actors: {
-    // ── Init ──────────────────────────────────────────────────────────
-    initMachine: initMachine,
-
     // ── Config resolution ────────────────────────────────────────────
     loadAndResolveConfigActor: fromPromise(
       async ({ input }: { input: Record<string, unknown> }) => {
         const options = input as {
-          options: { provider?: string; model?: string; setup: boolean };
+          options: { provider?: string; model?: string };
           version: string;
         };
 
@@ -143,19 +138,20 @@ export const wiredCliMachine = cliMachine.provide({
         const updateResult = await updateCheckPromise;
         showUpdateNotification(updateResult);
 
-        // If neither config is complete, either launch wizard or fail with error
+        // Neither config is complete. Two scenarios:
+        // 1. Config has provider+model but they're invalid → hard error with guidance
+        // 2. Config is truly missing or empty → return needsSetup to trigger onboarding
         if (!isGlobalComplete && !isProjectComplete) {
-          // Check if config exists but has invalid values (vs truly missing)
           const bestConfig = existingProjectConfig ?? existingConfig;
-          if (!options.options.setup && bestConfig?.provider && bestConfig?.model) {
-            // Config has provider+model set but they're invalid — fail with a
-            // clear error instead of silently launching the interactive wizard.
+          if (bestConfig?.provider && bestConfig?.model) {
+            // Scenario 1: User has a config file with values that don't match any
+            // known provider/model. Fail loudly instead of silently re-running setup.
             const provider = getProviderById(bestConfig.provider);
             if (!provider) {
               const validProviders = PROVIDERS.map((p) => p.id).join(", ");
               console.error(pc.red(`Error: Unknown provider '${bestConfig.provider}'.`));
               console.error(pc.dim(`Supported providers: ${validProviders}`));
-              console.error(pc.dim("Run `ai-git --setup` to select a valid provider."));
+              console.error(pc.dim("Run `ai-git configure` to select a valid provider."));
               throw new Error(`Unknown provider '${bestConfig.provider}'`);
             }
             // Provider is valid but model is not
@@ -165,7 +161,7 @@ export const wiredCliMachine = cliMachine.provide({
             console.error(
               pc.dim(`Available models: ${provider.models.map((m) => m.id).join(", ")}`),
             );
-            console.error(pc.dim("Run `ai-git --setup` to select a valid model."));
+            console.error(pc.dim("Run `ai-git configure` to select a valid model."));
             throw new Error(`Unknown model '${bestConfig.model}' for provider '${provider.name}'`);
           }
 
@@ -190,7 +186,6 @@ export const wiredCliMachine = cliMachine.provide({
           },
           options.version,
         );
-        result.needsSetup = options.options.setup;
         return result;
       },
     ),
@@ -216,23 +211,20 @@ export const wiredCliMachine = cliMachine.provide({
     }),
 
     // ── Onboarding ───────────────────────────────────────────────────
-    runOnboardingActor: fromPromise(async ({ input }: { input: Record<string, unknown> }) => {
-      const ctx = input as {
-        options: { provider?: string; model?: string };
-      };
-
-      const result = await runOnboarding({
-        defaults: {
-          provider: ctx.options.provider,
-          model: ctx.options.model,
-        },
-        target: "global",
-      });
-      return {
-        completed: result.completed,
-        continueToRun: result.continueToRun,
-      } satisfies OnboardingActorResult;
-    }),
+    runOnboardingActor: fromPromise(
+      async ({ input: _input }: { input: Record<string, unknown> }) => {
+        // First-run auto-trigger: when no config exists, show a brief message
+        // then launch the same configure flow as `ai-git configure`.
+        // Dynamic import avoids circular dependency (configure.ts → init.machine).
+        log.warn(ERROR_TEMPLATES.noConfig.message);
+        const { runConfigureFlow } = await import("../lib/configure.ts");
+        const result = await runConfigureFlow();
+        return {
+          completed: result.exitCode === 0,
+          continueToRun: result.continueToRun,
+        } satisfies OnboardingActorResult;
+      },
+    ),
 
     // ── Reload config (after onboarding) ─────────────────────────────
     reloadConfigActor: fromPromise(async ({ input }: { input: Record<string, unknown> }) => {
@@ -275,7 +267,7 @@ export const wiredCliMachine = cliMachine.provide({
           console.error(`The ${providerDef.name} CLI must be installed to use AI Git.`);
           console.error("");
           console.error(pc.dim("To switch to a different provider, run:"));
-          console.error(pc.dim("  ai-git --setup"));
+          console.error(pc.dim("  ai-git configure"));
         } else {
           console.error(pc.red(`Error: Provider '${providerDef.id}' is not available.`));
           console.error(pc.dim("Check your API key configuration."));

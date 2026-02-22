@@ -1,0 +1,23 @@
+{
+  "name": "@ai-git/meta",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "module": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "check": "oxlint && oxfmt --check",
+    "check:fix": "oxlint --fix && oxfmt --write",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@ai-git/config": "workspace:*",
+    "@types/bun": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:"
+  }
+}

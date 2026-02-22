@@ -24,7 +24,7 @@ export async function getApiKey(providerId: string, providedKey?: string): Promi
   const key = await getApiKeyFromSecrets(providerId);
   if (!key) {
     throw new Error(
-      `No API key found for ${providerId}. ` + `Run 'ai-git --setup' to configure your API key.`,
+      `No API key found for ${providerId}. ` + `Run 'ai-git configure' to configure your API key.`,
     );
   }
   return key;

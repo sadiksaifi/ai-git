@@ -57,8 +57,7 @@ On first run, you'll be guided through a quick setup wizard to choose your AI pr
 
 Settings are saved to `~/.config/ai-git/config.json`
 
-> **Reconfigure:** `ai-git --setup`
-> **Project config:** `ai-git --init` to create `.ai-git.json` in your project root
+> **Reconfigure:** `ai-git configure`
 > **Self-update:** `ai-git upgrade`
 
 ## Usage
@@ -68,24 +67,30 @@ Settings are saved to `~/.config/ai-git/config.json`
 ```sh
 $ ai-git --help
 Usage:
-  $ ai-git [options]
+  $ ai-git [command] [options]
 
-Generate a commit message using AI
+AI-powered Conventional Commits
 
-Options:
-  -P, --provider <id>         AI provider (claude-code, gemini-cli, codex, openrouter, openai, anthropic, google-ai-studio, cerebras)
-  -M, --model <id>            Model ID (e.g., haiku, gpt-5.3-codex-low, anthropic/claude-sonnet-4-6)
-  -a, --stage-all             Automatically stage all changes
-  -c, --commit                Automatically commit (skip editor/confirmation)
-  -p, --push                  Automatically push after commit
-  -H, --hint <text>           Provide a hint/context to the AI
-  -X, --exclude <pattern>     Exclude files/directories from staging (use with -a)
-  --dangerously-auto-approve  Run fully automated (Stage All + Commit + Push)
-  --dry-run                   Print the prompt and diff without calling AI (provider availability not required)
-  --setup                     Re-run the setup wizard to reconfigure AI provider
-  --init                      Initialize project-level configuration
-  -v, --version               Display version number
-  -h, --help                  Display this message
+Commands:
+  configure                    Set up AI provider and model
+  upgrade                      Update ai-git to the latest version
+
+Model:
+  --provider <id>              Use a specific AI provider for this run
+  --model <id>                 Use a specific model for this run
+
+Workflow:
+  -A, --stage-all              Stage all changes before generating
+  -C, --commit                 Commit without confirmation
+  -P, --push                   Push to remote after committing
+  -H, --hint <text>            Guide the AI with additional context
+  -X, --exclude <pattern>      Skip files when staging (glob, regex, or path)
+  --dangerously-auto-approve   Stage, commit, and push without prompts
+  --dry-run                    Preview the prompt without calling the AI
+
+Info:
+  -v, --version                Show version
+  -h, --help                   Show help
 ```
 
 ### Examples
@@ -104,13 +109,13 @@ ai-git --provider codex --model gpt-5.3-codex-low
 ai-git --provider openrouter --model anthropic/claude-sonnet-4-6
 
 # Exclude files/directories from staging
-ai-git -a --exclude "tests/" --exclude "*.test.ts"
+ai-git -A --exclude "tests/" --exclude "*.test.ts"
 
 # Automated (Be careful!)
 ai-git --dangerously-auto-approve --hint "Refactored authentication module"
 
 # Dry run works without installed provider CLI/API key
-ai-git --dry-run -a
+ai-git --dry-run -A
 ```
 
 ## Supported Providers
@@ -126,7 +131,7 @@ ai-git --dry-run -a
 | Anthropic        | `anthropic`        | API  | [Get API Key](https://console.anthropic.com/settings/keys)                              |
 | Cerebras         | `cerebras`         | API  | [Get API Key](https://cloud.cerebras.ai/)                                               |
 
-Configure with `ai-git --setup`
+Configure with `ai-git configure`
 
 ## Configuration
 
@@ -214,7 +219,7 @@ bun install
 bun run dev
 
 # Test prompt generation without AI call
-bun run dev --dry-run -a
+bun run dev --dry-run -A
 
 # Disable update-check network calls (useful for tests/CI)
 AI_GIT_DISABLE_UPDATE_CHECK=1 bun test

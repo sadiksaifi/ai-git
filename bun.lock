@@ -18,6 +18,7 @@
         "ai-git": "src/index.ts",
       },
       "dependencies": {
+        "@ai-git/meta": "workspace:*",
         "@ai-sdk/anthropic": "^3.0.1",
         "@ai-sdk/cerebras": "^2.0.33",
         "@ai-sdk/google": "^3.0.1",
@@ -45,6 +46,17 @@
       "name": "@ai-git/config",
       "version": "0.0.0",
     },
+    "packages/meta": {
+      "name": "@ai-git/meta",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@ai-git/config": "workspace:*",
+        "@types/bun": "catalog:",
+        "oxfmt": "catalog:",
+        "oxlint": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
   },
   "catalog": {
     "@types/bun": "latest",
@@ -55,6 +67,8 @@
   },
   "packages": {
     "@ai-git/config": ["@ai-git/config@workspace:packages/config"],
+
+    "@ai-git/meta": ["@ai-git/meta@workspace:packages/meta"],
 
     "@ai-sdk/anthropic": ["@ai-sdk/anthropic@3.0.46", "", { "dependencies": { "@ai-sdk/provider": "3.0.8", "@ai-sdk/provider-utils": "4.0.15" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-zXJPiNHaIiQ6XUqLeSYZ3ZbSzjqt1pNWEUf2hlkXlmmw8IF8KI0ruuGaDwKCExmtuNRf0E4TDxhsc9wRgWTzpw=="],
 

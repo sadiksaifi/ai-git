@@ -41,7 +41,7 @@ All workflow orchestration is handled by composable XState v5 state machines. `i
 7 composable XState machines orchestrated by a top-level CLI machine:
 
 - **`cli.machine.ts`** - Top-level orchestrator (config, provider validation, child machine invocation)
-- **`init.machine.ts`** - Project initialization (`--init` flag, IN1-IN10 scenarios)
+- **`init.machine.ts`** - Project initialization (`configure` command, IN1-IN10 scenarios)
 - **`setup-wizard.machine.ts`** - Provider/model setup wizard (wraps `lib/onboarding/wizard.ts`)
 - **`staging.machine.ts`** - File staging decisions (ST1-ST14 scenarios)
 - **`generation.machine.ts`** - 7-state AI generation loop (GN1-GN29 scenarios)

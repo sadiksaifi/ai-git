@@ -106,7 +106,7 @@ async function runCLI(args: string[], options: RunCLIOptions): Promise<RunCLIRes
       NO_COLOR: "1",
       CI: "1",
       PATH: options.pathEnv ?? process.env.PATH ?? "",
-      ...(options.extraEnv ?? {}),
+      ...options.extraEnv,
     },
   });
 
@@ -141,8 +141,10 @@ describe("ai-git CLI", () => {
       pathEnv: noProviderPath,
     });
 
-    expect(result.stdout).toContain("Usage:");
-    expect(result.stdout).toContain("Options:");
+    expect(result.stdout).toContain("$ ai-git [command] [options]");
+    expect(result.stdout).not.toContain("Options:");
+    expect(result.stdout).toContain("Commands:");
+    expect(result.stdout).toContain("configure");
     expect(result.exitCode).toBe(0);
   });
 
@@ -182,7 +184,7 @@ describe("ai-git CLI", () => {
 
     fs.writeFileSync(path.join(repoDir, "README.md"), "updated\n");
 
-    const result = await runCLI(["--dry-run", "-a"], {
+    const result = await runCLI(["--dry-run", "-A"], {
       cwd: repoDir,
       homeDir,
       pathEnv: noProviderPath,
@@ -255,7 +257,7 @@ describe("ai-git CLI", () => {
     });
 
     expect(result.stderr).toContain("is deprecated");
-    expect(result.stderr).toContain("ai-git --setup");
+    expect(result.stderr).toContain("ai-git configure");
     expect(result.exitCode).toBe(1);
   });
 
@@ -270,7 +272,7 @@ describe("ai-git CLI", () => {
 
     fs.writeFileSync(path.join(repoDir, "README.md"), "updated\n");
 
-    const result = await runCLI(["--dry-run", "-a"], {
+    const result = await runCLI(["--dry-run", "-A"], {
       cwd: repoDir,
       homeDir,
       pathEnv: noProviderPath,
@@ -306,7 +308,7 @@ describe("ai-git CLI", () => {
 
     fs.writeFileSync(path.join(repoDir, "README.md"), "updated\n");
 
-    const result = await runCLI(["--dry-run", "-a"], {
+    const result = await runCLI(["--dry-run", "-A"], {
       cwd: repoDir,
       homeDir,
       pathEnv: noProviderPath,
@@ -326,7 +328,7 @@ describe("ai-git CLI", () => {
 
     fs.writeFileSync(path.join(repoDir, "README.md"), "updated\n");
 
-    const result = await runCLI(["--dry-run", "-a"], {
+    const result = await runCLI(["--dry-run", "-A"], {
       cwd: repoDir,
       homeDir,
       pathEnv: noProviderPath,
@@ -351,7 +353,7 @@ describe("ai-git CLI", () => {
 
       expect(result.stderr).toContain(model);
       expect(result.stderr).toContain("Unknown model");
-      expect(result.stderr).toContain("--setup");
+      expect(result.stderr).toContain("configure");
       expect(result.exitCode).toBe(1);
     },
   );
