@@ -18,7 +18,7 @@ import {
 } from "../../config.ts";
 import { setApiKey, getApiKey } from "../secrets/index.ts";
 import { getCachedModels, cacheModels, type CachedModel } from "../model-cache.ts";
-import { INSTALL_INFO, ERROR_MESSAGES } from "./constants.ts";
+import { getInstallInfo, ERROR_MESSAGES } from "./constants.ts";
 import { findRecommendedModel, getModelCatalog } from "../../providers/api/models/index.ts";
 
 const SPEED_HINT = pc.dim(
@@ -162,17 +162,22 @@ async function setupCLIFlow(
 
   if (!isAvailable) {
     // Show helpful installation instructions
-    const installKey = providerId as keyof typeof INSTALL_INFO;
-    const errorInfo = ERROR_MESSAGES.cliNotInstalled(providerDef.binary!, installKey);
+    const installInfo = getInstallInfo(providerId);
+    const errorTemplate = ERROR_MESSAGES.cliNotInstalled(providerDef.binary!, providerDef.name);
+
+    const solutions: string[] = [];
+    if (installInfo?.installCommand) solutions.push(`Install: ${installInfo.installCommand}`);
+    if (installInfo?.docsUrl) solutions.push(`Docs: ${installInfo.docsUrl}`);
 
     note(
       [
-        errorInfo.message,
+        errorTemplate.message,
         "",
-        pc.bold("To install:"),
-        ...errorInfo.solutions.map((s) => `  ${pc.cyan(">")} ${s}`),
+        ...(solutions.length > 0
+          ? [pc.bold("To install:"), ...solutions.map((s) => `  ${pc.cyan(">")} ${s}`)]
+          : [errorTemplate.suggestion]),
       ].join("\n"),
-      pc.red(errorInfo.title),
+      pc.red(`${providerDef.name} CLI not installed`),
     );
 
     // Ask if they want to try a different option

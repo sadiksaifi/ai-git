@@ -8,7 +8,7 @@ import type { UserConfig } from "../../config.ts";
 import { getProviderById } from "../../providers/registry.ts";
 import { getAdapter } from "../../providers/index.ts";
 import { hasApiKey } from "../secrets/index.ts";
-import { ERROR_MESSAGES, INSTALL_INFO } from "./constants.ts";
+import { ERROR_MESSAGES, getInstallInfo } from "./constants.ts";
 import {
   getCatalogModelMetadata,
   getModelCatalog,
@@ -80,8 +80,7 @@ export async function diagnoseConfig(config: UserConfig | undefined): Promise<Co
         if (adapter) {
           const available = await adapter.checkAvailable();
           if (!available && provider.binary) {
-            const installKey = config.provider as keyof typeof INSTALL_INFO;
-            const installInfo = INSTALL_INFO[installKey];
+            const installInfo = getInstallInfo(config.provider);
             errors.push({
               code: "CLI_NOT_INSTALLED",
               message: `${provider.name} CLI (${provider.binary}) is not installed.`,
@@ -147,7 +146,7 @@ export async function diagnoseConfig(config: UserConfig | undefined): Promise<Co
           errors.push({
             code: "DEPRECATED_MODEL",
             message: `Configured model '${metadata?.name || config.model}' is deprecated.`,
-            suggestion: "Run: ai-git --setup to choose a supported model.",
+            suggestion: "Run: ai-git configure to choose a supported model.",
           });
         }
       } catch {
