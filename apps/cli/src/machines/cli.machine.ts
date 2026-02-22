@@ -256,7 +256,7 @@ export const cliMachine = setup({
     },
 
     // ══════════════════════════════════════════════════════════════════
-    // ── RUN ONBOARDING (--setup or missing config) ────────────────────
+    // ── RUN ONBOARDING (missing config) ────────────────────────────────
     // ══════════════════════════════════════════════════════════════════
     runOnboarding: {
       invoke: {
