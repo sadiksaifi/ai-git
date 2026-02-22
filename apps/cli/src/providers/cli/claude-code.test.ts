@@ -171,9 +171,9 @@ describe("claude-code registry", () => {
     expect(modelIds).not.toContain("haiku-high");
   });
 
-  it("should have sonnet-low as the default model", () => {
+  it("should have sonnet-low as the recommended model", () => {
     const provider = getProviderById("claude-code");
-    const defaultModel = provider?.models.find((m) => m.isDefault);
+    const defaultModel = provider?.models.find((m) => m.isRecommended);
     expect(defaultModel?.id).toBe("sonnet-low");
   });
 });
