@@ -21,14 +21,14 @@ bun run dev
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `bun run dev` | Start dev server at localhost:4321 |
-| `bun run build` | Build static site to `./dist/` |
-| `bun run preview` | Preview production build locally |
-| `bun run typecheck` | Type check Astro and TypeScript |
-| `bun run check` | Run oxlint + oxfmt check |
-| `bun run check:fix` | Auto-fix lint and format issues |
+| Command             | Description                        |
+| ------------------- | ---------------------------------- |
+| `bun run dev`       | Start dev server at localhost:4321 |
+| `bun run build`     | Build static site to `./dist/`     |
+| `bun run preview`   | Preview production build locally   |
+| `bun run typecheck` | Type check Astro and TypeScript    |
+| `bun run check`     | Run oxlint + oxfmt check           |
+| `bun run check:fix` | Auto-fix lint and format issues    |
 
 ## Deployment
 

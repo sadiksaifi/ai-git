@@ -14,14 +14,14 @@ This is a product/landing site. Minimize client-side JavaScript:
 
 ## Tech Stack
 
-| Technology | Version | Purpose |
-|-----------|---------|---------|
-| Astro | 5.x | Static site framework |
-| Tailwind CSS | 4.x | Utility-first CSS (via `@tailwindcss/vite`) |
-| TypeScript | 5.x | Type safety |
-| Alchemy | 0.82.x | Cloudflare deployment (IaC) |
-| oxlint | latest | Linting |
-| oxfmt | latest | Formatting |
+| Technology   | Version | Purpose                                     |
+| ------------ | ------- | ------------------------------------------- |
+| Astro        | 5.x     | Static site framework                       |
+| Tailwind CSS | 4.x     | Utility-first CSS (via `@tailwindcss/vite`) |
+| TypeScript   | 5.x     | Type safety                                 |
+| Alchemy      | 0.82.x  | Cloudflare deployment (IaC)                 |
+| oxlint       | latest  | Linting                                     |
+| oxfmt        | latest  | Formatting                                  |
 
 ## Project Structure
 
@@ -78,6 +78,7 @@ bun run destroy      # Tear down infrastructure
 ## Testing
 
 No test framework configured yet. When adding tests:
+
 - Prefer Bun test runner (consistent with monorepo)
 - Test utilities and logic, not Astro rendering
 - Colocate test files (`*.test.ts`)
