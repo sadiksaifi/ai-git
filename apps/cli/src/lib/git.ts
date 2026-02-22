@@ -370,3 +370,28 @@ export async function addRemoteAndPush(url: string): Promise<void> {
   await $`git remote add origin ${url}`.quiet();
   await $`git push -u origin HEAD`.quiet();
 }
+
+/**
+ * Fetch updates from the remote for the current branch's upstream.
+ * Throws if no remote is configured or on network errors.
+ */
+export async function fetchRemote(): Promise<void> {
+  await $`git fetch`.quiet();
+}
+
+/**
+ * Count how many commits the remote tracking branch is ahead of HEAD.
+ * Returns 0 if the remote is not ahead or there is no upstream.
+ */
+export async function getRemoteAheadCount(): Promise<number> {
+  const output = await $`git rev-list HEAD..@{u} --count`.text();
+  return parseInt(output.trim(), 10) || 0;
+}
+
+/**
+ * Pull with rebase from the remote tracking branch.
+ * Throws on conflicts or other errors.
+ */
+export async function pullRebase(): Promise<void> {
+  await $`git pull --rebase`.quiet();
+}
