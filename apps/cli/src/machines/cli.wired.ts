@@ -29,7 +29,15 @@ import {
 } from "../config.ts";
 import { PROVIDERS } from "../providers/registry.ts";
 import { getAdapter } from "../providers/index.ts";
-import { checkGitInstalled, checkInsideRepo, push, addRemoteAndPush, fetchRemote, getRemoteAheadCount, pullRebase } from "../lib/git.ts";
+import {
+  checkGitInstalled,
+  checkInsideRepo,
+  push,
+  addRemoteAndPush,
+  fetchRemote,
+  getRemoteAheadCount,
+  pullRebase,
+} from "../lib/git.ts";
 import { runGenerationLoop } from "../lib/generation.ts";
 import { pushMachine } from "./push.machine.ts";
 import { confirmActor, textActor } from "./actors/clack.actors.ts";

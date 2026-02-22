@@ -63,10 +63,12 @@ const happyPathActors = () => ({
     committed: true as boolean,
     aborted: false as boolean,
   })),
-  pushMachine: fromPromise(async (): Promise<{ pushed: boolean; exitCode: 0 | 1 }> => ({
-    pushed: false,
-    exitCode: 0,
-  })),
+  pushMachine: fromPromise(
+    async (): Promise<{ pushed: boolean; exitCode: 0 | 1 }> => ({
+      pushed: false,
+      exitCode: 0,
+    }),
+  ),
 });
 
 // ── Tests ────────────────────────────────────────────────────────────

@@ -128,9 +128,7 @@ export function createFetchRemoteActor(resolver: () => Promise<void> = fetchRemo
   });
 }
 
-export function createCheckRemoteAheadActor(
-  resolver: () => Promise<number> = getRemoteAheadCount,
-) {
+export function createCheckRemoteAheadActor(resolver: () => Promise<number> = getRemoteAheadCount) {
   return fromPromise(async () => resolver());
 }
 
