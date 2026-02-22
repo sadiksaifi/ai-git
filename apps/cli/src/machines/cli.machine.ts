@@ -221,7 +221,8 @@ export const cliMachine = setup({
           actions: "assignConfigResult",
         },
         onError: {
-          // Config loading failed (includes Bug #2: unknown provider error)
+          // Config loading failed — covers missing config, unknown provider,
+          // unknown model, and deprecated model errors (all thrown in cli.wired.ts)
           target: "exit",
           actions: "setExitError",
         },
@@ -409,7 +410,8 @@ export const cliMachine = setup({
       invoke: {
         src: "generationMachine",
         input: ({ context }) => {
-          // configResult is guaranteed non-null: loadConfig succeeds before reaching here
+          // Non-null: state flow guarantees loadConfig → showWelcome → checkGit →
+          // checkAvailability → staging → generation, so configResult is always set
           const cr = context.configResult!;
           return {
             model: cr.model,

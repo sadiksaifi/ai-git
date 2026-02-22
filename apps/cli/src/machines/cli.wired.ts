@@ -40,7 +40,7 @@ import type { SupportedAPIProviderId } from "../providers/api/models/types.ts";
 
 async function resolveFullConfig(
   options: { provider?: string; model?: string },
-  version: string,
+  _version: string, // kept for future use (e.g. version-specific model validation)
 ): Promise<ConfigResolutionResult> {
   const resolvedConfig = await resolveConfigAsync({
     provider: options.provider,
@@ -137,13 +137,14 @@ export const wiredCliMachine = cliMachine.provide({
         const updateResult = await updateCheckPromise;
         showUpdateNotification(updateResult);
 
-        // If neither config is complete, either launch wizard or fail with error
+        // Neither config is complete. Two scenarios:
+        // 1. Config has provider+model but they're invalid → hard error with guidance
+        // 2. Config is truly missing or empty → return needsSetup to trigger onboarding
         if (!isGlobalComplete && !isProjectComplete) {
-          // Check if config exists but has invalid values (vs truly missing)
           const bestConfig = existingProjectConfig ?? existingConfig;
           if (bestConfig?.provider && bestConfig?.model) {
-            // Config has provider+model set but they're invalid — fail with a
-            // clear error instead of silently launching the interactive wizard.
+            // Scenario 1: User has a config file with values that don't match any
+            // known provider/model. Fail loudly instead of silently re-running setup.
             const provider = getProviderById(bestConfig.provider);
             if (!provider) {
               const validProviders = PROVIDERS.map((p) => p.id).join(", ");
@@ -211,7 +212,9 @@ export const wiredCliMachine = cliMachine.provide({
     // ── Onboarding ───────────────────────────────────────────────────
     runOnboardingActor: fromPromise(
       async ({ input: _input }: { input: Record<string, unknown> }) => {
-        // First-run auto-trigger: show brief intro, then configure flow
+        // First-run auto-trigger: when no config exists, show a brief message
+        // then launch the same configure flow as `ai-git configure`.
+        // Dynamic import avoids circular dependency (configure.ts → init.machine).
         log.warn("No configuration found.");
         const { runConfigureFlow } = await import("../lib/configure.ts");
         const exitCode = await runConfigureFlow();

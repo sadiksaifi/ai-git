@@ -15,14 +15,14 @@ import { runConfigureFlow } from "./lib/configure.ts";
 
 const cli = cac("ai-git");
 
-// ── Configure Subcommand ────────────────────────────────────────────
+// ── Subcommands ─────────────────────────────────────────────────────
+// Standalone flows that bypass cliMachine entirely.
+// The main command (empty string) delegates to cliMachine below.
 
 cli.command("configure", COMMANDS.configure!.description).action(async () => {
   const exitCode = await runConfigureFlow();
   process.exit(exitCode);
 });
-
-// ── Upgrade Subcommand ───────────────────────────────────────────────
 
 cli.command("upgrade", COMMANDS.upgrade!.description).action(async () => {
   const actor = createActor(upgradeMachine, { input: { version: VERSION } });
@@ -32,6 +32,7 @@ cli.command("upgrade", COMMANDS.upgrade!.description).action(async () => {
 });
 
 // ── Main Command ─────────────────────────────────────────────────────
+// Default command (no subcommand). Flag definitions sourced from @ai-git/meta.
 
 cli
   .command("")
