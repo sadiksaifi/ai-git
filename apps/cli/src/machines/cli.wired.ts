@@ -9,7 +9,11 @@
 import { fromPromise } from "xstate";
 import pc from "picocolors";
 import { log } from "@clack/prompts";
-import { cliMachine, type ConfigResolutionResult, type OnboardingActorResult } from "./cli.machine.ts";
+import {
+  cliMachine,
+  type ConfigResolutionResult,
+  type OnboardingActorResult,
+} from "./cli.machine.ts";
 import { initMachine } from "./init.machine.ts";
 import { stagingMachine } from "./staging.machine.ts";
 import type { ProviderDefinition } from "../types.ts";
@@ -31,10 +35,7 @@ import { runGenerationLoop } from "../lib/generation.ts";
 import { handlePush } from "../lib/push.ts";
 import { runOnboarding } from "../lib/onboarding/index.ts";
 import { showWelcomeScreen, type WelcomeOptions } from "../lib/ui/welcome.ts";
-import {
-  startUpdateCheck,
-  showUpdateNotification,
-} from "../lib/update-check.ts";
+import { startUpdateCheck, showUpdateNotification } from "../lib/update-check.ts";
 import { assertConfiguredModelAllowed } from "../providers/api/models/index.ts";
 import type { SupportedAPIProviderId } from "../providers/api/models/types.ts";
 
@@ -53,9 +54,7 @@ async function resolveFullConfig(
   const providerDef = getProviderById(resolvedConfig.provider);
   if (!providerDef) {
     const validProviders = PROVIDERS.map((p) => p.id).join(", ");
-    console.error(
-      pc.red(`Error: Unknown provider '${resolvedConfig.provider}'.`),
-    );
+    console.error(pc.red(`Error: Unknown provider '${resolvedConfig.provider}'.`));
     console.error(pc.dim(`Supported providers: ${validProviders}`));
     throw new Error(`Unknown provider '${resolvedConfig.provider}'`);
   }
@@ -63,9 +62,7 @@ async function resolveFullConfig(
   // Get adapter
   const adapter = getAdapter(providerDef.id);
   if (!adapter) {
-    console.error(
-      pc.red(`Error: No adapter found for provider '${providerDef.id}'.`),
-    );
+    console.error(pc.red(`Error: No adapter found for provider '${providerDef.id}'.`));
     throw new Error(`No adapter found for provider '${providerDef.id}'`);
   }
 
@@ -78,10 +75,7 @@ async function resolveFullConfig(
     model = modelId;
     modelName = modelId;
     try {
-      await assertConfiguredModelAllowed(
-        providerDef.id as SupportedAPIProviderId,
-        model,
-      );
+      await assertConfiguredModelAllowed(providerDef.id as SupportedAPIProviderId, model);
     } catch (error) {
       console.error(
         pc.red(
@@ -95,18 +89,10 @@ async function resolveFullConfig(
     const modelDef = getModelById(providerDef, modelId);
     if (!modelDef) {
       console.error(
-        pc.red(
-          `Error: Unknown model '${modelId}' for provider '${providerDef.name}'.`,
-        ),
+        pc.red(`Error: Unknown model '${modelId}' for provider '${providerDef.name}'.`),
       );
-      console.error(
-        pc.dim(
-          `Available models: ${providerDef.models.map((m) => m.id).join(", ")}`,
-        ),
-      );
-      throw new Error(
-        `Unknown model '${modelId}' for provider '${providerDef.name}'`,
-      );
+      console.error(pc.dim(`Available models: ${providerDef.models.map((m) => m.id).join(", ")}`));
+      throw new Error(`Unknown model '${modelId}' for provider '${providerDef.name}'`);
     }
     model = modelDef.id;
     modelName = modelDef.name;
@@ -167,28 +153,20 @@ export const wiredCliMachine = cliMachine.provide({
             const provider = getProviderById(bestConfig.provider);
             if (!provider) {
               const validProviders = PROVIDERS.map((p) => p.id).join(", ");
-              console.error(
-                pc.red(`Error: Unknown provider '${bestConfig.provider}'.`),
-              );
+              console.error(pc.red(`Error: Unknown provider '${bestConfig.provider}'.`));
               console.error(pc.dim(`Supported providers: ${validProviders}`));
               console.error(pc.dim("Run `ai-git --setup` to select a valid provider."));
               throw new Error(`Unknown provider '${bestConfig.provider}'`);
             }
             // Provider is valid but model is not
             console.error(
-              pc.red(
-                `Error: Unknown model '${bestConfig.model}' for provider '${provider.name}'.`,
-              ),
+              pc.red(`Error: Unknown model '${bestConfig.model}' for provider '${provider.name}'.`),
             );
             console.error(
-              pc.dim(
-                `Available models: ${provider.models.map((m) => m.id).join(", ")}`,
-              ),
+              pc.dim(`Available models: ${provider.models.map((m) => m.id).join(", ")}`),
             );
             console.error(pc.dim("Run `ai-git --setup` to select a valid model."));
-            throw new Error(
-              `Unknown model '${bestConfig.model}' for provider '${provider.name}'`,
-            );
+            throw new Error(`Unknown model '${bestConfig.model}' for provider '${provider.name}'`);
           }
 
           return {
@@ -218,61 +196,55 @@ export const wiredCliMachine = cliMachine.provide({
     ),
 
     // ── Welcome screen ───────────────────────────────────────────────
-    showWelcomeActor: fromPromise(
-      async ({ input }: { input: Record<string, unknown> }) => {
-        const ctx = input as {
-          version: string;
-          configResult: ConfigResolutionResult | null;
-          needsSetup: boolean;
-        };
+    showWelcomeActor: fromPromise(async ({ input }: { input: Record<string, unknown> }) => {
+      const ctx = input as {
+        version: string;
+        configResult: ConfigResolutionResult | null;
+        needsSetup: boolean;
+      };
 
-        let welcomeOptions: WelcomeOptions = {};
-        if (!ctx.needsSetup && ctx.configResult?.providerDef?.name) {
-          welcomeOptions = {
-            showConfig: true,
-            providerName: ctx.configResult.providerDef.name,
-            modelName: ctx.configResult.modelName,
-          };
-        }
-        await showWelcomeScreen(ctx.version, welcomeOptions);
-        flushMigrationNotice();
-      },
-    ),
+      let welcomeOptions: WelcomeOptions = {};
+      if (!ctx.needsSetup && ctx.configResult?.providerDef?.name) {
+        welcomeOptions = {
+          showConfig: true,
+          providerName: ctx.configResult.providerDef.name,
+          modelName: ctx.configResult.modelName,
+        };
+      }
+      await showWelcomeScreen(ctx.version, welcomeOptions);
+      flushMigrationNotice();
+    }),
 
     // ── Onboarding ───────────────────────────────────────────────────
-    runOnboardingActor: fromPromise(
-      async ({ input }: { input: Record<string, unknown> }) => {
-        const ctx = input as {
-          options: { provider?: string; model?: string };
-        };
+    runOnboardingActor: fromPromise(async ({ input }: { input: Record<string, unknown> }) => {
+      const ctx = input as {
+        options: { provider?: string; model?: string };
+      };
 
-        const result = await runOnboarding({
-          defaults: {
-            provider: ctx.options.provider,
-            model: ctx.options.model,
-          },
-          target: "global",
-        });
-        return {
-          completed: result.completed,
-          continueToRun: result.continueToRun,
-        } satisfies OnboardingActorResult;
-      },
-    ),
+      const result = await runOnboarding({
+        defaults: {
+          provider: ctx.options.provider,
+          model: ctx.options.model,
+        },
+        target: "global",
+      });
+      return {
+        completed: result.completed,
+        continueToRun: result.continueToRun,
+      } satisfies OnboardingActorResult;
+    }),
 
     // ── Reload config (after onboarding) ─────────────────────────────
-    reloadConfigActor: fromPromise(
-      async ({ input }: { input: Record<string, unknown> }) => {
-        const ctx = input as {
-          options: { provider?: string; model?: string };
-          version: string;
-        };
-        return resolveFullConfig(
-          { provider: ctx.options.provider, model: ctx.options.model },
-          ctx.version,
-        );
-      },
-    ),
+    reloadConfigActor: fromPromise(async ({ input }: { input: Record<string, unknown> }) => {
+      const ctx = input as {
+        options: { provider?: string; model?: string };
+        version: string;
+      };
+      return resolveFullConfig(
+        { provider: ctx.options.provider, model: ctx.options.model },
+        ctx.version,
+      );
+    }),
 
     // ── Git checks ───────────────────────────────────────────────────
     checkGitActor: fromPromise(async () => {
@@ -281,45 +253,37 @@ export const wiredCliMachine = cliMachine.provide({
     }),
 
     // ── Provider availability ────────────────────────────────────────
-    checkAvailabilityActor: fromPromise(
-      async ({ input }: { input: Record<string, unknown> }) => {
-        const ctx = input as {
-          configResult: ConfigResolutionResult;
-          dryRun: boolean;
-        };
+    checkAvailabilityActor: fromPromise(async ({ input }: { input: Record<string, unknown> }) => {
+      const ctx = input as {
+        configResult: ConfigResolutionResult;
+        dryRun: boolean;
+      };
 
-        if (ctx.dryRun) return true;
+      if (ctx.dryRun) return true;
 
-        // adapter and providerDef are guaranteed non-null here:
-        // checkAvailability only runs after successful config resolution
-        const { adapter, providerDef } = ctx.configResult as ConfigResolutionResult & {
-          adapter: NonNullable<ConfigResolutionResult["adapter"]>;
-          providerDef: NonNullable<ConfigResolutionResult["providerDef"]>;
-        };
-        const isAvailable = await adapter.checkAvailable();
-        if (!isAvailable) {
-          if (adapter.mode === "cli" && providerDef.binary) {
-            console.error(
-              pc.red(`Error: '${providerDef.binary}' CLI is not installed.`),
-            );
-            console.error("");
-            console.error(
-              `The ${providerDef.name} CLI must be installed to use AI Git.`,
-            );
-            console.error("");
-            console.error(pc.dim("To switch to a different provider, run:"));
-            console.error(pc.dim("  ai-git --setup"));
-          } else {
-            console.error(
-              pc.red(`Error: Provider '${providerDef.id}' is not available.`),
-            );
-            console.error(pc.dim("Check your API key configuration."));
-          }
-          throw new Error("Provider not available");
+      // adapter and providerDef are guaranteed non-null here:
+      // checkAvailability only runs after successful config resolution
+      const { adapter, providerDef } = ctx.configResult as ConfigResolutionResult & {
+        adapter: NonNullable<ConfigResolutionResult["adapter"]>;
+        providerDef: NonNullable<ConfigResolutionResult["providerDef"]>;
+      };
+      const isAvailable = await adapter.checkAvailable();
+      if (!isAvailable) {
+        if (adapter.mode === "cli" && providerDef.binary) {
+          console.error(pc.red(`Error: '${providerDef.binary}' CLI is not installed.`));
+          console.error("");
+          console.error(`The ${providerDef.name} CLI must be installed to use AI Git.`);
+          console.error("");
+          console.error(pc.dim("To switch to a different provider, run:"));
+          console.error(pc.dim("  ai-git --setup"));
+        } else {
+          console.error(pc.red(`Error: Provider '${providerDef.id}' is not available.`));
+          console.error(pc.dim("Check your API key configuration."));
         }
-        return true;
-      },
-    ),
+        throw new Error("Provider not available");
+      }
+      return true;
+    }),
 
     // ── Staging ──────────────────────────────────────────────────────
     stagingMachine: stagingMachine,
@@ -330,49 +294,45 @@ export const wiredCliMachine = cliMachine.provide({
     }),
 
     // ── Generation ───────────────────────────────────────────────────
-    generationMachine: fromPromise(
-      async ({ input }: { input: Record<string, unknown> }) => {
-        const ctx = input as {
-          adapter: ProviderAdapter;
-          model: string;
-          modelName: string;
-          options: {
-            commit: boolean;
-            dangerouslyAutoApprove: boolean;
-            dryRun: boolean;
-            hint?: string;
-          };
-          slowWarningThresholdMs: number;
-          promptCustomization?: PromptCustomization;
-          editor?: string;
+    generationMachine: fromPromise(async ({ input }: { input: Record<string, unknown> }) => {
+      const ctx = input as {
+        adapter: ProviderAdapter;
+        model: string;
+        modelName: string;
+        options: {
+          commit: boolean;
+          dangerouslyAutoApprove: boolean;
+          dryRun: boolean;
+          hint?: string;
         };
-        return runGenerationLoop({
-          adapter: ctx.adapter,
-          model: ctx.model,
-          modelName: ctx.modelName,
-          options: ctx.options,
-          promptCustomization: ctx.promptCustomization,
-          editor: ctx.editor,
-          slowWarningThresholdMs: ctx.slowWarningThresholdMs,
-        });
-      },
-    ),
+        slowWarningThresholdMs: number;
+        promptCustomization?: PromptCustomization;
+        editor?: string;
+      };
+      return runGenerationLoop({
+        adapter: ctx.adapter,
+        model: ctx.model,
+        modelName: ctx.modelName,
+        options: ctx.options,
+        promptCustomization: ctx.promptCustomization,
+        editor: ctx.editor,
+        slowWarningThresholdMs: ctx.slowWarningThresholdMs,
+      });
+    }),
 
     // ── Push ─────────────────────────────────────────────────────────
-    pushMachine: fromPromise(
-      async ({ input }: { input: Record<string, unknown> }) => {
-        const ctx = input as {
-          push: boolean;
-          dangerouslyAutoApprove: boolean;
-          isInteractiveMode: boolean;
-        };
-        // Note: handlePush manages its own error display and doesn't return push status.
-        // The pushed: true here indicates the push flow completed without throwing.
-        // A future refactor should make handlePush return { pushed: boolean }.
-        await handlePush(ctx);
-        return { pushed: true, exitCode: 0 as const };
-      },
-    ),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    pushMachine: fromPromise(async ({ input }: { input: Record<string, unknown> }) => {
+      const ctx = input as {
+        push: boolean;
+        dangerouslyAutoApprove: boolean;
+        isInteractiveMode: boolean;
+      };
+      // Note: handlePush manages its own error display and doesn't return push status.
+      // The pushed: true here indicates the push flow completed without throwing.
+      // A future refactor should make handlePush return { pushed: boolean }.
+      await handlePush(ctx);
+      return { pushed: true, exitCode: 0 as const };
+    }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any,
 });

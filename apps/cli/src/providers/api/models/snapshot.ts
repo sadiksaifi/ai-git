@@ -13,7 +13,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-10-22",
         lastUpdated: "2024-10-22",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "claude-3-5-haiku-latest": {
         id: "claude-3-5-haiku-latest",
@@ -21,7 +21,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-10-22",
         lastUpdated: "2024-10-22",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "claude-3-5-sonnet-20240620": {
         id: "claude-3-5-sonnet-20240620",
@@ -29,7 +29,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-06-20",
         lastUpdated: "2024-06-20",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "claude-3-5-sonnet-20241022": {
         id: "claude-3-5-sonnet-20241022",
@@ -37,7 +37,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-10-22",
         lastUpdated: "2024-10-22",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "claude-3-7-sonnet-20250219": {
         id: "claude-3-7-sonnet-20250219",
@@ -45,7 +45,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-02-19",
         lastUpdated: "2025-02-19",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "claude-3-7-sonnet-latest": {
         id: "claude-3-7-sonnet-latest",
@@ -53,7 +53,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-02-19",
         lastUpdated: "2025-02-19",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "claude-3-haiku-20240307": {
         id: "claude-3-haiku-20240307",
@@ -61,7 +61,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-03-13",
         lastUpdated: "2024-03-13",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "claude-3-opus-20240229": {
         id: "claude-3-opus-20240229",
@@ -69,7 +69,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-02-29",
         lastUpdated: "2024-02-29",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "claude-3-sonnet-20240229": {
         id: "claude-3-sonnet-20240229",
@@ -77,7 +77,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-03-04",
         lastUpdated: "2024-03-04",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "claude-haiku-4-5": {
         id: "claude-haiku-4-5",
@@ -85,7 +85,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-10-15",
         lastUpdated: "2025-10-15",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "claude-haiku-4-5-20251001": {
         id: "claude-haiku-4-5-20251001",
@@ -93,7 +93,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-10-15",
         lastUpdated: "2025-10-15",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "claude-opus-4-0": {
         id: "claude-opus-4-0",
@@ -101,7 +101,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-05-22",
         lastUpdated: "2025-05-22",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "claude-opus-4-1": {
         id: "claude-opus-4-1",
@@ -109,7 +109,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-08-05",
         lastUpdated: "2025-08-05",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "claude-opus-4-1-20250805": {
         id: "claude-opus-4-1-20250805",
@@ -117,7 +117,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-08-05",
         lastUpdated: "2025-08-05",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "claude-opus-4-20250514": {
         id: "claude-opus-4-20250514",
@@ -125,7 +125,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-05-22",
         lastUpdated: "2025-05-22",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "claude-opus-4-5": {
         id: "claude-opus-4-5",
@@ -133,7 +133,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-11-24",
         lastUpdated: "2025-11-24",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "claude-opus-4-5-20251101": {
         id: "claude-opus-4-5-20251101",
@@ -141,7 +141,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-11-01",
         lastUpdated: "2025-11-01",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "claude-opus-4-6": {
         id: "claude-opus-4-6",
@@ -149,7 +149,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2026-02-05",
         lastUpdated: "2026-02-05",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "claude-sonnet-4-0": {
         id: "claude-sonnet-4-0",
@@ -157,7 +157,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-05-22",
         lastUpdated: "2025-05-22",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "claude-sonnet-4-20250514": {
         id: "claude-sonnet-4-20250514",
@@ -165,7 +165,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-05-22",
         lastUpdated: "2025-05-22",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "claude-sonnet-4-5": {
         id: "claude-sonnet-4-5",
@@ -173,7 +173,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-09-29",
         lastUpdated: "2025-09-29",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "claude-sonnet-4-5-20250929": {
         id: "claude-sonnet-4-5-20250929",
@@ -181,7 +181,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-09-29",
         lastUpdated: "2025-09-29",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "claude-sonnet-4-6": {
         id: "claude-sonnet-4-6",
@@ -189,9 +189,9 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2026-02-17",
         lastUpdated: "2026-02-17",
         reasoning: true,
-        toolCall: true
-      }
-    }
+        toolCall: true,
+      },
+    },
   },
   openai: {
     models: {
@@ -201,7 +201,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-05-16",
         lastUpdated: "2025-05-16",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-3.5-turbo": {
         id: "gpt-3.5-turbo",
@@ -209,7 +209,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2023-03-01",
         lastUpdated: "2023-11-06",
         reasoning: false,
-        toolCall: false
+        toolCall: false,
       },
       "gpt-4": {
         id: "gpt-4",
@@ -217,7 +217,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2023-11-06",
         lastUpdated: "2024-04-09",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-4-turbo": {
         id: "gpt-4-turbo",
@@ -225,7 +225,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2023-11-06",
         lastUpdated: "2024-04-09",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-4.1": {
         id: "gpt-4.1",
@@ -233,7 +233,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-04-14",
         lastUpdated: "2025-04-14",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-4.1-mini": {
         id: "gpt-4.1-mini",
@@ -241,7 +241,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-04-14",
         lastUpdated: "2025-04-14",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-4.1-nano": {
         id: "gpt-4.1-nano",
@@ -249,7 +249,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-04-14",
         lastUpdated: "2025-04-14",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-4o": {
         id: "gpt-4o",
@@ -257,7 +257,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-05-13",
         lastUpdated: "2024-08-06",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-4o-2024-05-13": {
         id: "gpt-4o-2024-05-13",
@@ -265,7 +265,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-05-13",
         lastUpdated: "2024-05-13",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-4o-2024-08-06": {
         id: "gpt-4o-2024-08-06",
@@ -273,7 +273,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-08-06",
         lastUpdated: "2024-08-06",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-4o-2024-11-20": {
         id: "gpt-4o-2024-11-20",
@@ -281,7 +281,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-11-20",
         lastUpdated: "2024-11-20",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-4o-mini": {
         id: "gpt-4o-mini",
@@ -289,7 +289,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-07-18",
         lastUpdated: "2024-07-18",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5": {
         id: "gpt-5",
@@ -297,7 +297,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-08-07",
         lastUpdated: "2025-08-07",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5-chat-latest": {
         id: "gpt-5-chat-latest",
@@ -305,7 +305,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-08-07",
         lastUpdated: "2025-08-07",
         reasoning: true,
-        toolCall: false
+        toolCall: false,
       },
       "gpt-5-codex": {
         id: "gpt-5-codex",
@@ -313,7 +313,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-09-15",
         lastUpdated: "2025-09-15",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5-mini": {
         id: "gpt-5-mini",
@@ -321,7 +321,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-08-07",
         lastUpdated: "2025-08-07",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5-nano": {
         id: "gpt-5-nano",
@@ -329,7 +329,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-08-07",
         lastUpdated: "2025-08-07",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5-pro": {
         id: "gpt-5-pro",
@@ -337,7 +337,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-10-06",
         lastUpdated: "2025-10-06",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5.1": {
         id: "gpt-5.1",
@@ -345,7 +345,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-11-13",
         lastUpdated: "2025-11-13",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5.1-chat-latest": {
         id: "gpt-5.1-chat-latest",
@@ -353,7 +353,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-11-13",
         lastUpdated: "2025-11-13",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5.1-codex": {
         id: "gpt-5.1-codex",
@@ -361,7 +361,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-11-13",
         lastUpdated: "2025-11-13",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5.1-codex-max": {
         id: "gpt-5.1-codex-max",
@@ -369,7 +369,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-11-13",
         lastUpdated: "2025-11-13",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5.1-codex-mini": {
         id: "gpt-5.1-codex-mini",
@@ -377,7 +377,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-11-13",
         lastUpdated: "2025-11-13",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5.2": {
         id: "gpt-5.2",
@@ -385,7 +385,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-12-11",
         lastUpdated: "2025-12-11",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5.2-chat-latest": {
         id: "gpt-5.2-chat-latest",
@@ -393,7 +393,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-12-11",
         lastUpdated: "2025-12-11",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5.2-codex": {
         id: "gpt-5.2-codex",
@@ -401,7 +401,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-12-11",
         lastUpdated: "2025-12-11",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5.2-pro": {
         id: "gpt-5.2-pro",
@@ -409,7 +409,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-12-11",
         lastUpdated: "2025-12-11",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5.3-codex": {
         id: "gpt-5.3-codex",
@@ -417,7 +417,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2026-02-05",
         lastUpdated: "2026-02-05",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gpt-5.3-codex-spark": {
         id: "gpt-5.3-codex-spark",
@@ -425,7 +425,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2026-02-05",
         lastUpdated: "2026-02-05",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       o1: {
         id: "o1",
@@ -433,7 +433,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-12-05",
         lastUpdated: "2024-12-05",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "o1-mini": {
         id: "o1-mini",
@@ -441,7 +441,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-09-12",
         lastUpdated: "2024-09-12",
         reasoning: true,
-        toolCall: false
+        toolCall: false,
       },
       "o1-preview": {
         id: "o1-preview",
@@ -449,7 +449,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-09-12",
         lastUpdated: "2024-09-12",
         reasoning: true,
-        toolCall: false
+        toolCall: false,
       },
       "o1-pro": {
         id: "o1-pro",
@@ -457,7 +457,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-03-19",
         lastUpdated: "2025-03-19",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       o3: {
         id: "o3",
@@ -465,7 +465,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-04-16",
         lastUpdated: "2025-04-16",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "o3-deep-research": {
         id: "o3-deep-research",
@@ -473,7 +473,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-06-26",
         lastUpdated: "2024-06-26",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "o3-mini": {
         id: "o3-mini",
@@ -481,7 +481,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-12-20",
         lastUpdated: "2025-01-29",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "o3-pro": {
         id: "o3-pro",
@@ -489,7 +489,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-06-10",
         lastUpdated: "2025-06-10",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "o4-mini": {
         id: "o4-mini",
@@ -497,7 +497,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-04-16",
         lastUpdated: "2025-04-16",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "o4-mini-deep-research": {
         id: "o4-mini-deep-research",
@@ -505,7 +505,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-06-26",
         lastUpdated: "2024-06-26",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "text-embedding-3-large": {
         id: "text-embedding-3-large",
@@ -513,7 +513,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-01-25",
         lastUpdated: "2024-01-25",
         reasoning: false,
-        toolCall: false
+        toolCall: false,
       },
       "text-embedding-3-small": {
         id: "text-embedding-3-small",
@@ -521,7 +521,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-01-25",
         lastUpdated: "2024-01-25",
         reasoning: false,
-        toolCall: false
+        toolCall: false,
       },
       "text-embedding-ada-002": {
         id: "text-embedding-ada-002",
@@ -529,9 +529,9 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2022-12-15",
         lastUpdated: "2022-12-15",
         reasoning: false,
-        toolCall: false
-      }
-    }
+        toolCall: false,
+      },
+    },
   },
   google: {
     models: {
@@ -541,7 +541,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-05-14",
         lastUpdated: "2024-05-14",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-1.5-flash-8b": {
         id: "gemini-1.5-flash-8b",
@@ -549,7 +549,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-10-03",
         lastUpdated: "2024-10-03",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-1.5-pro": {
         id: "gemini-1.5-pro",
@@ -557,7 +557,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-02-15",
         lastUpdated: "2024-02-15",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-2.0-flash": {
         id: "gemini-2.0-flash",
@@ -565,7 +565,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-12-11",
         lastUpdated: "2024-12-11",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-2.0-flash-lite": {
         id: "gemini-2.0-flash-lite",
@@ -573,7 +573,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2024-12-11",
         lastUpdated: "2024-12-11",
         reasoning: false,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-2.5-flash": {
         id: "gemini-2.5-flash",
@@ -581,7 +581,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-03-20",
         lastUpdated: "2025-06-05",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-2.5-flash-image": {
         id: "gemini-2.5-flash-image",
@@ -589,7 +589,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-08-26",
         lastUpdated: "2025-08-26",
         reasoning: true,
-        toolCall: false
+        toolCall: false,
       },
       "gemini-2.5-flash-image-preview": {
         id: "gemini-2.5-flash-image-preview",
@@ -597,7 +597,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-08-26",
         lastUpdated: "2025-08-26",
         reasoning: true,
-        toolCall: false
+        toolCall: false,
       },
       "gemini-2.5-flash-lite": {
         id: "gemini-2.5-flash-lite",
@@ -605,7 +605,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-06-17",
         lastUpdated: "2025-06-17",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-2.5-flash-lite-preview-06-17": {
         id: "gemini-2.5-flash-lite-preview-06-17",
@@ -613,7 +613,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-06-17",
         lastUpdated: "2025-06-17",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-2.5-flash-lite-preview-09-2025": {
         id: "gemini-2.5-flash-lite-preview-09-2025",
@@ -621,7 +621,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-09-25",
         lastUpdated: "2025-09-25",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-2.5-flash-preview-04-17": {
         id: "gemini-2.5-flash-preview-04-17",
@@ -629,7 +629,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-04-17",
         lastUpdated: "2025-04-17",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-2.5-flash-preview-05-20": {
         id: "gemini-2.5-flash-preview-05-20",
@@ -637,7 +637,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-05-20",
         lastUpdated: "2025-05-20",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-2.5-flash-preview-09-2025": {
         id: "gemini-2.5-flash-preview-09-2025",
@@ -645,7 +645,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-09-25",
         lastUpdated: "2025-09-25",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-2.5-flash-preview-tts": {
         id: "gemini-2.5-flash-preview-tts",
@@ -653,7 +653,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-05-01",
         lastUpdated: "2025-05-01",
         reasoning: false,
-        toolCall: false
+        toolCall: false,
       },
       "gemini-2.5-pro": {
         id: "gemini-2.5-pro",
@@ -661,7 +661,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-03-20",
         lastUpdated: "2025-06-05",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-2.5-pro-preview-05-06": {
         id: "gemini-2.5-pro-preview-05-06",
@@ -669,7 +669,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-05-06",
         lastUpdated: "2025-05-06",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-2.5-pro-preview-06-05": {
         id: "gemini-2.5-pro-preview-06-05",
@@ -677,7 +677,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-06-05",
         lastUpdated: "2025-06-05",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-2.5-pro-preview-tts": {
         id: "gemini-2.5-pro-preview-tts",
@@ -685,7 +685,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-05-01",
         lastUpdated: "2025-05-01",
         reasoning: false,
-        toolCall: false
+        toolCall: false,
       },
       "gemini-3-flash-preview": {
         id: "gemini-3-flash-preview",
@@ -693,7 +693,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-12-17",
         lastUpdated: "2025-12-17",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-3-pro-preview": {
         id: "gemini-3-pro-preview",
@@ -701,7 +701,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-11-18",
         lastUpdated: "2025-11-18",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-embedding-001": {
         id: "gemini-embedding-001",
@@ -709,7 +709,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-05-20",
         lastUpdated: "2025-05-20",
         reasoning: false,
-        toolCall: false
+        toolCall: false,
       },
       "gemini-flash-latest": {
         id: "gemini-flash-latest",
@@ -717,7 +717,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-09-25",
         lastUpdated: "2025-09-25",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-flash-lite-latest": {
         id: "gemini-flash-lite-latest",
@@ -725,7 +725,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-09-25",
         lastUpdated: "2025-09-25",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-live-2.5-flash": {
         id: "gemini-live-2.5-flash",
@@ -733,7 +733,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-09-01",
         lastUpdated: "2025-09-01",
         reasoning: true,
-        toolCall: true
+        toolCall: true,
       },
       "gemini-live-2.5-flash-preview-native-audio": {
         id: "gemini-live-2.5-flash-preview-native-audio",
@@ -741,8 +741,8 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         releaseDate: "2025-06-17",
         lastUpdated: "2025-09-18",
         reasoning: true,
-        toolCall: true
-      }
-    }
-  }
+        toolCall: true,
+      },
+    },
+  },
 };

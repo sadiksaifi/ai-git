@@ -1,27 +1,16 @@
 import type { APIModelDefinition } from "../../types.ts";
 import { getCatalogModelMetadata, isDeprecatedModel } from "./catalog.ts";
-import {
-  MODEL_TIER_ORDER,
-  PROVIDER_MODEL_RULES,
-  matchesProviderRules,
-} from "./provider-rules.ts";
-import type {
-  ModelCatalog,
-  ModelTier,
-  RankedModel,
-  SupportedAPIProviderId,
-} from "./types.ts";
+import { MODEL_TIER_ORDER, PROVIDER_MODEL_RULES, matchesProviderRules } from "./provider-rules.ts";
+import type { ModelCatalog, ModelTier, RankedModel, SupportedAPIProviderId } from "./types.ts";
 
 export type RecommendationPolicy = "balanced" | "speed" | "capability";
 
-const TIER_INDEX = new Map<ModelTier, number>(
-  MODEL_TIER_ORDER.map((tier, index) => [tier, index])
-);
+const TIER_INDEX = new Map<ModelTier, number>(MODEL_TIER_ORDER.map((tier, index) => [tier, index]));
 
 function rankModelsDetailed(
   providerId: SupportedAPIProviderId,
   models: APIModelDefinition[],
-  catalog: ModelCatalog
+  catalog: ModelCatalog,
 ): RankedModel[] {
   const rules = PROVIDER_MODEL_RULES[providerId];
 
@@ -69,7 +58,7 @@ function rankModelsDetailed(
 export function rankProviderModels(
   providerId: SupportedAPIProviderId,
   models: APIModelDefinition[],
-  catalog: ModelCatalog
+  catalog: ModelCatalog,
 ): APIModelDefinition[] {
   return rankModelsDetailed(providerId, models, catalog).map((model) => ({
     id: model.id,
@@ -80,7 +69,7 @@ export function rankProviderModels(
 
 export function dedupeProviderModels(
   providerId: SupportedAPIProviderId,
-  models: APIModelDefinition[]
+  models: APIModelDefinition[],
 ): APIModelDefinition[] {
   const rules = PROVIDER_MODEL_RULES[providerId];
   const seen = new Set<string>();
@@ -100,14 +89,11 @@ export function findRecommendedModel(
   providerId: SupportedAPIProviderId,
   models: APIModelDefinition[],
   catalog: ModelCatalog,
-  policy: RecommendationPolicy = "balanced"
+  policy: RecommendationPolicy = "balanced",
 ): string | null {
   if (models.length === 0) return null;
 
-  const ranked = dedupeProviderModels(
-    providerId,
-    rankProviderModels(providerId, models, catalog)
-  );
+  const ranked = dedupeProviderModels(providerId, rankProviderModels(providerId, models, catalog));
   if (ranked.length === 0) return null;
 
   const detailed = rankModelsDetailed(providerId, ranked, catalog);

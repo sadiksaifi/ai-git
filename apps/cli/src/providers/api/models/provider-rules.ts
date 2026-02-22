@@ -1,6 +1,4 @@
-import type {
-  APIModelDefinition,
-} from "../../types.ts";
+import type { APIModelDefinition } from "../../types.ts";
 import type {
   CatalogModelDefinition,
   CatalogProviderId,
@@ -10,26 +8,20 @@ import type {
   SupportedAPIProviderId,
 } from "./types.ts";
 
-export const DEFAULT_PROVIDER_ORDER: CatalogProviderId[] = [
-  "anthropic",
-  "openai",
-  "google",
-];
+export const DEFAULT_PROVIDER_ORDER: CatalogProviderId[] = ["anthropic", "openai", "google"];
 
-export const MODEL_TIER_ORDER: ModelTier[] = [
-  "default",
-  "fast",
-  "reasoning",
-  "legacy",
-  "other",
-];
+export const MODEL_TIER_ORDER: ModelTier[] = ["default", "fast", "reasoning", "legacy", "other"];
 
 export function normalizeModelKey(modelId: string): string {
   return modelId.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
 function getCatalogProviderFromModel(model: APIModelDefinition): CatalogProviderId | null {
-  if (model.provider === "anthropic" || model.provider === "openai" || model.provider === "google") {
+  if (
+    model.provider === "anthropic" ||
+    model.provider === "openai" ||
+    model.provider === "google"
+  ) {
     return model.provider;
   }
 
@@ -77,7 +69,7 @@ function isLegacyModel(metadata: CatalogModelDefinition | null): boolean {
 function resolveTierForCatalogProvider(
   catalogProvider: CatalogProviderId,
   modelId: string,
-  metadata: CatalogModelDefinition | null
+  metadata: CatalogModelDefinition | null,
 ): ModelTier {
   const id = modelId.toLowerCase();
 
@@ -98,7 +90,11 @@ function resolveTierForCatalogProvider(
   }
 
   if (catalogProvider === "openai") {
-    if (/^gpt-5(?:$|\.|-chat-latest|-pro)/.test(id) || /^gpt-4\.1$/.test(id) || /^gpt-4o$/.test(id)) {
+    if (
+      /^gpt-5(?:$|\.|-chat-latest|-pro)/.test(id) ||
+      /^gpt-4\.1$/.test(id) ||
+      /^gpt-4o$/.test(id)
+    ) {
       return "default";
     }
     if (/mini|nano|flash|lite/.test(id)) {
@@ -196,10 +192,7 @@ export const PROVIDER_MODEL_RULES: Record<SupportedAPIProviderId, ProviderModelR
   },
   openrouter: {
     includePatterns: [/^anthropic\//i, /^openai\//i, /^google\//i],
-    excludePatterns: [
-      /\/(?:.*)(?:embedding|audio|realtime|whisper|tts|dall-e)/i,
-      /:free$/i,
-    ],
+    excludePatterns: [/\/(?:.*)(?:embedding|audio|realtime|whisper|tts|dall-e)/i, /:free$/i],
     dedupeKey: (modelId: string) => {
       const [provider, ...rest] = modelId.split("/");
       const model = rest.join("/");
@@ -216,24 +209,17 @@ export const PROVIDER_MODEL_RULES: Record<SupportedAPIProviderId, ProviderModelR
   },
   cerebras: {
     includePatterns: [
-      /^llama[\d.-]/i,   // llama3.1-8b, llama-3.3-70b
-      /^qwen-/i,         // qwen-3-32b, qwen-3-235b-...
-      /^gpt-oss-/i,      // gpt-oss-120b
-      /^zai-glm-/i,      // zai-glm-4.6, zai-glm-4.7
+      /^llama[\d.-]/i, // llama3.1-8b, llama-3.3-70b
+      /^qwen-/i, // qwen-3-32b, qwen-3-235b-...
+      /^gpt-oss-/i, // gpt-oss-120b
+      /^zai-glm-/i, // zai-glm-4.6, zai-glm-4.7
     ],
-    excludePatterns: [
-      /embedding/i,
-      /moderation/i,
-      /tts/i,
-      /whisper/i,
-      /vision/i,
-    ],
+    excludePatterns: [/embedding/i, /moderation/i, /tts/i, /whisper/i, /vision/i],
     dedupeKey: (modelId: string) => {
       // Normalize Cerebras model IDs: collapse variant + date suffixes to base model
-      return stripDateSuffix(modelId)
-        .replace(/-(instruct|thinking)(-\d+)?$/i, "");
+      return stripDateSuffix(modelId).replace(/-(instruct|thinking)(-\d+)?$/i, "");
     },
-    resolveCatalogProvider: () => null,  // Not in catalog
+    resolveCatalogProvider: () => null, // Not in catalog
     resolveTier: (ctx: ProviderModelRuleContext) => {
       const id = ctx.model.id.toLowerCase();
 

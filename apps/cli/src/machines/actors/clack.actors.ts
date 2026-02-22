@@ -1,11 +1,5 @@
 import { fromPromise } from "xstate";
-import {
-  select,
-  confirm,
-  text,
-  multiselect,
-  isCancel,
-} from "@clack/prompts";
+import { select, confirm, text, multiselect, isCancel } from "@clack/prompts";
 import { UserCancelledError } from "../../lib/errors.ts";
 
 // ── Types ────────────────────────────────────────────────────────────

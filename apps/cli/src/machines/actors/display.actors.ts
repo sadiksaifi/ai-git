@@ -15,9 +15,10 @@ export function createDisplayStagedResultActor(
     // Re-fetch statuses for accurate display (context only stores paths),
     // then filter to files the machine actually staged this session.
     const allStaged = await getStagedFilesWithStatus();
-    const relevant = input.stagedFiles.length > 0
-      ? allStaged.filter((f) => input.stagedFiles.some((p) => f.path.includes(p)))
-      : allStaged;
+    const relevant =
+      input.stagedFiles.length > 0
+        ? allStaged.filter((f) => input.stagedFiles.some((p) => f.path.includes(p)))
+        : allStaged;
     displayFileList("Staged files", relevant);
   };
   return fromPromise(async ({ input }: { input: DisplayStagedResultInput }) =>
@@ -29,9 +30,7 @@ export const displayStagedResultActor = createDisplayStagedResultActor();
 
 // ── Display file summary (before interactive prompt) ──────────────────
 
-export function createDisplayFileSummaryActor(
-  resolver?: () => Promise<void>,
-) {
+export function createDisplayFileSummaryActor(resolver?: () => Promise<void>) {
   const defaultResolver = async () => {
     const staged = await getStagedFilesWithStatus();
     const unstaged = await getUnstagedFilesWithStatus();

@@ -146,8 +146,6 @@ export async function backupConfigFile(configPath: string): Promise<string> {
  */
 export function showMigrationNotice(changes: string[], backupPath?: string): void {
   const bullets = changes.map((c) => `  ${pc.yellow("•")} ${c}`).join("\n");
-  const backupLine = backupPath
-    ? `\n  Backup saved to ${pc.dim(backupPath)}`
-    : "";
+  const backupLine = backupPath ? `\n  Backup saved to ${pc.dim(backupPath)}` : "";
   log.warn(`Config migrated:\n${bullets}${backupLine}`);
 }

@@ -1,10 +1,6 @@
 import { BunSecretsManager } from "./bun-secrets.ts";
 import { EncryptedFileSecretsManager } from "./encrypted-file.ts";
-import {
-  type SecretsManager,
-  API_KEY_SERVICE,
-  getApiKeyAccount,
-} from "./types.ts";
+import { type SecretsManager, API_KEY_SERVICE, getApiKeyAccount } from "./types.ts";
 
 // Re-export types and utilities
 export { type SecretsManager, API_KEY_SERVICE, getApiKeyAccount };
@@ -45,10 +41,7 @@ export async function getSecretsManager(): Promise<SecretsManager> {
  * @param providerId - The provider ID (e.g., "openrouter", "anthropic")
  * @param apiKey - The API key to store
  */
-export async function setApiKey(
-  providerId: string,
-  apiKey: string
-): Promise<void> {
+export async function setApiKey(providerId: string, apiKey: string): Promise<void> {
   const manager = await getSecretsManager();
   await manager.setSecret(API_KEY_SERVICE, getApiKeyAccount(providerId), apiKey);
 }

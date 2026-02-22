@@ -82,17 +82,13 @@ describe("parseNameStatusOutput", () => {
   test("parses renamed files with old → new format", () => {
     const output = "R100\tsrc/old-name.ts\tsrc/new-name.ts\n";
     const result = parseNameStatusOutput(output);
-    expect(result).toEqual([
-      { status: "R", path: "src/old-name.ts → src/new-name.ts" },
-    ]);
+    expect(result).toEqual([{ status: "R", path: "src/old-name.ts → src/new-name.ts" }]);
   });
 
   test("handles partial rename scores", () => {
     const output = "R085\tutils.ts\tlib/utils.ts\n";
     const result = parseNameStatusOutput(output);
-    expect(result).toEqual([
-      { status: "R", path: "utils.ts → lib/utils.ts" },
-    ]);
+    expect(result).toEqual([{ status: "R", path: "utils.ts → lib/utils.ts" }]);
   });
 
   test("returns empty array for empty output", () => {
@@ -103,9 +99,7 @@ describe("parseNameStatusOutput", () => {
   test("handles copy status (destination path not captured)", () => {
     const output = "C100\tsrc/original.ts\tsrc/copy.ts\n";
     const result = parseNameStatusOutput(output);
-    expect(result).toEqual([
-      { status: "C", path: "src/original.ts" },
-    ]);
+    expect(result).toEqual([{ status: "C", path: "src/original.ts" }]);
   });
 
   test("handles mixed statuses including renames", () => {
@@ -148,9 +142,7 @@ describe("parseUnstagedOutput", () => {
   test("handles rename in modified output (destination path not captured)", () => {
     const modified = "R100\tsrc/old.ts\tsrc/new.ts\n";
     const result = parseUnstagedOutput(modified, "");
-    expect(result).toEqual([
-      { status: "R", path: "src/old.ts" },
-    ]);
+    expect(result).toEqual([{ status: "R", path: "src/old.ts" }]);
   });
 
   test("handles only untracked files", () => {

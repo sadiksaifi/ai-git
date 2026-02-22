@@ -115,7 +115,7 @@ jobs:
       - name: Update Homebrew Formula
         run: |
           VERSION=${{ github.ref_name }}
-          
+
           URL_ARM64="https://github.com/${{ github.repository }}/releases/download/${VERSION}/ai-git-darwin-arm64.tar.gz"
           SHA256_ARM64=$(shasum -a 256 apps/cli/dist/ai-git-darwin-arm64.tar.gz | awk '{print $1}')
 
@@ -123,7 +123,7 @@ jobs:
           SHA256_X64=$(shasum -a 256 apps/cli/dist/ai-git-darwin-x64.tar.gz | awk '{print $1}')
 
           echo "Updating Formula for version $VERSION..."
-          
+
           cd homebrew-tap/Formula
 
           # Update Version
@@ -140,7 +140,7 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add ai-git.rb
-          
+
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else

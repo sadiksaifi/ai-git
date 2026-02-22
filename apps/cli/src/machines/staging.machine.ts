@@ -54,15 +54,9 @@ export const stagingMachine = setup({
     stageAllExceptActor: defaultStageAllExceptActor as ActorLogicFrom<
       typeof defaultStageAllExceptActor
     >,
-    stageFilesActor: defaultStageFilesActor as ActorLogicFrom<
-      typeof defaultStageFilesActor
-    >,
-    selectActor: defaultSelectActor as ActorLogicFrom<
-      typeof defaultSelectActor
-    >,
-    multiselectActor: defaultMultiselectActor as ActorLogicFrom<
-      typeof defaultMultiselectActor
-    >,
+    stageFilesActor: defaultStageFilesActor as ActorLogicFrom<typeof defaultStageFilesActor>,
+    selectActor: defaultSelectActor as ActorLogicFrom<typeof defaultSelectActor>,
+    multiselectActor: defaultMultiselectActor as ActorLogicFrom<typeof defaultMultiselectActor>,
     displayStagedResultActor: defaultDisplayStagedResultActor as ActorLogicFrom<
       typeof defaultDisplayStagedResultActor
     >,
@@ -71,8 +65,7 @@ export const stagingMachine = setup({
     >,
   },
   guards: {
-    shouldAutoStage: ({ context }) =>
-      context.stageAll || context.dangerouslyAutoApprove,
+    shouldAutoStage: ({ context }) => context.stageAll || context.dangerouslyAutoApprove,
   },
   actions: {
     assignStagedFiles: assign({
@@ -176,18 +169,18 @@ export const stagingMachine = setup({
       invoke: {
         src: "selectActor",
         input: ({ context }) => ({
-          message: context.stagedFiles.length > 0
-            ? `${context.stagedFiles.length} file(s) staged. ${context.unstagedFiles.length} unstaged file(s) remaining.`
-            : `${context.unstagedFiles.length} unstaged file(s). What would you like to do?`,
+          message:
+            context.stagedFiles.length > 0
+              ? `${context.stagedFiles.length} file(s) staged. ${context.unstagedFiles.length} unstaged file(s) remaining.`
+              : `${context.unstagedFiles.length} unstaged file(s). What would you like to do?`,
           options: [
             ...(context.stagedFiles.length > 0
               ? [{ value: "proceed", label: "Proceed with staged files" }]
               : []),
             {
               value: "stage_all",
-              label: context.stagedFiles.length > 0
-                ? "Stage all remaining files"
-                : "Stage all files",
+              label:
+                context.stagedFiles.length > 0 ? "Stage all remaining files" : "Stage all files",
             },
             { value: "select_files", label: "Select files to stage" },
             { value: "cancel", label: "Cancel" },

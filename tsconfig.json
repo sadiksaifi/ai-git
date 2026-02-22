@@ -1,0 +1,3 @@
+{
+  "extends": "@ai-git/config/tsconfig.base.json"
+}

@@ -44,9 +44,7 @@ export interface ConfigWarning {
  * Validate configuration and return detailed diagnostics.
  * Unlike isConfigComplete(), this provides actionable error messages.
  */
-export async function diagnoseConfig(
-  config: UserConfig | undefined
-): Promise<ConfigDiagnostic> {
+export async function diagnoseConfig(config: UserConfig | undefined): Promise<ConfigDiagnostic> {
   const errors: ConfigError[] = [];
   const warnings: ConfigWarning[] = [];
 
@@ -142,22 +140,20 @@ export async function diagnoseConfig(
             id: config.model,
             name: config.model,
           },
-          catalog
+          catalog,
         );
 
         if (isDeprecatedModel(metadata)) {
           errors.push({
             code: "DEPRECATED_MODEL",
-            message:
-              `Configured model '${metadata?.name || config.model}' is deprecated.`,
+            message: `Configured model '${metadata?.name || config.model}' is deprecated.`,
             suggestion: "Run: ai-git --setup to choose a supported model.",
           });
         }
       } catch {
         warnings.push({
           code: "MODEL_CATALOG_UNAVAILABLE",
-          message:
-            "Could not validate model deprecation because model catalog is unavailable.",
+          message: "Could not validate model deprecation because model catalog is unavailable.",
         });
       }
     }

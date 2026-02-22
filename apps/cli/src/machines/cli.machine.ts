@@ -90,21 +90,17 @@ export const cliMachine = setup({
   },
   actors: {
     // ── Init flow ────────────────────────────────────────────────────
-    initMachine: fromPromise(
-      async (): Promise<{ continue: boolean; exitCode: 0 | 1 }> => {
-        // Default implementation — replaced by actual initMachine in production
-        return { continue: false, exitCode: 0 };
-      },
-    ),
+    initMachine: fromPromise(async (): Promise<{ continue: boolean; exitCode: 0 | 1 }> => {
+      // Default implementation — replaced by actual initMachine in production
+      return { continue: false, exitCode: 0 };
+    }),
 
     // ── Config resolution ────────────────────────────────────────────
-    loadAndResolveConfigActor: fromPromise(
-      async (): Promise<ConfigResolutionResult> => {
-        // Default implementation — replaced in production with real config logic
-        // including Bug #2 fix: dynamic provider list via PROVIDERS.map(p => p.id)
-        throw new Error("loadAndResolveConfigActor not provided");
-      },
-    ),
+    loadAndResolveConfigActor: fromPromise(async (): Promise<ConfigResolutionResult> => {
+      // Default implementation — replaced in production with real config logic
+      // including Bug #2 fix: dynamic provider list via PROVIDERS.map(p => p.id)
+      throw new Error("loadAndResolveConfigActor not provided");
+    }),
 
     // ── Welcome screen ───────────────────────────────────────────────
     showWelcomeActor: fromPromise(async (): Promise<void> => {
@@ -112,18 +108,14 @@ export const cliMachine = setup({
     }),
 
     // ── Onboarding / setup wizard ────────────────────────────────────
-    runOnboardingActor: fromPromise(
-      async (): Promise<OnboardingActorResult> => {
-        return { completed: false, continueToRun: false };
-      },
-    ),
+    runOnboardingActor: fromPromise(async (): Promise<OnboardingActorResult> => {
+      return { completed: false, continueToRun: false };
+    }),
 
     // ── Reload config after onboarding ───────────────────────────────
-    reloadConfigActor: fromPromise(
-      async (): Promise<ConfigResolutionResult> => {
-        throw new Error("reloadConfigActor not provided");
-      },
-    ),
+    reloadConfigActor: fromPromise(async (): Promise<ConfigResolutionResult> => {
+      throw new Error("reloadConfigActor not provided");
+    }),
 
     // ── Git checks ───────────────────────────────────────────────────
     checkGitActor: fromPromise(async (): Promise<void> => {
@@ -136,11 +128,9 @@ export const cliMachine = setup({
     }),
 
     // ── Child machines (wrapped as fromPromise for easy testing) ─────
-    stagingMachine: fromPromise(
-      async (): Promise<{ stagedFiles: string[]; aborted: boolean }> => {
-        return { stagedFiles: [], aborted: false };
-      },
-    ),
+    stagingMachine: fromPromise(async (): Promise<{ stagedFiles: string[]; aborted: boolean }> => {
+      return { stagedFiles: [], aborted: false };
+    }),
 
     // ── Clean tree warning ───────────────────────────────────────────
     warnCleanTreeActor: fromPromise(async (): Promise<void> => {
@@ -157,11 +147,9 @@ export const cliMachine = setup({
       },
     ),
 
-    pushMachine: fromPromise(
-      async (): Promise<{ pushed: boolean; exitCode: 0 }> => {
-        return { pushed: false, exitCode: 0 };
-      },
-    ),
+    pushMachine: fromPromise(async (): Promise<{ pushed: boolean; exitCode: 0 }> => {
+      return { pushed: false, exitCode: 0 };
+    }),
   },
   guards: {
     isInitFlag: ({ context }) => context.options.init,
@@ -170,36 +158,25 @@ export const cliMachine = setup({
       return output?.continue === true;
     },
     needsSetup: ({ context }) =>
-      context.options.setup ||
-      (context.configResult?.needsSetup ?? false),
+      context.options.setup || (context.configResult?.needsSetup ?? false),
     onboardingCompleted: ({ event }) => {
-      const output = (
-        event as { output?: OnboardingActorResult }
-      ).output;
+      const output = (event as { output?: OnboardingActorResult }).output;
       return output?.completed === true;
     },
     onboardingContinues: ({ event }) => {
-      const output = (
-        event as { output?: OnboardingActorResult }
-      ).output;
+      const output = (event as { output?: OnboardingActorResult }).output;
       return output?.completed === true && output?.continueToRun === true;
     },
     stagingAborted: ({ event }) => {
-      const output = (
-        event as { output?: { aborted: boolean } }
-      ).output;
+      const output = (event as { output?: { aborted: boolean } }).output;
       return output?.aborted === true;
     },
     hasNoStagedFiles: ({ event }) => {
-      const output = (
-        event as { output?: { stagedFiles: string[] } }
-      ).output;
+      const output = (event as { output?: { stagedFiles: string[] } }).output;
       return (output?.stagedFiles?.length ?? 0) === 0;
     },
     generationAborted: ({ event }) => {
-      const output = (
-        event as { output?: { aborted: boolean } }
-      ).output;
+      const output = (event as { output?: { aborted: boolean } }).output;
       return output?.aborted === true;
     },
   },
@@ -218,8 +195,7 @@ export const cliMachine = setup({
       },
     }),
     assignConfigResult: assign({
-      configResult: ({ event }) =>
-        (event as { output?: ConfigResolutionResult }).output ?? null,
+      configResult: ({ event }) => (event as { output?: ConfigResolutionResult }).output ?? null,
     }),
     setExitOk: assign({ exitCode: 0 as const }),
     setExitError: assign({ exitCode: 1 as const }),
@@ -270,9 +246,7 @@ export const cliMachine = setup({
             target: "exit",
             actions: assign({
               exitCode: ({ event }) => {
-                const output = (
-                  event as { output?: { exitCode: 0 | 1 } }
-                ).output;
+                const output = (event as { output?: { exitCode: 0 | 1 } }).output;
                 return output?.exitCode ?? 0;
               },
             }),
@@ -316,9 +290,7 @@ export const cliMachine = setup({
         input: ({ context }) => ({
           version: context.version,
           configResult: context.configResult,
-          needsSetup:
-            context.options.setup ||
-            (context.configResult?.needsSetup ?? false),
+          needsSetup: context.options.setup || (context.configResult?.needsSetup ?? false),
         }),
         onDone: [
           {

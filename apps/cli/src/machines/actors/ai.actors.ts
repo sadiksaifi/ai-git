@@ -25,11 +25,7 @@ type InvokeAIInput = {
  * actor delegates to the `adapter` supplied via input.
  */
 export function createInvokeAIActor(
-  resolver?: (input: {
-    model: string;
-    system: string;
-    prompt: string;
-  }) => Promise<string>,
+  resolver?: (input: { model: string; system: string; prompt: string }) => Promise<string>,
 ) {
   return fromPromise(async ({ input }: { input: InvokeAIInput }) => {
     const invoke =
@@ -42,16 +38,13 @@ export function createInvokeAIActor(
     const s = spinner();
     s.start(`Analyzing changes with ${input.modelName}...`);
 
-    const cancelSlowWarning = createSlowWarningTimer(
-      input.slowThresholdMs,
-      () => {
-        s.message(
-          pc.yellow(
-            `Still generating with ${input.modelName}... Speed depends on your selected provider and model.`,
-          ),
-        );
-      },
-    );
+    const cancelSlowWarning = createSlowWarningTimer(input.slowThresholdMs, () => {
+      s.message(
+        pc.yellow(
+          `Still generating with ${input.modelName}... Speed depends on your selected provider and model.`,
+        ),
+      );
+    });
 
     try {
       const rawMsg = await invoke({

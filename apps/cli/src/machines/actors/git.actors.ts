@@ -24,11 +24,7 @@ export function createCheckGitInstalledActor(
     try {
       await $`git --version`.quiet();
     } catch {
-      throw new CLIError(
-        "git is not installed",
-        1,
-        "Install git: https://git-scm.com",
-      );
+      throw new CLIError("git is not installed", 1, "Install git: https://git-scm.com");
     }
   },
 ) {
@@ -42,11 +38,7 @@ export function createCheckInsideRepoActor(
     try {
       await $`git rev-parse --is-inside-work-tree`.quiet();
     } catch {
-      throw new CLIError(
-        "Not inside a git repository",
-        1,
-        "Run 'git init' first",
-      );
+      throw new CLIError("Not inside a git repository", 1, "Run 'git init' first");
     }
   },
 ) {
@@ -55,21 +47,15 @@ export function createCheckInsideRepoActor(
   });
 }
 
-export function createGetStagedFilesActor(
-  resolver: () => Promise<string[]> = getStagedFiles,
-) {
+export function createGetStagedFilesActor(resolver: () => Promise<string[]> = getStagedFiles) {
   return fromPromise(async () => resolver());
 }
 
-export function createGetUnstagedFilesActor(
-  resolver: () => Promise<string[]> = getUnstagedFiles,
-) {
+export function createGetUnstagedFilesActor(resolver: () => Promise<string[]> = getUnstagedFiles) {
   return fromPromise(async () => resolver());
 }
 
-export function createStageFilesActor(
-  resolver: (files: string[]) => Promise<void> = stageFiles,
-) {
+export function createStageFilesActor(resolver: (files: string[]) => Promise<void> = stageFiles) {
   return fromPromise(async ({ input }: { input: { files: string[] } }) => {
     await resolver(input.files);
   });
@@ -83,17 +69,13 @@ export function createStageAllExceptActor(
   });
 }
 
-export function createCommitActor(
-  resolver: (message: string) => Promise<CommitResult> = commit,
-) {
+export function createCommitActor(resolver: (message: string) => Promise<CommitResult> = commit) {
   return fromPromise(async ({ input }: { input: { message: string } }) => {
     return resolver(input.message);
   });
 }
 
-export function createPushActor(
-  resolver: () => Promise<void> = push,
-) {
+export function createPushActor(resolver: () => Promise<void> = push) {
   return fromPromise(async () => {
     await resolver();
   });

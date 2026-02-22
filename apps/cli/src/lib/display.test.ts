@@ -25,18 +25,14 @@ describe("formatFileList", () => {
   });
 
   test("handles untracked files with ? status", () => {
-    const files: FileWithStatus[] = [
-      { status: "?", path: "new-untracked.ts" },
-    ];
+    const files: FileWithStatus[] = [{ status: "?", path: "new-untracked.ts" }];
     const result = formatFileList(files);
     expect(result).toContain("?");
     expect(result).toContain("new-untracked.ts");
   });
 
   test("handles renamed files with R status", () => {
-    const files: FileWithStatus[] = [
-      { status: "R", path: "renamed-file.ts" },
-    ];
+    const files: FileWithStatus[] = [{ status: "R", path: "renamed-file.ts" }];
     const result = formatFileList(files);
     expect(result).toContain("R");
     expect(result).toContain("renamed-file.ts");

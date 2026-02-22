@@ -9,8 +9,7 @@ import { CLIError } from "./errors.ts";
 // CONSTANTS
 // ==============================================================================
 
-export const GITHUB_RELEASE_BASE =
-  `https://github.com/${GITHUB_REPO}/releases/download`;
+export const GITHUB_RELEASE_BASE = `https://github.com/${GITHUB_REPO}/releases/download`;
 
 // ==============================================================================
 // TYPES
@@ -171,10 +170,7 @@ export async function downloadRelease(
  * Returns the path to the extracted binary.
  * Throws CLIError if the binary is not found after extraction.
  */
-export async function extractBinary(
-  tarballPath: string,
-  tmpDir: string,
-): Promise<string> {
+export async function extractBinary(tarballPath: string, tmpDir: string): Promise<string> {
   await $`tar -xzf ${tarballPath} -C ${tmpDir}`.quiet();
 
   const extractedBinPath = path.join(tmpDir, "ai-git");

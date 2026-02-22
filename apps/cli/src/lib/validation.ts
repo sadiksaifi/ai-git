@@ -16,8 +16,17 @@ export interface ValidationResult {
 }
 
 const VALID_TYPES = [
-  "feat", "fix", "refactor", "perf", "style",
-  "docs", "test", "build", "ci", "chore", "revert",
+  "feat",
+  "fix",
+  "refactor",
+  "perf",
+  "style",
+  "docs",
+  "test",
+  "build",
+  "ci",
+  "chore",
+  "revert",
 ];
 
 /**

@@ -61,4 +61,3 @@ export const ERROR_MESSAGES = {
     suggestion: "Run: ai-git --setup to configure your API key.",
   }),
 } as const;
-

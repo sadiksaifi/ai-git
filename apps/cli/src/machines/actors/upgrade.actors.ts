@@ -21,16 +21,16 @@ export function createDetectInstallMethodActor(
 }
 
 export function createFetchReleaseActor(
-  resolver: (version: string) => Promise<{ latestVersion: string; tag: string } | null> = fetchAndCheckVersion,
+  resolver: (
+    version: string,
+  ) => Promise<{ latestVersion: string; tag: string } | null> = fetchAndCheckVersion,
 ) {
   return fromPromise(async ({ input }: { input: { version: string } }) => {
     return resolver(input.version);
   });
 }
 
-export function createDetectPlatformActor(
-  resolver: () => PlatformInfo | null = detectPlatform,
-) {
+export function createDetectPlatformActor(resolver: () => PlatformInfo | null = detectPlatform) {
   return fromPromise(async () => {
     const platform = resolver();
     if (!platform) {
@@ -43,7 +43,10 @@ export function createDetectPlatformActor(
 }
 
 export function createDownloadReleaseActor(
-  resolver: (tag: string, platform: PlatformInfo) => Promise<{ tarballPath: string; checksumsContent: string; tmpDir: string }> = downloadRelease,
+  resolver: (
+    tag: string,
+    platform: PlatformInfo,
+  ) => Promise<{ tarballPath: string; checksumsContent: string; tmpDir: string }> = downloadRelease,
 ) {
   return fromPromise(async ({ input }: { input: { tag: string; platform: PlatformInfo } }) => {
     return resolver(input.tag, input.platform);
@@ -51,14 +54,24 @@ export function createDownloadReleaseActor(
 }
 
 export function createVerifyChecksumActor(
-  resolver: (filePath: string, checksumContent: string, fileName: string) => Promise<boolean> = verifyChecksum,
+  resolver: (
+    filePath: string,
+    checksumContent: string,
+    fileName: string,
+  ) => Promise<boolean> = verifyChecksum,
 ) {
-  return fromPromise(async ({ input }: { input: { tarballPath: string; checksumsContent: string; archiveName: string } }) => {
-    const valid = await resolver(input.tarballPath, input.checksumsContent, input.archiveName);
-    if (!valid) {
-      throw new CLIError("Checksum verification failed. Aborting upgrade.");
-    }
-  });
+  return fromPromise(
+    async ({
+      input,
+    }: {
+      input: { tarballPath: string; checksumsContent: string; archiveName: string };
+    }) => {
+      const valid = await resolver(input.tarballPath, input.checksumsContent, input.archiveName);
+      if (!valid) {
+        throw new CLIError("Checksum verification failed. Aborting upgrade.");
+      }
+    },
+  );
 }
 
 export function createExtractBinaryActor(
@@ -77,9 +90,7 @@ export function createInstallBinaryActor(
   });
 }
 
-export function createCleanupActor(
-  resolver: (tmpDir: string) => void = cleanupTmpDir,
-) {
+export function createCleanupActor(resolver: (tmpDir: string) => void = cleanupTmpDir) {
   return fromPromise(async ({ input }: { input: { tmpDir: string } }) => {
     resolver(input.tmpDir);
   });

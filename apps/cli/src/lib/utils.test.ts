@@ -1,8 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import {
-  matchesExcludePattern,
-  filterExcludedFiles,
-} from "./utils";
+import { matchesExcludePattern, filterExcludedFiles } from "./utils";
 
 describe("matchesExcludePattern", () => {
   // ==============================================================================
@@ -85,9 +82,15 @@ describe("matchesExcludePattern", () => {
     });
 
     it("matches regex with alternation", () => {
-      expect(matchesExcludePattern("foo.spec.tsx", ["regex:\\.(spec|test)\\.(ts|tsx)$"])).toBe(true);
-      expect(matchesExcludePattern("foo.test.tsx", ["regex:\\.(spec|test)\\.(ts|tsx)$"])).toBe(true);
-      expect(matchesExcludePattern("foo.unit.tsx", ["regex:\\.(spec|test)\\.(ts|tsx)$"])).toBe(false);
+      expect(matchesExcludePattern("foo.spec.tsx", ["regex:\\.(spec|test)\\.(ts|tsx)$"])).toBe(
+        true,
+      );
+      expect(matchesExcludePattern("foo.test.tsx", ["regex:\\.(spec|test)\\.(ts|tsx)$"])).toBe(
+        true,
+      );
+      expect(matchesExcludePattern("foo.unit.tsx", ["regex:\\.(spec|test)\\.(ts|tsx)$"])).toBe(
+        false,
+      );
     });
 
     it("matches paths containing specific segments", () => {
@@ -173,12 +176,7 @@ describe("matchesExcludePattern", () => {
 
 describe("filterExcludedFiles", () => {
   it("filters files matching patterns", () => {
-    const files = [
-      "src/index.ts",
-      "src/utils.test.ts",
-      "dist/bundle.js",
-      "README.md",
-    ];
+    const files = ["src/index.ts", "src/utils.test.ts", "dist/bundle.js", "README.md"];
     const patterns = ["dist/", "*.test.ts"];
     const result = filterExcludedFiles(files, patterns);
 
@@ -186,12 +184,7 @@ describe("filterExcludedFiles", () => {
   });
 
   it("filters files using regex patterns", () => {
-    const files = [
-      "src/index.ts",
-      "src/utils.spec.ts",
-      "src/helpers.test.tsx",
-      "README.md",
-    ];
+    const files = ["src/index.ts", "src/utils.spec.ts", "src/helpers.test.tsx", "README.md"];
     const patterns = ["/\\.(test|spec)\\.(ts|tsx)$/"];
     const result = filterExcludedFiles(files, patterns);
 

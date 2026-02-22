@@ -57,7 +57,7 @@ function truncatePath(path: string, maxWidth: number): string {
 function wrapText(text: string, maxWidth: number): string[] {
   const words = text.split(" ");
   if (words.length === 0) return [];
-  
+
   const lines: string[] = [];
   let currentLine = words[0] ?? "";
 
@@ -86,7 +86,10 @@ export interface WelcomeOptions {
 /**
  * Display a two-column welcome screen inspired by Claude Code.
  */
-export async function showWelcomeScreen(version: string, options?: WelcomeOptions): Promise<WelcomeResult> {
+export async function showWelcomeScreen(
+  version: string,
+  options?: WelcomeOptions,
+): Promise<WelcomeResult> {
   console.clear();
 
   // Layout dimensions
@@ -162,7 +165,7 @@ export async function showWelcomeScreen(version: string, options?: WelcomeOption
   const title = ` AI Git v${version} `;
   const titlePadLeft = 3;
   const leftRemaining = leftWidth - titlePadLeft - title.length;
-  
+
   lines.push(
     pc.dim(BOX.topLeft) +
       pc.dim(BOX.horizontal.repeat(titlePadLeft)) +
@@ -170,14 +173,14 @@ export async function showWelcomeScreen(version: string, options?: WelcomeOption
       pc.dim(BOX.horizontal.repeat(Math.max(0, leftRemaining))) +
       pc.dim(BOX.horizontalDown) +
       pc.dim(BOX.horizontal.repeat(rightWidth)) +
-      pc.dim(BOX.topRight)
+      pc.dim(BOX.topRight),
   );
 
   // Content rows with middle divider
   for (let i = 0; i < maxRows; i++) {
     const leftCell = padTo(leftContent[i] || "", leftWidth);
     const rightItem = rightContent[i];
-    
+
     // Check if this is a separator row (marked with null)
     if (rightItem === null) {
       lines.push(
@@ -185,16 +188,12 @@ export async function showWelcomeScreen(version: string, options?: WelcomeOption
           leftCell +
           pc.dim(BOX.verticalRight) +
           pc.dim(BOX.horizontal.repeat(rightWidth)) +
-          pc.dim(BOX.verticalLeft)
+          pc.dim(BOX.verticalLeft),
       );
     } else {
       const rightCell = padTo(rightItem || "", rightWidth);
       lines.push(
-        pc.dim(BOX.vertical) +
-          leftCell +
-          pc.dim(BOX.vertical) +
-          rightCell +
-          pc.dim(BOX.vertical)
+        pc.dim(BOX.vertical) + leftCell + pc.dim(BOX.vertical) + rightCell + pc.dim(BOX.vertical),
       );
     }
   }
@@ -205,7 +204,7 @@ export async function showWelcomeScreen(version: string, options?: WelcomeOption
       pc.dim(BOX.horizontal.repeat(leftWidth)) +
       pc.dim(BOX.horizontalUp) +
       pc.dim(BOX.horizontal.repeat(rightWidth)) +
-      pc.dim(BOX.bottomRight)
+      pc.dim(BOX.bottomRight),
   );
 
   // Render

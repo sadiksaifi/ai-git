@@ -53,8 +53,7 @@ const FETCH_TIMEOUT_MS = 3000;
 export const GITHUB_REPO = "sadiksaifi/ai-git";
 
 /** GitHub API endpoint */
-const GITHUB_RELEASES_URL =
-  `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
+const GITHUB_RELEASES_URL = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
 
 // ==============================================================================
 // VERSION COMPARISON
@@ -161,9 +160,7 @@ export async function fetchLatestRelease(): Promise<GitHubRelease | null> {
  * Perform the update check (with caching).
  * This is the main internal function that does the actual work.
  */
-async function performUpdateCheck(
-  currentVersion: string
-): Promise<UpdateCheckResult> {
+async function performUpdateCheck(currentVersion: string): Promise<UpdateCheckResult> {
   // Check cache first
   const cache = await loadCache();
   if (cache && isCacheValid(cache, currentVersion)) {
@@ -211,9 +208,7 @@ async function performUpdateCheck(
  *   // ... do other work ...
  *   const result = await updatePromise; // Only when ready to show notification
  */
-export function startUpdateCheck(
-  currentVersion: string
-): Promise<UpdateCheckResult> {
+export function startUpdateCheck(currentVersion: string): Promise<UpdateCheckResult> {
   // Test/CI escape hatch for deterministic runs without network calls.
   if (process.env.AI_GIT_DISABLE_UPDATE_CHECK === "1") {
     return Promise.resolve({
@@ -260,6 +255,6 @@ export function showUpdateNotification(result: UpdateCheckResult): void {
 
   log.warn(
     pc.yellow(`Update available: ${result.currentVersion} -> ${result.latestVersion}\n`) +
-    pc.dim(getUpdateInstruction())
+      pc.dim(getUpdateInstruction()),
   );
 }

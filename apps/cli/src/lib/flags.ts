@@ -11,8 +11,7 @@ export const FLAGS = {
     short: "-M",
     long: "--model",
     arg: "<id>",
-    description:
-      "Model ID (e.g., haiku, gpt-4o-mini, anthropic/claude-3.5-haiku)",
+    description: "Model ID (e.g., haiku, gpt-4o-mini, anthropic/claude-3.5-haiku)",
   },
 
   // Workflow options
@@ -75,7 +74,7 @@ export const FLAGS = {
 export function getRandomTip(): { flag: string; desc: string } {
   const flags = Object.values(FLAGS);
   const randomFlag = flags[Math.floor(Math.random() * flags.length)];
-  
+
   if (!randomFlag) {
     return { flag: "--help", desc: "Show help" };
   }

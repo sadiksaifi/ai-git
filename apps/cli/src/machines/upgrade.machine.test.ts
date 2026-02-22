@@ -172,12 +172,15 @@ describe("upgradeMachine", () => {
   // Version forwarding
   test("forwards version to fetchRelease actor", async () => {
     let receivedVersion = "";
-    const snap = await runMachine({
-      fetchReleaseActor: fromPromise(async ({ input }: { input: { version: string } }) => {
-        receivedVersion = input.version;
-        return { latestVersion: "2.0.0", tag: "v2.0.0" };
-      }),
-    }, "2.5.0");
+    const snap = await runMachine(
+      {
+        fetchReleaseActor: fromPromise(async ({ input }: { input: { version: string } }) => {
+          receivedVersion = input.version;
+          return { latestVersion: "2.0.0", tag: "v2.0.0" };
+        }),
+      },
+      "2.5.0",
+    );
     expect(receivedVersion).toBe("2.5.0");
     expect(snap.output!.exitCode).toBe(0);
   });

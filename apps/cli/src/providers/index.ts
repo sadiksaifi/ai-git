@@ -58,4 +58,9 @@ export function getRegisteredProviderIds(): string[] {
 }
 
 // Re-export types for convenience
-export type { ProviderAdapter, InvokeOptions, CLIProviderAdapter, APIProviderAdapter } from "./types.ts";
+export type {
+  ProviderAdapter,
+  InvokeOptions,
+  CLIProviderAdapter,
+  APIProviderAdapter,
+} from "./types.ts";

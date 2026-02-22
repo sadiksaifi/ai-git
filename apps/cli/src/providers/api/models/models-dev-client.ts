@@ -11,11 +11,7 @@ import type {
 export const MODELS_DEV_API_URL = "https://models.dev/api.json";
 export const MODELS_DEV_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-const MODELS_DEV_PROVIDER_IDS: CatalogProviderId[] = [
-  "anthropic",
-  "openai",
-  "google",
-];
+const MODELS_DEV_PROVIDER_IDS: CatalogProviderId[] = ["anthropic", "openai", "google"];
 
 interface ModelsDevRawModel {
   name?: string;
@@ -51,7 +47,7 @@ function toCatalogModelDefinition(id: string, model: ModelsDevRawModel): Catalog
 
 function toProviderModelCatalog(
   providerId: CatalogProviderId,
-  rawProvider: ModelsDevRawProvider | undefined
+  rawProvider: ModelsDevRawProvider | undefined,
 ): ProviderModelCatalog {
   const rawModels = rawProvider?.models || {};
   const models: Record<string, CatalogModelDefinition> = {};
@@ -73,24 +69,21 @@ function toProviderModelCatalog(
   };
 }
 
-export function createCatalogFromRaw(
-  raw: unknown,
-  source: ModelCatalog["source"]
-): ModelCatalog {
+export function createCatalogFromRaw(raw: unknown, source: ModelCatalog["source"]): ModelCatalog {
   const rawRecord = isRecord(raw) ? raw : {};
 
   const providers = {
     anthropic: toProviderModelCatalog(
       "anthropic",
-      (rawRecord.anthropic as ModelsDevRawProvider | undefined) || undefined
+      (rawRecord.anthropic as ModelsDevRawProvider | undefined) || undefined,
     ),
     openai: toProviderModelCatalog(
       "openai",
-      (rawRecord.openai as ModelsDevRawProvider | undefined) || undefined
+      (rawRecord.openai as ModelsDevRawProvider | undefined) || undefined,
     ),
     google: toProviderModelCatalog(
       "google",
-      (rawRecord.google as ModelsDevRawProvider | undefined) || undefined
+      (rawRecord.google as ModelsDevRawProvider | undefined) || undefined,
     ),
   };
 
@@ -105,7 +98,7 @@ export async function fetchModelsDevCatalog(): Promise<ModelCatalog> {
   const response = await fetch(MODELS_DEV_API_URL, {
     headers: {
       "User-Agent": "ai-git-cli",
-      "Accept": "application/json",
+      Accept: "application/json",
     },
   });
 
@@ -148,7 +141,7 @@ export async function loadCatalogCache(): Promise<ModelCatalog | null> {
 
 export function isCatalogFresh(
   catalog: ModelCatalog,
-  ttlMs: number = MODELS_DEV_CACHE_TTL_MS
+  ttlMs: number = MODELS_DEV_CACHE_TTL_MS,
 ): boolean {
   const fetchedAtMs = new Date(catalog.fetchedAt).getTime();
   if (Number.isNaN(fetchedAtMs)) return false;

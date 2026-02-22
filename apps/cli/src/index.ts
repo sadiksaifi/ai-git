@@ -15,56 +15,35 @@ const cli = cac("ai-git");
 
 // ── Upgrade Subcommand ───────────────────────────────────────────────
 
-cli.command("upgrade", "Upgrade ai-git to the latest version")
-  .action(async () => {
-    const actor = createActor(upgradeMachine, { input: { version: VERSION } });
-    actor.start();
-    const snapshot = await waitFor(actor, (s) => s.status === "done", { timeout: 600_000 });
-    process.exit(snapshot.output!.exitCode);
-  });
+cli.command("upgrade", "Upgrade ai-git to the latest version").action(async () => {
+  const actor = createActor(upgradeMachine, { input: { version: VERSION } });
+  actor.start();
+  const snapshot = await waitFor(actor, (s) => s.status === "done", { timeout: 600_000 });
+  process.exit(snapshot.output!.exitCode);
+});
 
 // ── Main Command ─────────────────────────────────────────────────────
 
-cli.command("")
+cli
+  .command("")
   .option(
     `${FLAGS.provider.short}, ${FLAGS.provider.long} ${FLAGS.provider.arg}`,
     FLAGS.provider.description,
   )
-  .option(
-    `${FLAGS.model.short}, ${FLAGS.model.long} ${FLAGS.model.arg}`,
-    FLAGS.model.description,
-  )
-  .option(
-    `${FLAGS.stageAll.short}, ${FLAGS.stageAll.long}`,
-    FLAGS.stageAll.description,
-  )
-  .option(
-    `${FLAGS.commit.short}, ${FLAGS.commit.long}`,
-    FLAGS.commit.description,
-  )
-  .option(
-    `${FLAGS.push.short}, ${FLAGS.push.long}`,
-    FLAGS.push.description,
-  )
-  .option(
-    `${FLAGS.hint.short}, ${FLAGS.hint.long} ${FLAGS.hint.arg}`,
-    FLAGS.hint.description,
-  )
+  .option(`${FLAGS.model.short}, ${FLAGS.model.long} ${FLAGS.model.arg}`, FLAGS.model.description)
+  .option(`${FLAGS.stageAll.short}, ${FLAGS.stageAll.long}`, FLAGS.stageAll.description)
+  .option(`${FLAGS.commit.short}, ${FLAGS.commit.long}`, FLAGS.commit.description)
+  .option(`${FLAGS.push.short}, ${FLAGS.push.long}`, FLAGS.push.description)
+  .option(`${FLAGS.hint.short}, ${FLAGS.hint.long} ${FLAGS.hint.arg}`, FLAGS.hint.description)
   .option(
     `${FLAGS.exclude.short}, ${FLAGS.exclude.long} ${FLAGS.exclude.arg}`,
     FLAGS.exclude.description,
   )
-  .option(
-    FLAGS.dangerouslyAutoApprove.long,
-    FLAGS.dangerouslyAutoApprove.description,
-  )
+  .option(FLAGS.dangerouslyAutoApprove.long, FLAGS.dangerouslyAutoApprove.description)
   .option(FLAGS.dryRun.long, FLAGS.dryRun.description)
   .option(FLAGS.setup.long, FLAGS.setup.description)
   .option(FLAGS.init.long, FLAGS.init.description)
-  .option(
-    `${FLAGS.version.short}, ${FLAGS.version.long}`,
-    FLAGS.version.description,
-  )
+  .option(`${FLAGS.version.short}, ${FLAGS.version.long}`, FLAGS.version.description)
   .action(async (options: CLIOptions) => {
     const actor = createActor(wiredCliMachine, {
       input: { options, version: VERSION },

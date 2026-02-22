@@ -1,9 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import { createActor, waitFor } from "xstate";
-import {
-  createDisplayStagedResultActor,
-  createDisplayFileSummaryActor,
-} from "./display.actors.ts";
+import { createDisplayStagedResultActor, createDisplayFileSummaryActor } from "./display.actors.ts";
 
 describe("displayStagedResultActor", () => {
   test("calls resolver with input and completes without error", async () => {

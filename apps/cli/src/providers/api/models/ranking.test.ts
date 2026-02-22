@@ -1,11 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import type { APIModelDefinition } from "../../types.ts";
 import { createCatalogFromRaw } from "./models-dev-client.ts";
-import {
-  dedupeProviderModels,
-  rankProviderModels,
-  findRecommendedModel,
-} from "./ranking.ts";
+import { dedupeProviderModels, rankProviderModels, findRecommendedModel } from "./ranking.ts";
 
 function testCatalog() {
   return createCatalogFromRaw(
@@ -37,7 +33,7 @@ function testCatalog() {
             reasoning: true,
             tool_call: true,
           },
-          "o3": {
+          o3: {
             name: "o3",
             last_updated: "2025-04-16",
             release_date: "2025-04-16",
@@ -80,7 +76,7 @@ function testCatalog() {
         },
       },
     },
-    "snapshot"
+    "snapshot",
   );
 }
 
@@ -108,12 +104,7 @@ describe("provider model ranking", () => {
 
     const ranked = rankProviderModels("openai", models, catalog);
 
-    expect(ranked.map((m) => m.id)).toEqual([
-      "gpt-5",
-      "gpt-5-mini",
-      "o3",
-      "gpt-4",
-    ]);
+    expect(ranked.map((m) => m.id)).toEqual(["gpt-5", "gpt-5-mini", "o3", "gpt-4"]);
   });
 
   it("appends unknown models alphabetically after known models", () => {
@@ -126,11 +117,7 @@ describe("provider model ranking", () => {
 
     const ranked = rankProviderModels("openai", models, catalog);
 
-    expect(ranked.map((m) => m.id)).toEqual([
-      "gpt-5",
-      "gpt-experimental-a",
-      "gpt-experimental-z",
-    ]);
+    expect(ranked.map((m) => m.id)).toEqual(["gpt-5", "gpt-experimental-a", "gpt-experimental-z"]);
   });
 
   it("dedupe keeps the highest-ranked canonical variant", () => {

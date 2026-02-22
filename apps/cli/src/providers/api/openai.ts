@@ -2,11 +2,7 @@ import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { APIProviderAdapter, APIModelDefinition, InvokeOptions } from "../types.ts";
 import { getApiKey, createTimeoutController, COMMON_HEADERS } from "./utils.ts";
-import {
-  dedupeProviderModels,
-  getModelCatalog,
-  rankProviderModels,
-} from "./models/index.ts";
+import { dedupeProviderModels, getModelCatalog, rankProviderModels } from "./models/index.ts";
 
 // ==============================================================================
 // OPENAI API ADAPTER
@@ -37,11 +33,11 @@ function getModelDisplayName(modelId: string): string {
     "gpt-4-turbo": "GPT-4 Turbo",
     "gpt-4": "GPT-4",
     "gpt-3.5-turbo": "GPT-3.5 Turbo",
-    "o1": "o1 (Reasoning)",
+    o1: "o1 (Reasoning)",
     "o1-mini": "o1 Mini (Reasoning)",
     "o1-preview": "o1 Preview",
     "o1-pro": "o1 Pro (Reasoning)",
-    "o3": "o3 (Reasoning)",
+    o3: "o3 (Reasoning)",
     "o3-mini": "o3 Mini (Reasoning)",
     "o3-pro": "o3 Pro (Reasoning)",
     "o4-mini": "o4 Mini (Reasoning)",
@@ -144,11 +140,10 @@ export const openAIAdapter: APIProviderAdapter = {
       const data = (await response.json()) as OpenAIModelsResponse;
       const catalog = await getModelCatalog();
 
-      const models: APIModelDefinition[] = data.data
-        .map((m) => ({
-          id: m.id,
-          name: getModelDisplayName(m.id),
-        }));
+      const models: APIModelDefinition[] = data.data.map((m) => ({
+        id: m.id,
+        name: getModelDisplayName(m.id),
+      }));
 
       const ranked = rankProviderModels("openai", models, catalog);
       return dedupeProviderModels("openai", ranked);

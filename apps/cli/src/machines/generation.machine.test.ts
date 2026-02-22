@@ -28,7 +28,9 @@ describe("generationMachine", () => {
         getBranchNameActor: fromPromise(async () => "main"),
         // @ts-expect-error — XState v5 test mock type inference
         gatherContextActor: fromPromise(async () => ({
-          diff: "diff content", commits: "recent commits", fileList: "M file.ts",
+          diff: "diff content",
+          commits: "recent commits",
+          fileList: "M file.ts",
         })),
         // @ts-expect-error — XState v5 test mock type inference
         invokeAIActor: fromPromise(async () => "feat: add login"),
@@ -36,8 +38,14 @@ describe("generationMachine", () => {
         selectActor: fromPromise(async () => "commit"),
         // @ts-expect-error — XState v5 test mock type inference
         commitActor: fromPromise(async () => ({
-          hash: "abc1234", branch: "main", subject: "feat: add login",
-          filesChanged: 1, insertions: 10, deletions: 0, files: [], isRoot: false,
+          hash: "abc1234",
+          branch: "main",
+          subject: "feat: add login",
+          filesChanged: 1,
+          insertions: 10,
+          deletions: 0,
+          files: [],
+          isRoot: false,
         })),
       },
     });
@@ -57,7 +65,9 @@ describe("generationMachine", () => {
         getBranchNameActor: fromPromise(async () => "main"),
         // @ts-expect-error — XState v5 test mock type inference
         gatherContextActor: fromPromise(async () => ({
-          diff: "", commits: "", fileList: "",
+          diff: "",
+          commits: "",
+          fileList: "",
         })),
         // @ts-expect-error — XState v5 test mock type inference
         invokeAIActor: fromPromise(async () => {
@@ -70,8 +80,14 @@ describe("generationMachine", () => {
         selectActor: fromPromise(async () => "commit"),
         // @ts-expect-error — XState v5 test mock type inference
         commitActor: fromPromise(async () => ({
-          hash: "abc", branch: "main", subject: "feat: add login",
-          filesChanged: 1, insertions: 1, deletions: 0, files: [], isRoot: false,
+          hash: "abc",
+          branch: "main",
+          subject: "feat: add login",
+          filesChanged: 1,
+          insertions: 1,
+          deletions: 0,
+          files: [],
+          isRoot: false,
         })),
       },
     });
@@ -90,7 +106,9 @@ describe("generationMachine", () => {
         getBranchNameActor: fromPromise(async () => "main"),
         // @ts-expect-error — XState v5 test mock type inference
         gatherContextActor: fromPromise(async () => ({
-          diff: "", commits: "", fileList: "",
+          diff: "",
+          commits: "",
+          fileList: "",
         })),
         // @ts-expect-error — XState v5 test mock type inference
         invokeAIActor: fromPromise(async () => {
@@ -114,7 +132,9 @@ describe("generationMachine", () => {
         getBranchNameActor: fromPromise(async () => "main"),
         // @ts-expect-error — XState v5 test mock type inference
         gatherContextActor: fromPromise(async () => ({
-          diff: "", commits: "", fileList: "",
+          diff: "",
+          commits: "",
+          fileList: "",
         })),
         // @ts-expect-error — XState v5 test mock type inference
         invokeAIActor: fromPromise(async () => "```\n```"), // Only code blocks → empty after cleanup
@@ -135,10 +155,15 @@ describe("generationMachine", () => {
         getBranchNameActor: fromPromise(async () => "main"),
         // @ts-expect-error — XState v5 test mock type inference
         gatherContextActor: fromPromise(async () => ({
-          diff: "diff", commits: "", fileList: "",
+          diff: "diff",
+          commits: "",
+          fileList: "",
         })),
         // @ts-expect-error — XState v5 test mock type inference
-        invokeAIActor: fromPromise(async () => { aiCalled = true; return ""; }),
+        invokeAIActor: fromPromise(async () => {
+          aiCalled = true;
+          return "";
+        }),
       },
     });
     const actor = createActor(machine, {
@@ -183,8 +208,14 @@ describe("generationMachine", () => {
         invokeAIActor: fromPromise(async () => "feat: add login"),
         // @ts-expect-error — XState v5 test mock type inference
         commitActor: fromPromise(async () => ({
-          hash: "abc", branch: "main", subject: "feat: add login",
-          filesChanged: 1, insertions: 1, deletions: 0, files: [], isRoot: false,
+          hash: "abc",
+          branch: "main",
+          subject: "feat: add login",
+          filesChanged: 1,
+          insertions: 1,
+          deletions: 0,
+          files: [],
+          isRoot: false,
         })),
       },
     });
@@ -211,13 +242,19 @@ describe("generationMachine", () => {
           return "feat: add login";
         }),
         // @ts-expect-error — XState v5 test mock type inference
-        selectActor: fromPromise(async () => genCount === 1 ? "retry" : "commit"),
+        selectActor: fromPromise(async () => (genCount === 1 ? "retry" : "commit")),
         // @ts-expect-error — XState v5 test mock type inference
         textActor: fromPromise(async () => "Make it shorter"),
         // @ts-expect-error — XState v5 test mock type inference
         commitActor: fromPromise(async () => ({
-          hash: "abc", branch: "main", subject: "feat: add login",
-          filesChanged: 1, insertions: 1, deletions: 0, files: [], isRoot: false,
+          hash: "abc",
+          branch: "main",
+          subject: "feat: add login",
+          filesChanged: 1,
+          insertions: 1,
+          deletions: 0,
+          files: [],
+          isRoot: false,
         })),
       },
     });
@@ -235,11 +272,22 @@ describe("generationMachine", () => {
         // @ts-expect-error — XState v5 test mock type inference
         getBranchNameActor: fromPromise(async (): Promise<string> => "main"),
         // @ts-expect-error — XState v5 test mock type inference
-        gatherContextActor: fromPromise(async () => { throw new Error("git failed"); }),
+        gatherContextActor: fromPromise(async () => {
+          throw new Error("git failed");
+        }),
         // @ts-expect-error — XState v5 test mock type inference
         invokeAIActor: fromPromise(async (): Promise<string> => ""),
         // @ts-expect-error — XState v5 test mock type inference
-        commitActor: fromPromise(async () => ({ hash: "", branch: "", subject: "", filesChanged: 0, insertions: 0, deletions: 0, files: [] as string[], isRoot: false })),
+        commitActor: fromPromise(async () => ({
+          hash: "",
+          branch: "",
+          subject: "",
+          filesChanged: 0,
+          insertions: 0,
+          deletions: 0,
+          files: [] as string[],
+          isRoot: false,
+        })),
         // @ts-expect-error — XState v5 test mock type inference
         selectActor: fromPromise(async (): Promise<string> => "commit"),
         // @ts-expect-error — XState v5 test mock type inference
@@ -264,8 +312,14 @@ describe("generationMachine", () => {
         invokeAIActor: fromPromise(async () => "feat: add login"),
         // @ts-expect-error — XState v5 test mock type inference
         commitActor: fromPromise(async () => ({
-          hash: "abc", branch: "main", subject: "feat: add login",
-          filesChanged: 1, insertions: 1, deletions: 0, files: [], isRoot: false,
+          hash: "abc",
+          branch: "main",
+          subject: "feat: add login",
+          filesChanged: 1,
+          insertions: 1,
+          deletions: 0,
+          files: [],
+          isRoot: false,
         })),
       },
     });

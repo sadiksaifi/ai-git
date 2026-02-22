@@ -1,9 +1,4 @@
-import {
-  createCipheriv,
-  createDecipheriv,
-  randomBytes,
-  scryptSync,
-} from "node:crypto";
+import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "node:crypto";
 import { mkdirSync, readFileSync } from "node:fs";
 import { hostname, userInfo } from "node:os";
 import * as path from "node:path";
@@ -39,7 +34,6 @@ interface SecretsFile {
   secrets: Record<string, EncryptedEntry>;
 }
 
-
 function makeKey(service: string, account: string): string {
   return `${service}:${account}`;
 }
@@ -65,10 +59,7 @@ function deriveEncryptionKey(salt: Buffer): Buffer {
 function encrypt(plaintext: string, key: Buffer): EncryptedEntry {
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
-  const encrypted = Buffer.concat([
-    cipher.update(plaintext, "utf8"),
-    cipher.final(),
-  ]);
+  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
   const tag = cipher.getAuthTag();
   return {
     iv: iv.toString("base64"),
@@ -83,9 +74,7 @@ function decrypt(entry: EncryptedEntry, key: Buffer): string {
   const data = Buffer.from(entry.data, "base64");
   const decipher = createDecipheriv("aes-256-gcm", key, iv);
   decipher.setAuthTag(tag);
-  return Buffer.concat([decipher.update(data), decipher.final()]).toString(
-    "utf8"
-  );
+  return Buffer.concat([decipher.update(data), decipher.final()]).toString("utf8");
 }
 
 async function readStore(secretsPath: string): Promise<SecretsFile> {
@@ -103,16 +92,13 @@ async function readStore(secretsPath: string): Promise<SecretsFile> {
   } catch (err) {
     console.warn(
       `[ai-git] Warning: failed to read secrets file at ${secretsPath} — starting fresh.`,
-      err instanceof Error ? err.message : err
+      err instanceof Error ? err.message : err,
     );
     return { version: 1, salt: "", secrets: {} };
   }
 }
 
-async function writeStore(
-  secretsPath: string,
-  store: SecretsFile
-): Promise<void> {
+async function writeStore(secretsPath: string, store: SecretsFile): Promise<void> {
   const dir = path.dirname(secretsPath);
   try {
     mkdirSync(dir, { recursive: true });
@@ -152,11 +138,7 @@ export class EncryptedFileSecretsManager implements SecretsManager {
     return salt;
   }
 
-  async setSecret(
-    service: string,
-    account: string,
-    secret: string
-  ): Promise<void> {
+  async setSecret(service: string, account: string, secret: string): Promise<void> {
     const store = await readStore(this.secretsPath);
     const salt = this.ensureSalt(store);
     const key = this.getKey(salt);

@@ -103,7 +103,7 @@ function isCacheValid(cache: ModelCache, ttlMs: number = DEFAULT_CACHE_TTL_MS): 
  */
 export async function getCachedModels(
   provider: string,
-  ttlHours: number = 48
+  ttlHours: number = 48,
 ): Promise<CachedModel[] | null> {
   const cache = await loadCache(provider);
   if (!cache) return null;
@@ -119,10 +119,7 @@ export async function getCachedModels(
  * @param provider - The provider ID
  * @param models - The models to cache
  */
-export async function cacheModels(
-  provider: string,
-  models: CachedModel[]
-): Promise<void> {
+export async function cacheModels(provider: string, models: CachedModel[]): Promise<void> {
   await saveCache(provider, models);
 }
 

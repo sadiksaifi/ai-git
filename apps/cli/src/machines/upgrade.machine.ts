@@ -148,7 +148,8 @@ export const upgradeMachine = setup({
     delegated: {
       entry: [
         ({ context }) => {
-          const msg = DELEGATION_MESSAGES[context.method!] ?? "Use your package manager to upgrade.";
+          const msg =
+            DELEGATION_MESSAGES[context.method!] ?? "Use your package manager to upgrade.";
           log.info(pc.yellow(msg));
         },
         assign({

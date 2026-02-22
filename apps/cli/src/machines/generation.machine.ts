@@ -84,7 +84,7 @@ export interface GenerationOutput {
 function cleanAIResponse(raw: string): string {
   return raw
     .replace(/^```\w*$/gm, "") // Remove opening fence lines (```lang)
-    .replace(/^```$/gm, "")     // Remove closing fence lines
+    .replace(/^```$/gm, "") // Remove closing fence lines
     .trim();
 }
 
@@ -103,33 +103,23 @@ export const generationMachine = setup({
     gatherContextActor: defaultGatherContextActor as ActorLogicFrom<
       typeof defaultGatherContextActor
     >,
-    invokeAIActor: defaultInvokeAIActor as ActorLogicFrom<
-      typeof defaultInvokeAIActor
-    >,
-    commitActor: defaultCommitActor as ActorLogicFrom<
-      typeof defaultCommitActor
-    >,
-    selectActor: defaultSelectActor as ActorLogicFrom<
-      typeof defaultSelectActor
-    >,
+    invokeAIActor: defaultInvokeAIActor as ActorLogicFrom<typeof defaultInvokeAIActor>,
+    commitActor: defaultCommitActor as ActorLogicFrom<typeof defaultCommitActor>,
+    selectActor: defaultSelectActor as ActorLogicFrom<typeof defaultSelectActor>,
     textActor: defaultTextActor as ActorLogicFrom<typeof defaultTextActor>,
   },
   guards: {
     isDryRun: ({ context }) => context.options.dryRun,
-    isAutoCommit: ({ context }) =>
-      context.options.commit || context.options.dangerouslyAutoApprove,
+    isAutoCommit: ({ context }) => context.options.commit || context.options.dangerouslyAutoApprove,
     isEmptyMessage: ({ context }) => !context.currentMessage,
     hasCriticalErrors: ({ context }) => {
       if (!context.validationResult) return false;
       return !context.validationResult.valid;
     },
     canAutoRetry: ({ context }) => context.autoRetries < 3,
-    isMenuCommit: ({ event }) =>
-      (event as { output?: string }).output === "commit",
-    isMenuRetry: ({ event }) =>
-      (event as { output?: string }).output === "retry",
-    isMenuEdit: ({ event }) =>
-      (event as { output?: string }).output === "edit",
+    isMenuCommit: ({ event }) => (event as { output?: string }).output === "commit",
+    isMenuRetry: ({ event }) => (event as { output?: string }).output === "retry",
+    isMenuEdit: ({ event }) => (event as { output?: string }).output === "edit",
     isRefinementNonEmpty: ({ event }) => {
       const text = (event as { output?: string }).output ?? "";
       return text.trim().length > 0;
@@ -137,8 +127,7 @@ export const generationMachine = setup({
   },
   actions: {
     assignBranchName: assign({
-      branchName: ({ event }) =>
-        (event as { output?: string | null }).output ?? null,
+      branchName: ({ event }) => (event as { output?: string | null }).output ?? null,
     }),
     assignGatheredContext: assign({
       diff: ({ event }) => {
@@ -161,12 +150,10 @@ export const generationMachine = setup({
       },
     }),
     assignValidationResult: assign({
-      validationResult: ({ context }) =>
-        validateCommitMessage(context.currentMessage),
+      validationResult: ({ context }) => validateCommitMessage(context.currentMessage),
     }),
     assignCommitResult: assign({
-      commitResult: ({ event }) =>
-        (event as { output?: CommitResult }).output ?? null,
+      commitResult: ({ event }) => (event as { output?: CommitResult }).output ?? null,
       committed: true,
     }),
     markAborted: assign({ aborted: true }),
@@ -208,7 +195,10 @@ export const generationMachine = setup({
     logContextError: assign({
       generationErrors: ({ context, event }) => {
         const error = (event as { error?: unknown }).error;
-        return [...context.generationErrors, `Context gathering failed: ${extractErrorMessage(error)}`];
+        return [
+          ...context.generationErrors,
+          `Context gathering failed: ${extractErrorMessage(error)}`,
+        ];
       },
     }),
   },
@@ -306,17 +296,9 @@ export const generationMachine = setup({
             input: ({ context }) => {
               // Build error context if retrying
               let errorContext: string | undefined;
-              if (
-                context.generationErrors.length > 0 &&
-                context.lastGeneratedMessage
-              ) {
-                const lastResult = validateCommitMessage(
-                  context.lastGeneratedMessage,
-                );
-                errorContext = buildRetryContext(
-                  lastResult.errors,
-                  context.lastGeneratedMessage,
-                );
+              if (context.generationErrors.length > 0 && context.lastGeneratedMessage) {
+                const lastResult = validateCommitMessage(context.lastGeneratedMessage);
+                errorContext = buildRetryContext(lastResult.errors, context.lastGeneratedMessage);
               }
 
               const userPrompt = buildUserPrompt({
@@ -328,8 +310,7 @@ export const generationMachine = setup({
                 stagedFileList: context.fileList || undefined,
                 errors: errorContext,
                 refinements:
-                  context.lastGeneratedMessage &&
-                  context.userRefinements.length > 0
+                  context.lastGeneratedMessage && context.userRefinements.length > 0
                     ? {
                         lastMessage: context.lastGeneratedMessage,
                         instructions: context.userRefinements,
@@ -407,11 +388,7 @@ export const generationMachine = setup({
         {
           // GN6: Critical errors + can auto-retry
           guard: ({ context }) => {
-            if (
-              !context.validationResult ||
-              context.validationResult.valid
-            )
-              return false;
+            if (!context.validationResult || context.validationResult.valid) return false;
             return context.autoRetries < 3;
           },
           target: "autoRetry",
@@ -480,9 +457,10 @@ export const generationMachine = setup({
               options: [
                 {
                   value: "commit",
-                  label: context.validationResult && !context.validationResult.valid
-                    ? "Commit (with warnings)"
-                    : "Commit",
+                  label:
+                    context.validationResult && !context.validationResult.valid
+                      ? "Commit (with warnings)"
+                      : "Commit",
                 },
                 { value: "retry", label: "Retry" },
                 { value: "edit", label: "Edit" },
@@ -596,10 +574,8 @@ export const generationMachine = setup({
         src: "textActor",
         input: {
           // @ts-expect-error — XState v5 invoke type inference
-          message:
-            "Enter instructions to refine (or leave blank to retry as-is):",
-          placeholder:
-            "e.g. 'Make the header shorter' or 'Use fix instead of feat'",
+          message: "Enter instructions to refine (or leave blank to retry as-is):",
+          placeholder: "e.g. 'Make the header shorter' or 'Use fix instead of feat'",
         },
         onDone: [
           {

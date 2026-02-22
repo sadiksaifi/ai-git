@@ -2,11 +2,7 @@ import { generateText } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { APIProviderAdapter, APIModelDefinition, InvokeOptions } from "../types.ts";
 import { getApiKey, createTimeoutController, COMMON_HEADERS } from "./utils.ts";
-import {
-  dedupeProviderModels,
-  getModelCatalog,
-  rankProviderModels,
-} from "./models/index.ts";
+import { dedupeProviderModels, getModelCatalog, rankProviderModels } from "./models/index.ts";
 
 // ==============================================================================
 // OPENROUTER API ADAPTER

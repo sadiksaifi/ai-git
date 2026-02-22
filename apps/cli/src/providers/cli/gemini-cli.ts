@@ -33,7 +33,7 @@ export const geminiCliAdapter: CLIProviderAdapter = {
     // Write system prompt to temp file for GEMINI_SYSTEM_MD
     const tmpFile = join(
       tmpdir(),
-      `ai-git-system-${Date.now()}-${randomBytes(4).toString("hex")}.md`
+      `ai-git-system-${Date.now()}-${randomBytes(4).toString("hex")}.md`,
     );
 
     try {
@@ -42,11 +42,15 @@ export const geminiCliAdapter: CLIProviderAdapter = {
       const proc = Bun.spawn(
         [
           "gemini",
-          "--model", model,
-          "--output-format", "text",
+          "--model",
+          model,
+          "--output-format",
+          "text",
           "--sandbox",
-          "-e", "none",
-          "-p", prompt,
+          "-e",
+          "none",
+          "-p",
+          prompt,
         ],
         {
           stdout: "pipe",
@@ -55,7 +59,7 @@ export const geminiCliAdapter: CLIProviderAdapter = {
             ...process.env,
             GEMINI_SYSTEM_MD: tmpFile,
           },
-        }
+        },
       );
 
       const [stdout, stderr] = await Promise.all([

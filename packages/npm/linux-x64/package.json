@@ -7,7 +7,13 @@
     "type": "git",
     "url": "https://github.com/sadiksaifi/ai-git"
   },
-  "os": ["linux"],
-  "cpu": ["x64"],
-  "files": ["bin/"]
+  "files": [
+    "bin/"
+  ],
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ]
 }

@@ -193,7 +193,11 @@ describe("createSetBranchNameActor", () => {
 
 describe("createGatherContextActor", () => {
   test("returns gathered context from resolver", async () => {
-    const mockContext = { diff: "diff content", commits: "commit1\ncommit2", fileList: "file1.ts\nfile2.ts" };
+    const mockContext = {
+      diff: "diff content",
+      commits: "commit1\ncommit2",
+      fileList: "file1.ts\nfile2.ts",
+    };
     const actor = createGatherContextActor(async () => mockContext);
     const ref = createActor(actor);
     ref.start();

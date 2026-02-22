@@ -1,16 +1,17 @@
-import {
-  spinner,
-  select,
-  text,
-  isCancel,
-  note,
-  log,
-} from "@clack/prompts";
+import { spinner, select, text, isCancel, note, log } from "@clack/prompts";
 import pc from "picocolors";
 import { buildSystemPrompt, buildUserPrompt } from "../prompt.ts";
 import { DEFAULT_SLOW_WARNING_THRESHOLD_MS, type PromptCustomization } from "../config.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
-import { getStagedDiff, getBranchName, setBranchName, commit, getRecentCommits, getStagedFileList, type CommitResult } from "./git.ts";
+import {
+  getStagedDiff,
+  getBranchName,
+  setBranchName,
+  commit,
+  getRecentCommits,
+  getStagedFileList,
+  type CommitResult,
+} from "./git.ts";
 import { validateCommitMessage, buildRetryContext, type ValidationError } from "./validation.ts";
 import { displayCommitMessage } from "./display.ts";
 import { wrapText } from "./utils.ts";
@@ -26,12 +27,12 @@ import { CLIError } from "./errors.ts";
  */
 function showCommitResult(result: CommitResult): void {
   const lines: string[] = [];
-  
+
   // Header: [branch hash] subject
   const rootLabel = result.isRoot ? " (root-commit)" : "";
   lines.push(pc.dim(`[${result.branch}${rootLabel} ${result.hash}]`) + ` ${result.subject}`);
   lines.push("");
-  
+
   // Stats
   const stats: string[] = [];
   if (result.filesChanged > 0) {
@@ -46,7 +47,7 @@ function showCommitResult(result: CommitResult): void {
   if (stats.length > 0) {
     lines.push(stats.join(", "));
   }
-  
+
   // File list (if any new/deleted files)
   if (result.files.length > 0) {
     lines.push("");
@@ -55,7 +56,7 @@ function showCommitResult(result: CommitResult): void {
       lines.push(`${statusColor(file.status)} ${file.path}`);
     }
   }
-  
+
   note(lines.join("\n"), "Commit Created");
 }
 
@@ -100,10 +101,7 @@ export type GenerationState =
  * Returns a cleanup function that cancels the timer.
  * If thresholdMs <= 0, no timer is created and cleanup is a no-op.
  */
-export function createSlowWarningTimer(
-  thresholdMs: number,
-  onSlow: () => void,
-): () => void {
+export function createSlowWarningTimer(thresholdMs: number, onSlow: () => void): () => void {
   if (thresholdMs <= 0) return () => {};
   const timer = setTimeout(onSlow, thresholdMs);
   return () => clearTimeout(timer);
@@ -132,9 +130,7 @@ function logCommitError(err: unknown): void {
  * Run the AI generation loop.
  * Generates commit messages, validates them, and handles user interactions.
  */
-export async function runGenerationLoop(
-  ctx: GenerationContext
-): Promise<GenerationResult> {
+export async function runGenerationLoop(ctx: GenerationContext): Promise<GenerationResult> {
   const { adapter, model, modelName, options, promptCustomization } = ctx;
 
   // Build the system prompt with any user customizations
@@ -206,9 +202,10 @@ export async function runGenerationLoop(
           recentCommits,
           stagedFileList,
           errors: errorContext,
-          refinements: lastGeneratedMessage && userRefinements.length > 0
-            ? { lastMessage: lastGeneratedMessage, instructions: userRefinements }
-            : undefined,
+          refinements:
+            lastGeneratedMessage && userRefinements.length > 0
+              ? { lastMessage: lastGeneratedMessage, instructions: userRefinements }
+              : undefined,
           diff: diffOutput,
         });
 
@@ -240,7 +237,9 @@ export async function runGenerationLoop(
 
         const cancelSlowWarning = createSlowWarningTimer(slowThresholdMs, () => {
           s.message(
-            pc.yellow(`Still generating with ${modelName}... Speed depends on your selected provider and model.`)
+            pc.yellow(
+              `Still generating with ${modelName}... Speed depends on your selected provider and model.`,
+            ),
           );
         });
 
@@ -259,11 +258,17 @@ export async function runGenerationLoop(
 
           // Determine if this is an API provider error
           const isApiMode = adapter.mode === "api";
-          const providerName = isApiMode ? adapter.providerId.charAt(0).toUpperCase() + adapter.providerId.slice(1) : "AI";
+          const providerName = isApiMode
+            ? adapter.providerId.charAt(0).toUpperCase() + adapter.providerId.slice(1)
+            : "AI";
 
           if (errorMessage.includes("Requested entity was not found")) {
             console.error(pc.red(`Error: The model '${model}' was not found.`));
-            console.error(pc.yellow("This usually means the model ID is incorrect or you don't have access to it."));
+            console.error(
+              pc.yellow(
+                "This usually means the model ID is incorrect or you don't have access to it.",
+              ),
+            );
             console.error(pc.dim(`Try running 'ai-git --setup' to select a different model.`));
           } else if (isApiMode) {
             console.error(pc.red(`${providerName} API Error:`));
@@ -311,15 +316,20 @@ export async function runGenerationLoop(
               pc.yellow(
                 editedManually
                   ? "Validation failed on manually edited message"
-                  : "Maximum validation retries reached (3/3)"
-              )
+                  : "Maximum validation retries reached (3/3)",
+              ),
             );
             editedManually = false;
             const allErrors = validationResult.errors;
             for (const err of allErrors) {
               log.warn(pc.yellow(`${err.severity}: ${err.message} — ${err.suggestion}`));
             }
-            state = { type: "prompt", message: state.message, validationFailed: true, warnings: allErrors };
+            state = {
+              type: "prompt",
+              message: state.message,
+              validationFailed: true,
+              warnings: allErrors,
+            };
           }
         } else {
           // Valid — reset counters
@@ -329,7 +339,7 @@ export async function runGenerationLoop(
 
           // Show non-critical warnings if any
           const warnings = validationResult.errors.filter(
-            (e) => e.severity === "important" || e.severity === "minor"
+            (e) => e.severity === "important" || e.severity === "minor",
           );
           if (warnings.length > 0) {
             for (const w of warnings) {
@@ -349,8 +359,8 @@ export async function runGenerationLoop(
         generationErrors = state.errors;
         log.warn(
           pc.yellow(
-            `Validation failed: ${state.errors.join("; ")}. Retrying (${autoRetries}/3)...`
-          )
+            `Validation failed: ${state.errors.join("; ")}. Retrying (${autoRetries}/3)...`,
+          ),
         );
         state = { type: "generate" };
         break;
@@ -371,11 +381,17 @@ export async function runGenerationLoop(
           try {
             const result = await commit(currentMessage);
             showCommitResult(result);
-            state = { type: "done", result: { message: currentMessage, committed: true, aborted: false } };
+            state = {
+              type: "done",
+              result: { message: currentMessage, committed: true, aborted: false },
+            };
           } catch (err) {
             log.error(pc.red("Git commit failed."));
             logCommitError(err);
-            state = { type: "done", result: { message: currentMessage, committed: false, aborted: true } };
+            state = {
+              type: "done",
+              result: { message: currentMessage, committed: false, aborted: true },
+            };
           }
           break;
         }
@@ -404,7 +420,10 @@ export async function runGenerationLoop(
           try {
             const result = await commit(currentMessage);
             showCommitResult(result);
-            state = { type: "done", result: { message: currentMessage, committed: true, aborted: false } };
+            state = {
+              type: "done",
+              result: { message: currentMessage, committed: true, aborted: false },
+            };
           } catch (err) {
             log.error(pc.red("Git commit failed."));
             logCommitError(err);
@@ -477,7 +496,9 @@ export async function runGenerationLoop(
         }
 
         if (!editor) {
-          console.error(pc.red("Error: No suitable editor found. Please set the EDITOR environment variable."));
+          console.error(
+            pc.red("Error: No suitable editor found. Please set the EDITOR environment variable."),
+          );
           state = { type: "validate", message: state.message };
           break;
         }

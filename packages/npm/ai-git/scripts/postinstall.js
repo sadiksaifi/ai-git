@@ -53,12 +53,8 @@ function main() {
 
   // Platform binary not found (e.g., --ignore-optional was used)
   // Provide guidance rather than silently failing
-  console.warn(
-    `\nai-git: Platform binary not found for ${os.platform()}-${os.arch()}.`,
-  );
-  console.warn(
-    "If you used --ignore-optional, the platform package was skipped.",
-  );
+  console.warn(`\nai-git: Platform binary not found for ${os.platform()}-${os.arch()}.`);
+  console.warn("If you used --ignore-optional, the platform package was skipped.");
   console.warn(
     "You can install the binary manually: curl -fsSL https://ai-git.xyz/install | bash\n",
   );

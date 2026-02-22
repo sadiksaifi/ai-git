@@ -34,16 +34,14 @@ type SnapshotModel = {
 type Snapshot = Record<CatalogProviderId, { models: Record<string, SnapshotModel> }>;
 
 function sortObjectByKeys<T>(value: Record<string, T>): Record<string, T> {
-  return Object.fromEntries(
-    Object.entries(value).sort(([a], [b]) => a.localeCompare(b))
-  );
+  return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)));
 }
 
 async function fetchModelsDevRaw(): Promise<RawResponse> {
   const response = await fetch(MODELS_DEV_API_URL, {
     headers: {
       "User-Agent": "ai-git-cli",
-      "Accept": "application/json",
+      Accept: "application/json",
     },
   });
 
@@ -82,8 +80,7 @@ function toSnapshot(raw: RawResponse): Snapshot {
 }
 
 function renderSnapshotFile(snapshot: Snapshot): string {
-  const serialized = JSON.stringify(snapshot, null, 2)
-    .replace(/"([a-zA-Z0-9_]+)":/g, "$1:");
+  const serialized = JSON.stringify(snapshot, null, 2).replace(/"([a-zA-Z0-9_]+)":/g, "$1:");
 
   return [
     'import type { CatalogModelDefinition, CatalogProviderId } from "./types.ts";',
@@ -103,10 +100,7 @@ async function main(): Promise<void> {
   const raw = await fetchModelsDevRaw();
   const snapshot = toSnapshot(raw);
 
-  const targetFile = path.resolve(
-    import.meta.dir,
-    "../src/providers/api/models/snapshot.ts"
-  );
+  const targetFile = path.resolve(import.meta.dir, "../src/providers/api/models/snapshot.ts");
 
   await Bun.write(targetFile, renderSnapshotFile(snapshot));
 
