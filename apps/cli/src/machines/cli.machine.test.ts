@@ -177,7 +177,7 @@ describe("cliMachine", () => {
 
   // needsSetup triggers onboarding
   test("needsSetup triggers onboarding", async () => {
-    let setupCalled = false;
+    let onboardingCalled = false;
     const machine = cliMachine.provide({
       actors: {
         ...happyPathActors(),
@@ -188,7 +188,7 @@ describe("cliMachine", () => {
           }),
         ),
         runOnboardingActor: fromPromise(async (): Promise<OnboardingActorResult> => {
-          setupCalled = true;
+          onboardingCalled = true;
           return { completed: true, continueToRun: false };
         }),
       },
@@ -201,7 +201,7 @@ describe("cliMachine", () => {
     const snap = await waitFor(actor, (s) => s.status === "done", {
       timeout: 5000,
     });
-    expect(setupCalled).toBe(true);
+    expect(onboardingCalled).toBe(true);
     expect(snap.output!.exitCode).toBe(0);
   });
 
@@ -248,7 +248,7 @@ describe("cliMachine", () => {
     expect((capturedInput as unknown as Record<string, unknown>).stageAll).toBe(true);
   });
 
-  // Setup not completed -> exit 1
+  // Onboarding not completed -> exit 1
   test("onboarding not completed exits with code 1", async () => {
     const machine = cliMachine.provide({
       actors: {

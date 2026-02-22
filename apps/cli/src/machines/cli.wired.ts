@@ -9,6 +9,7 @@
 import { fromPromise } from "xstate";
 import pc from "picocolors";
 import { log } from "@clack/prompts";
+import { ERROR_TEMPLATES } from "@ai-git/meta";
 import {
   cliMachine,
   type ConfigResolutionResult,
@@ -215,12 +216,12 @@ export const wiredCliMachine = cliMachine.provide({
         // First-run auto-trigger: when no config exists, show a brief message
         // then launch the same configure flow as `ai-git configure`.
         // Dynamic import avoids circular dependency (configure.ts → init.machine).
-        log.warn("No configuration found.");
+        log.warn(ERROR_TEMPLATES.noConfig.message);
         const { runConfigureFlow } = await import("../lib/configure.ts");
-        const exitCode = await runConfigureFlow();
+        const result = await runConfigureFlow();
         return {
-          completed: exitCode === 0,
-          continueToRun: exitCode === 0,
+          completed: result.exitCode === 0,
+          continueToRun: result.continueToRun,
         } satisfies OnboardingActorResult;
       },
     ),

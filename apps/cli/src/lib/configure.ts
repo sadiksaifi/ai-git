@@ -1,5 +1,5 @@
 import { createActor, waitFor } from "xstate";
-import { select, isCancel } from "@clack/prompts";
+import { select, isCancel, cancel } from "@clack/prompts";
 import { initMachine } from "../machines/init.machine.ts";
 import { runOnboarding } from "./onboarding/index.ts";
 
@@ -8,15 +8,22 @@ import { runOnboarding } from "./onboarding/index.ts";
 // ==============================================================================
 
 /**
+ * Result of running the configure flow.
+ */
+export interface ConfigureResult {
+  exitCode: 0 | 1;
+  /** Whether the user wants to continue running ai-git after setup. */
+  continueToRun: boolean;
+}
+
+/**
  * Shared configure flow used by both `ai-git configure` command
  * and the first-run auto-trigger in cliMachine.
  *
  * Prompts user to choose Global or Project configuration,
  * then delegates to the appropriate setup flow.
- *
- * @returns exit code (0 = success, 1 = error/cancelled)
  */
-export async function runConfigureFlow(): Promise<0 | 1> {
+export async function runConfigureFlow(): Promise<ConfigureResult> {
   const choice = await select({
     message: "Where do you want to configure?",
     options: [
@@ -34,12 +41,16 @@ export async function runConfigureFlow(): Promise<0 | 1> {
   });
 
   if (isCancel(choice)) {
-    return 1;
+    cancel("Configuration cancelled.");
+    return { exitCode: 1, continueToRun: false };
   }
 
   if (choice === "global") {
     const result = await runOnboarding({ target: "global" });
-    return result.completed ? 0 : 1;
+    return {
+      exitCode: result.completed ? 0 : 1,
+      continueToRun: result.continueToRun,
+    };
   }
 
   // Project: run the init machine
@@ -50,5 +61,8 @@ export async function runConfigureFlow(): Promise<0 | 1> {
   const snapshot = await waitFor(actor, (s) => s.status === "done", {
     timeout: 600_000,
   });
-  return snapshot.output!.exitCode;
+  return {
+    exitCode: snapshot.output!.exitCode,
+    continueToRun: snapshot.output!.continue ?? false,
+  };
 }

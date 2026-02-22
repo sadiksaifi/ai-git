@@ -15,7 +15,7 @@ export const PROVIDERS: Record<string, ProviderDoc | CLIProviderDoc> = {
     name: "Claude Code",
     type: "cli",
     binary: "claude",
-    installCommand: "npm install -g @anthropic-ai/claude-code",
+    installCommand: "curl -fsSL https://claude.ai/install.sh | bash",
     docsUrl: "https://code.claude.com/docs/en/setup",
     requirementsUrl: "https://claude.com/claude-code",
     requirementsLabel: "Install CLI",
@@ -37,7 +37,7 @@ export const PROVIDERS: Record<string, ProviderDoc | CLIProviderDoc> = {
     binary: "codex",
     installCommand: "npm install -g @openai/codex",
     docsUrl: "https://developers.openai.com/codex/cli",
-    requirementsUrl: "https://developers.openai.com/codex/cli",
+    requirementsUrl: "https://openai.com/codex",
     requirementsLabel: "Install CLI",
   },
   openrouter: {

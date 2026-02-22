@@ -8,6 +8,10 @@ import { CLI_NAME } from "./meta.ts";
 /**
  * Error message templates with actionable suggestions.
  * Plain strings only — consumers handle formatting.
+ *
+ * Suggestion format:
+ * - Actionable: "Run `ai-git configure` to <action>."
+ * - Non-actionable: descriptive guidance (e.g. provider not available)
  */
 export const ERROR_TEMPLATES = {
   noConfig: {
@@ -52,11 +56,11 @@ export const ERROR_TEMPLATES = {
 
   providerNotAvailable: (providerId: string): ErrorTemplate => ({
     message: `Provider '${providerId}' is not available.`,
-    suggestion: "Check your API key configuration.",
+    suggestion: `Run: ${CLI_NAME} configure to check your provider setup.`,
   }),
 
   cliNotInstalled: (binary: string, providerName: string): ErrorTemplate => ({
     message: `'${binary}' CLI is not installed.`,
-    suggestion: `The ${providerName} CLI must be installed to use AI Git.`,
+    suggestion: `Install the ${providerName} CLI, then run: ${CLI_NAME} configure`,
   }),
 } as const;

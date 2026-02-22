@@ -162,8 +162,9 @@ async function setupCLIFlow(
 
   if (!isAvailable) {
     // Show helpful installation instructions
+    const binary = providerDef.binary ?? providerId;
     const installInfo = getInstallInfo(providerId);
-    const errorTemplate = ERROR_MESSAGES.cliNotInstalled(providerDef.binary!, providerDef.name);
+    const errorTemplate = ERROR_MESSAGES.cliNotInstalled(binary, providerDef.name);
 
     const solutions: string[] = [];
     if (installInfo?.installCommand) solutions.push(`Install: ${installInfo.installCommand}`);

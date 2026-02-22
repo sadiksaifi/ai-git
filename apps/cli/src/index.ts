@@ -20,8 +20,8 @@ const cli = cac("ai-git");
 // The main command (empty string) delegates to cliMachine below.
 
 cli.command("configure", COMMANDS.configure.description).action(async () => {
-  const exitCode = await runConfigureFlow();
-  process.exit(exitCode);
+  const result = await runConfigureFlow();
+  process.exit(result.exitCode);
 });
 
 cli.command("upgrade", COMMANDS.upgrade.description).action(async () => {
