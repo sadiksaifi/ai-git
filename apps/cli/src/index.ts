@@ -58,11 +58,6 @@ cli
     process.exit(snapshot.output!.exitCode);
   });
 
-// ── Help ─────────────────────────────────────────────────────────────
-
-// Suppress cac's default help output; we render our own
-cli.help(() => []);
-
 // ── Entry Point ──────────────────────────────────────────────────────
 
 try {

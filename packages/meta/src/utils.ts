@@ -42,5 +42,6 @@ export function getFlagsByCategory(): {
     .map((category) => ({
       category,
       flags: allFlags.filter((f) => f.category === category.key),
-    }));
+    }))
+    .filter((group) => group.flags.length > 0);
 }
