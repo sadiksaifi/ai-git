@@ -381,7 +381,7 @@ export async function fetchRemote(): Promise<void> {
 
 /**
  * Count how many commits the remote tracking branch is ahead of HEAD.
- * Returns 0 if the remote is not ahead or there is no upstream.
+ * Throws if no upstream is configured; handled gracefully by the push machine.
  */
 export async function getRemoteAheadCount(): Promise<number> {
   const output = await $`git rev-list HEAD..@{u} --count`.text();
