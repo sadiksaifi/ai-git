@@ -9,7 +9,7 @@ This is a product/landing site. Minimize client-side JavaScript:
 - **Default:** Zero-JS Astro components (no `client:*` directives)
 - **Styling:** Tailwind CSS v4 utilities and CSS animations only
 - **Interactivity:** Use CSS (`:hover`, `:focus`, `@keyframes`, `transition`) before JS
-- **When JS is needed:** Use `client:visible` or `client:idle` (never `client:load`)
+- **When JS is needed:** Prefer `client:visible` or `client:idle`. Only use `client:load` when absolutely necessary and explicitly specified by the user.
 - **Goal:** Ship HTML + CSS. Add JS only when genuinely required.
 
 ## Tech Stack
@@ -45,7 +45,7 @@ apps/web/
 - **Pages:** `src/pages/` directory. Each `.astro` file = a route. `index.astro` = `/`
 - **Layouts:** `src/layouts/` for shared page structure. Use `<slot />` for content injection.
 - **Components:** `src/components/` for reusable pieces. All components are server-rendered by default (zero JS).
-- **Styles:** Import `../styles/global.css` in Layout.astro. Use Tailwind utilities in class attributes. Scoped `<style>` blocks for component-specific CSS.
+- **Styles:** `src/styles/global.css` is the Tailwind entry point, already imported in Layout.astro. Use Tailwind CSS utilities heavily for all styling. Only use scoped `<style>` blocks when something genuinely can't be achieved with Tailwind CSS.
 - **Assets:** `src/assets/` for images/SVGs that need processing. `public/` for static files served as-is.
 
 ## Tailwind CSS v4
