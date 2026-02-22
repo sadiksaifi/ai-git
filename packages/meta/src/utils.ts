@@ -15,6 +15,8 @@ export function getRandomTip(): { flag: string; description: string } {
 
   const randomFlag = tippableFlags[Math.floor(Math.random() * tippableFlags.length)];
 
+  // Defensive fallback — currently unreachable since FLAGS always has non-info
+  // entries, but guards against future changes that might empty the list.
   if (!randomFlag) {
     return { flag: "--help", description: "Show help" };
   }

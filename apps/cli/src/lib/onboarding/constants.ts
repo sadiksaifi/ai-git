@@ -8,6 +8,9 @@ import { ERROR_TEMPLATES, PROVIDERS, isCLIProviderDoc } from "@ai-git/meta";
 /**
  * Installation information for CLI tools.
  * Derived from @ai-git/meta provider docs.
+ *
+ * Note: PROVIDERS in @ai-git/meta and the runtime registry in
+ * providers/registry.ts must be kept in sync when adding/removing providers.
  */
 export function getInstallInfo(providerId: string) {
   const doc = PROVIDERS[providerId];
@@ -21,6 +24,8 @@ export function getInstallInfo(providerId: string) {
 }
 
 /**
- * Error message templates. Re-exported from @ai-git/meta.
+ * Error message templates. Re-exported from @ai-git/meta under the legacy
+ * name `ERROR_MESSAGES` to avoid renaming all consumer call sites.
+ * Canonical name is `ERROR_TEMPLATES` in @ai-git/meta.
  */
 export { ERROR_TEMPLATES as ERROR_MESSAGES };

@@ -19,12 +19,12 @@ const cli = cac("ai-git");
 // Standalone flows that bypass cliMachine entirely.
 // The main command (empty string) delegates to cliMachine below.
 
-cli.command("configure", COMMANDS.configure!.description).action(async () => {
+cli.command("configure", COMMANDS.configure.description).action(async () => {
   const exitCode = await runConfigureFlow();
   process.exit(exitCode);
 });
 
-cli.command("upgrade", COMMANDS.upgrade!.description).action(async () => {
+cli.command("upgrade", COMMANDS.upgrade.description).action(async () => {
   const actor = createActor(upgradeMachine, { input: { version: VERSION } });
   actor.start();
   const snapshot = await waitFor(actor, (s) => s.status === "done", { timeout: 600_000 });
