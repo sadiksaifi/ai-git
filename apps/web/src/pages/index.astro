@@ -1,9 +1,26 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Hero from "../components/Hero.astro";
+import FeatureShowcase from "../components/FeatureShowcase.astro";
+import ProviderShowcase from "../components/ProviderShowcase.astro";
+import HowItWorks from "../components/HowItWorks.astro";
+import Installation from "../components/Installation.astro";
+import Metrics from "../components/Metrics.astro";
+import FAQ from "../components/FAQ.astro";
+import Footer from "../components/Footer.astro";
 ---
 
-<Layout title="ai-git">
-  <main class="flex min-h-screen items-center justify-center">
-    <h1 class="text-4xl font-bold">ai-git</h1>
+<Layout>
+  <Header />
+  <main>
+    <Hero />
+    <FeatureShowcase />
+    <ProviderShowcase />
+    <HowItWorks />
+    <Installation />
+    <Metrics />
+    <FAQ />
   </main>
+  <Footer />
 </Layout>
