@@ -12,6 +12,10 @@ This is a product/landing site. Minimize client-side JavaScript:
 - **When JS is needed:** Prefer `client:visible` or `client:idle`. Only use `client:load` when absolutely necessary and explicitly specified by the user.
 - **Goal:** Ship HTML + CSS. Add JS only when genuinely required.
 
+## Content Package
+
+All website content is imported from `@ai-git/content/web`. Never hardcode marketing copy, feature descriptions, provider lists, or installation methods directly in Astro components. If content is needed by both CLI and web, it belongs in `packages/content/src/shared/`. If web-only, it belongs in `packages/content/src/web/`. Astro components should be purely presentational — they receive content as props or imports, they don't define it.
+
 ## Tech Stack
 
 | Technology   | Version | Purpose                                     |

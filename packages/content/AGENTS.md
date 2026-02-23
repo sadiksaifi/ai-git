@@ -1,43 +1,68 @@
-# @ai-git/meta
+# @ai-git/content
 
-Shared CLI metadata package. Contains all documentation-level data for the
-ai-git CLI: flag definitions, command definitions, provider display metadata,
-error message templates, and utility functions.
+Shared content package with dual exports for the CLI and website.
 
-## What belongs here
+## Architecture
 
-- **Types** — `FlagDef`, `CommandDef`, `ProviderDoc`, `ErrorTemplate`, etc.
-- **Metadata** — `CLI_NAME`, `CLI_DESCRIPTION`
-- **Flag definitions** — `FLAGS` record with all CLI flags, `FLAG_CATEGORIES` for grouping
-- **Command definitions** — `COMMANDS` record (`configure`, `upgrade`)
-- **Provider docs** — Display-only metadata (name, type, URLs, install commands)
-- **Error templates** — Reusable error messages with actionable suggestions
-- **Utilities** — `getRandomTip()`, `getFlagsByCategory()`
+Two explicit export paths enforced by `package.json` exports:
 
-## What does NOT belong here
+- `@ai-git/content/cli` — consumed by `apps/cli`
+- `@ai-git/content/web` — consumed by `apps/web`
 
-- Runtime logic (provider adapters, model lists, config resolution)
-- Rendering / formatting (that lives in `apps/cli`)
-- State machines or actors
-- Anything that imports from `apps/cli`
+Shared content in `src/shared/` is re-exported by both paths.
 
-## Adding a new flag
+## Directory Layout
 
-1. Add a `FlagDef` entry to `FLAGS` in `src/flags.ts`
-2. Assign a `FlagCategory` (`"model"`, `"workflow"`, or `"info"`)
-3. If it has a custom shorthand, use uppercase (e.g. `-X`)
-4. Register the flag in `apps/cli/src/index.ts` via cac `.option()`
-5. Add to `CLIOptions` in `apps/cli/src/machines/cli.machine.ts` if needed
+- `src/shared/` — Single source of truth (providers, features, install methods, examples, metadata, shared types)
+- `src/cli/` — CLI-specific (flags, commands, error templates, utilities, CLI types)
+- `src/web/` — Web marketing content (hero, features showcase, FAQ, SEO, navigation, docs structure)
 
-## Adding a new command
+## What belongs where
 
-1. Add a `CommandDef` entry to `COMMANDS` in `src/commands.ts`
-2. Register the command in `apps/cli/src/index.ts` via cac `.command()`
+### `src/shared/` — Content used by both CLI and web
 
-## Adding a new provider
+- Identity: `CLI_NAME`, `CLI_DESCRIPTION`
+- Provider metadata: names, types, URLs
+- Feature definitions: label + short description
+- Installation methods: commands, platforms
+- Usage and configuration examples
+- Shared types (`ProviderDoc`, `Feature`, `InstallMethod`, etc.)
 
-1. Add a `ProviderDoc` (or `CLIProviderDoc` for CLI providers) to `PROVIDERS` in `src/providers.ts`
-2. The runtime provider registration stays in `apps/cli/src/providers/registry.ts`
+### `src/cli/` — CLI-only content
+
+- Flag definitions (`FLAGS`, `FLAG_CATEGORIES`)
+- Command definitions (`COMMANDS`)
+- Error message templates (`ERROR_TEMPLATES`)
+- CLI utilities (`getRandomTip`, `getFlagsByCategory`)
+- CLI-specific types (`FlagDef`, `CommandDef`, `ErrorTemplate`)
+
+### `src/web/` — Web-only marketing content
+
+- Hero section (headlines, subheadlines, CTAs)
+- Feature showcase (marketing copy extending shared features)
+- Provider showcase (categorization for display)
+- How-it-works steps
+- Testimonials and metrics
+- FAQ entries
+- Documentation page structure
+- Navigation (header, footer, social links)
+- SEO metadata (OG tags, Twitter cards, icons, manifest)
+
+## Adding new shared content
+
+1. Add a type to `src/shared/types.ts`
+2. Create or update the relevant file in `src/shared/`
+3. Re-export from both `src/cli/index.ts` and `src/web/index.ts`
+
+## Adding CLI-only content
+
+1. Add to the relevant file in `src/cli/`
+2. Export from `src/cli/index.ts`
+
+## Adding web-only content
+
+1. Add to the relevant file in `src/web/`
+2. Export from `src/web/index.ts`
 
 ## Conventions
 
