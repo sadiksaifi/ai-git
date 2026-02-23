@@ -30,7 +30,7 @@ await $`magick ${OUT}/favicon-16x16.png ${OUT}/favicon-32x32.png ${OUT}/favicon.
 // 4. Generate OG image (1200x630) — logo centered with tagline
 const ogSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
   <rect width="1200" height="630" fill="#0a0a0a"/>
-  <g transform="translate(520, 120) scale(0.6)">
+  <g transform="translate(446, 120) scale(0.6)">
     <path d="M 252 96 L 128 400 L 230 400 L 252 308 Z" fill="white"/>
     <path d="M 260 96 L 384 400 L 282 400 L 260 308 Z" fill="white"/>
   </g>
