@@ -1,5 +1,5 @@
 import type { ErrorTemplate } from "./types.ts";
-import { CLI_NAME } from "./meta.ts";
+import { CLI_NAME } from "../shared/meta.ts";
 
 // ==============================================================================
 // @ai-git/meta — Error Message Templates
