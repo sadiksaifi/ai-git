@@ -6,8 +6,6 @@ import type { PromptCustomization } from "./config.ts";
 
 /**
  * The core system prompt as XML-tagged natural language.
- * Replaces the TOON-encoded JSON object.
- * ~120 lines vs the previous ~295 lines.
  */
 const SYSTEM_PROMPT = `<role>
 You generate git commit messages following Conventional Commits v1.0.0.
