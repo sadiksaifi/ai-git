@@ -17,13 +17,7 @@ export const providerShowcase = {
       type: "api" as const,
       label: "API Providers",
       tagline: "Bring your own key. Pick your model.",
-      providerIds: [
-        "openrouter",
-        "openai",
-        "google-ai-studio",
-        "anthropic",
-        "cerebras",
-      ],
+      providerIds: ["openrouter", "openai", "google-ai-studio", "anthropic", "cerebras"],
     },
   ],
 } as const;

@@ -15,8 +15,7 @@ export const USAGE_EXAMPLES: readonly UsageExample[] = [
     description: "Exclude files from staging",
   },
   {
-    command:
-      'ai-git --dangerously-auto-approve --hint "Refactored auth module"',
+    command: 'ai-git --dangerously-auto-approve --hint "Refactored auth module"',
     description: "Fully automated",
   },
   {
@@ -30,8 +29,7 @@ export const CONFIG_EXAMPLES: readonly ConfigExample[] = [
     title: "Basic",
     description: "Simple provider + model setup",
     json: {
-      $schema:
-        "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
+      $schema: "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
       provider: "claude-code",
       model: "haiku",
       defaults: { stageAll: false, commit: false, push: false },
@@ -41,15 +39,12 @@ export const CONFIG_EXAMPLES: readonly ConfigExample[] = [
     title: "Monorepo with Scopes",
     description: "Custom context and style for monorepos",
     json: {
-      $schema:
-        "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
+      $schema: "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
       provider: "claude-code",
       model: "sonnet",
       prompt: {
-        context:
-          "Monorepo with packages: web, mobile, shared, api, docs, infra.",
-        style:
-          "Always use a scope from the valid list. Reference PR numbers in footer.",
+        context: "Monorepo with packages: web, mobile, shared, api, docs, infra.",
+        style: "Always use a scope from the valid list. Reference PR numbers in footer.",
       },
     },
   },

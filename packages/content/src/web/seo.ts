@@ -18,8 +18,7 @@ export const seo = {
   } as PageSEO,
   docs: {
     title: "Documentation — AI Git",
-    description:
-      "Installation guides, configuration reference, and provider setup for AI Git.",
+    description: "Installation guides, configuration reference, and provider setup for AI Git.",
   } as PageSEO,
   openGraph: {
     type: "website" as const,
