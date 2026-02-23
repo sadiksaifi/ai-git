@@ -29,6 +29,7 @@
       "persistent": true
     },
     "deploy": {
+      "dependsOn": ["^build"],
       "cache": false
     },
     "destroy": {

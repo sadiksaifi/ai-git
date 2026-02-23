@@ -79,7 +79,7 @@
       "name": "@ai-git/infra",
       "devDependencies": {
         "@ai-git/config": "workspace:*",
-        "alchemy": "^0.82.1",
+        "alchemy": "catalog:",
         "typescript": "catalog:",
       },
     },
