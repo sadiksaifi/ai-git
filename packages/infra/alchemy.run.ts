@@ -10,6 +10,7 @@ const app = await alchemy("ai-git", {
 
 export const web = await Vite("web", {
   cwd: "../../apps/web",
+  build: "bun run astro build",
   assets: "dist",
 });
 
