@@ -1,0 +1,39 @@
+---
+import { providerShowcase, PROVIDERS } from "@ai-git/content/web";
+---
+
+<section id="providers" class="px-6 py-24">
+  <div class="mx-auto max-w-6xl">
+    <div class="text-center">
+      <h2 class="text-3xl font-bold md:text-4xl">{providerShowcase.headline}</h2>
+      <p class="mt-4 text-lg text-neutral-400">{providerShowcase.subheadline}</p>
+    </div>
+
+    <div class="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2">
+      {providerShowcase.categories.map((category) => (
+        <div class="rounded-xl border border-neutral-800 bg-neutral-900/30 p-8">
+          <div class="mb-2 text-xs font-medium uppercase tracking-wider text-neutral-500">
+            {category.type === "cli" ? "CLI" : "API"}
+          </div>
+          <h3 class="text-xl font-semibold">{category.label}</h3>
+          <p class="mt-1 text-sm text-neutral-400">{category.tagline}</p>
+          <div class="mt-6 flex flex-wrap gap-2">
+            {category.providerIds.map((id) => {
+              const provider = PROVIDERS[id];
+              return provider ? (
+                <a
+                  href={provider.requirementsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="rounded-full border border-neutral-700 px-4 py-1.5 text-sm text-neutral-300 transition-colors hover:border-neutral-500 hover:text-white"
+                >
+                  {provider.name}
+                </a>
+              ) : null;
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

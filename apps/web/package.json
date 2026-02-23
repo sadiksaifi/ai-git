@@ -1,0 +1,29 @@
+{
+  "name": "web",
+  "version": "0.0.0-git",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "typecheck": "astro check && tsc --noEmit",
+    "check": "oxlint && oxfmt --check",
+    "check:fix": "oxlint --fix && oxfmt --write",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@ai-git/content": "workspace:*",
+    "@astrojs/sitemap": "^3.7.0",
+    "astro": "^5.17.1",
+    "tailwindcss": "^4.1.0"
+  },
+  "devDependencies": {
+    "@ai-git/config": "workspace:*",
+    "@astrojs/check": "^0.9.6",
+    "@tailwindcss/vite": "^4.1.0",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:"
+  }
+}

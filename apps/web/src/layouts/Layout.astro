@@ -1,0 +1,63 @@
+---
+import "../styles/global.css";
+import { seo } from "@ai-git/content/web";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = seo.home.title, description = seo.home.description } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+    <meta name="theme-color" content={seo.site.themeColor} />
+
+    <!-- Favicons -->
+    <link rel="icon" href={seo.icons.favicon} sizes="32x32" />
+    <link rel="icon" href={seo.icons.faviconSvg} type="image/svg+xml" />
+    <link rel="apple-touch-icon" href={seo.icons.appleTouchIcon} />
+    <link rel="manifest" href={seo.manifest} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content={seo.openGraph.type} />
+    <meta property="og:site_name" content={seo.openGraph.siteName} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:locale" content={seo.site.locale} />
+    {seo.openGraph.images.map((img) => (
+      <>
+        <meta property="og:image" content={new URL(img.url, Astro.site)} />
+        <meta property="og:image:width" content={String(img.width)} />
+        <meta property="og:image:height" content={String(img.height)} />
+        <meta property="og:image:alt" content={img.alt} />
+      </>
+    ))}
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content={seo.twitter.card} />
+    <meta name="twitter:site" content={seo.twitter.site} />
+    <meta name="twitter:creator" content={seo.twitter.creator} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  </head>
+  <body class="min-h-screen bg-neutral-950 text-white antialiased">
+    <slot />
+  </body>
+</html>

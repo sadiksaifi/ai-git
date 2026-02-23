@@ -1,6 +1,8 @@
 // ==============================================================================
-// @ai-git/meta — Shared Types
+// @ai-git/content — CLI Types
 // ==============================================================================
+
+export type { ProviderType, ProviderDoc, CLIProviderDoc } from "../shared/types.ts";
 
 /**
  * Flag category identifier.
@@ -33,33 +35,6 @@ export interface FlagDef {
 export interface CommandDef {
   name: string;
   description: string;
-}
-
-/**
- * Provider type: CLI binary or HTTP API.
- */
-export type ProviderType = "cli" | "api";
-
-/**
- * Documentation metadata for a provider.
- * Consumer-agnostic — no runtime logic or rendering.
- */
-export interface ProviderDoc {
-  id: string;
-  name: string;
-  type: ProviderType;
-  requirementsUrl: string;
-  requirementsLabel: string;
-}
-
-/**
- * Extended documentation for CLI providers (includes install info).
- */
-export interface CLIProviderDoc extends ProviderDoc {
-  type: "cli";
-  binary: string;
-  installCommand: string;
-  docsUrl: string;
 }
 
 /**

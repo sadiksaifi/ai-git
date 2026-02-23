@@ -6,6 +6,10 @@ This file defines project-specific rules and constraints for AI agents like you 
 
 AI Git is a CLI tool that uses AI to generate Conventional Commits-compliant git commit messages. It analyzes staged diffs and produces semantically correct messages following the v1.0.0 specification.
 
+## Content Package
+
+All shared content (features, providers, install methods, examples, metadata) is imported from `@ai-git/content/cli`. Never hardcode content that could be shared — declare it in `packages/content/src/shared/` and consume via the CLI export path. The old `@ai-git/meta` package has been renamed to `@ai-git/content`.
+
 ## Commands
 
 ```bash
