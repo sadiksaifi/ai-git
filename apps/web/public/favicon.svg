@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="64" fill="#0a0a0a"/>
+  <g fill="none" stroke="white" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Stylized "A" -->
+    <polyline points="160,384 256,128 352,384"/>
+    <line x1="192" y1="296" x2="320" y2="296"/>
+    <!-- Cursor/underscore -->
+    <line x1="368" y1="384" x2="416" y2="384"/>
+  </g>
+</svg>

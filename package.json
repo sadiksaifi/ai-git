@@ -39,7 +39,8 @@
     "destroy": "turbo -F @ai-git/infra destroy",
     "sync:catalog": "turbo -F cli sync:catalog",
     "sync:schema": "turbo -F cli sync:schema",
-    "sync:models": "turbo -F cli sync:models"
+    "sync:models": "turbo -F cli sync:models",
+    "generate:assets": "bun run scripts/generate-logo.ts"
   },
   "devDependencies": {
     "@ai-git/config": "workspace:*",
