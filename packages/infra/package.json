@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "alchemy dev",
+    "dev": "ALCHEMY_DEV=1 alchemy dev",
     "deploy": "alchemy deploy",
     "destroy": "alchemy destroy"
   },

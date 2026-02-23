@@ -21,9 +21,7 @@
   "devDependencies": {
     "@ai-git/config": "workspace:*",
     "@astrojs/check": "^0.9.6",
-    "@astrojs/cloudflare": "^12.6.4",
     "@tailwindcss/vite": "^4.1.0",
-    "alchemy": "^0.82.1",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "typescript": "catalog:"

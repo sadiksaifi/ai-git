@@ -1,11 +1,24 @@
 import alchemy from "alchemy";
-import { Astro } from "alchemy/cloudflare";
+import { CustomDomain, Vite } from "alchemy/cloudflare";
 
-const app = await alchemy("ai-git");
+const isDev = !!process.env.ALCHEMY_DEV;
 
-export const web = await Astro("web", {
-  cwd: "../../apps/web",
+const app = await alchemy("ai-git", {
+  profile: "default",
+  stage: isDev ? "development" : "production",
 });
+
+export const web = await Vite("web", {
+  cwd: "../../apps/web",
+  assets: "dist",
+});
+
+if (!isDev) {
+  await CustomDomain("web-domain", {
+    name: "ai-git.xyz",
+    workerName: web.name,
+  });
+}
 
 console.log(`Web -> ${web.url}`);
 
