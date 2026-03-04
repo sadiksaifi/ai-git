@@ -109,7 +109,7 @@ function resolveTierForCatalogProvider(
     return "other";
   }
 
-  if (/gemini-(3-pro-preview|2\.5-pro|flash-latest)/.test(id)) {
+  if (/gemini-(3\.1-pro-preview|3-pro-preview|2\.5-pro|flash-latest)/.test(id)) {
     return "default";
   }
   if (/flash-lite|flash/.test(id)) {
