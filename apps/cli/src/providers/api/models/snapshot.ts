@@ -703,6 +703,22 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         reasoning: true,
         toolCall: true,
       },
+      "gemini-3.1-pro-preview": {
+        id: "gemini-3.1-pro-preview",
+        name: "Gemini 3.1 Pro Preview",
+        releaseDate: "2026-02-19",
+        lastUpdated: "2026-02-19",
+        reasoning: true,
+        toolCall: true,
+      },
+      "gemini-3.1-pro-preview-customtools": {
+        id: "gemini-3.1-pro-preview-customtools",
+        name: "Gemini 3.1 Pro Preview Custom Tools",
+        releaseDate: "2026-02-19",
+        lastUpdated: "2026-02-19",
+        reasoning: true,
+        toolCall: true,
+      },
       "gemini-embedding-001": {
         id: "gemini-embedding-001",
         name: "Gemini Embedding 001",
