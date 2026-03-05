@@ -4,7 +4,7 @@ type ReasoningEffort = "xhigh" | "high" | "medium" | "low";
 
 /**
  * Parse a virtual model ID into its base model and reasoning effort.
- * e.g. "gpt-5.3-codex-high" → { model: "gpt-5.3-codex", effort: "high" }
+ * e.g. "gpt-5.4-high" → { model: "gpt-5.4", effort: "high" }
  * Falls back to using the full ID as model with "medium" effort.
  */
 function parseModelId(virtualId: string): {

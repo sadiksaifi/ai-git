@@ -49,10 +49,10 @@
         "sonnet-low",
         "opus-low",
         "gemini-3-flash-preview",
+        "gpt-5.4",
         "gpt-5.3-codex",
-        "gpt-5.2-codex",
         "gpt-5.1-codex-max",
-        "openai/gpt-5.3-codex",
+        "openai/gpt-5.4",
         "gemini-3.1-pro-preview",
         "claude-sonnet-4-6"
       ]
@@ -204,6 +204,10 @@
         "properties": {
           "model": {
             "enum": [
+              "gpt-5.4-xhigh",
+              "gpt-5.4-high",
+              "gpt-5.4-medium",
+              "gpt-5.4-low",
               "gpt-5.3-codex-xhigh",
               "gpt-5.3-codex-high",
               "gpt-5.3-codex-medium",
@@ -226,7 +230,7 @@
               "gpt-5.1-codex-mini-medium",
               "gpt-5.1-codex-mini-low"
             ],
-            "description": "Codex CLI virtual model ID: '<base-model>-<effort>'. Effort levels: xhigh, high, medium, low. Default: 'gpt-5.3-codex-low'."
+            "description": "Codex CLI virtual model ID: '<base-model>-<effort>'. Effort levels: xhigh, high, medium, low. Default: 'gpt-5.4-low'."
           }
         }
       }
@@ -243,7 +247,7 @@
         "properties": {
           "model": {
             "type": "string",
-            "description": "OpenRouter model ID (e.g., 'openai/gpt-5.3-codex'). Models are fetched dynamically."
+            "description": "OpenRouter model ID (e.g., 'openai/gpt-5.4'). Models are fetched dynamically."
           }
         }
       }
@@ -260,7 +264,7 @@
         "properties": {
           "model": {
             "type": "string",
-            "description": "OpenAI model ID (e.g., 'gpt-5.3-codex'). Models are fetched dynamically."
+            "description": "OpenAI model ID (e.g., 'gpt-5.4'). Models are fetched dynamically."
           }
         }
       }
