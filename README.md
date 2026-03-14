@@ -26,8 +26,7 @@ npm install -g @ai-git/cli
 ### Homebrew (macOS)
 
 ```bash
-brew tap sadiksaifi/tap
-brew install ai-git
+brew tap sadiksaifi/tap/ai-git
 ```
 
 ### Shell Script (macOS/Linux)
