@@ -7,6 +7,12 @@ import type { ProviderDefinition, ModelDefinition, Mode } from "../types.ts";
 /**
  * Supported AI providers and their available models.
  * Add new providers here to extend support.
+ *
+ * MODEL ORDERING (CLI providers):
+ *   1. Newest generation first (e.g. 5.4 before 5.3)
+ *   2. Smallest/cheapest variant first within a generation (mini → base → max)
+ *   3. Lowest effort first within a variant (low → medium → high → xhigh)
+ *   4. New models go at the TOP of the list
  */
 export const PROVIDERS: ProviderDefinition[] = [
   // ==============================================================================
@@ -66,9 +72,9 @@ export const PROVIDERS: ProviderDefinition[] = [
     models: [
       // Haiku does NOT support effort levels — do not add haiku-low/medium/high variants.
       // The --effort flag is only for Sonnet and Opus (see parseClaudeModelId in cli/claude-code.ts).
-      { id: "haiku", name: "Claude Haiku" },
+      { id: "haiku", name: "Claude Haiku", isRecommended: true },
       // sonnet (low, medium, high)
-      { id: "sonnet-low", name: "Claude Sonnet (low)", isRecommended: true },
+      { id: "sonnet-low", name: "Claude Sonnet (low)" },
       { id: "sonnet-medium", name: "Claude Sonnet (medium)" },
       { id: "sonnet-high", name: "Claude Sonnet (high)" },
       // opus (low, medium, high)
