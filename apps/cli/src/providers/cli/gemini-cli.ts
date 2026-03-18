@@ -29,14 +29,27 @@ export const GEMINI_OPTIMIZED_SETTINGS = {
 } as const;
 
 /**
- * Ensure the optimized Gemini settings file exists in DATA_DIR.
- * Idempotent — writes only if the file is missing.
+ * Ensure the optimized Gemini settings file exists and is up-to-date.
+ * Compares content to handle stale or malformed files.
+ * Best-effort — silently skips on read-only filesystems (CI, containers).
  */
-async function ensureGeminiSettings(): Promise<void> {
-  const file = Bun.file(GEMINI_SETTINGS_FILE);
-  if (await file.exists()) return;
-  await mkdir(DATA_DIR, { recursive: true });
-  await Bun.write(GEMINI_SETTINGS_FILE, JSON.stringify(GEMINI_OPTIMIZED_SETTINGS, null, 2));
+export async function ensureGeminiSettings(): Promise<void> {
+  try {
+    const expected = JSON.stringify(GEMINI_OPTIMIZED_SETTINGS, null, 2);
+    const file = Bun.file(GEMINI_SETTINGS_FILE);
+    if (await file.exists()) {
+      try {
+        const content = await file.text();
+        if (content === expected) return;
+      } catch {
+        // File unreadable — rewrite below
+      }
+    }
+    await mkdir(DATA_DIR, { recursive: true });
+    await Bun.write(GEMINI_SETTINGS_FILE, expected);
+  } catch {
+    // Best-effort: skip if DATA_DIR is not writable (CI, containers, Nix)
+  }
 }
 
 /**
@@ -72,7 +85,12 @@ export const geminiCliAdapter: CLIProviderAdapter = {
     );
 
     try {
-      await Promise.all([Bun.write(tmpFile, system), ensureGeminiSettings()]);
+      // Respect externally-managed settings (e.g. enterprise Gemini installations)
+      const externalSettings = process.env.GEMINI_CLI_SYSTEM_SETTINGS_PATH;
+      await Promise.all([
+        Bun.write(tmpFile, system),
+        ...(externalSettings ? [] : [ensureGeminiSettings()]),
+      ]);
 
       const proc = Bun.spawn(
         [
@@ -93,7 +111,7 @@ export const geminiCliAdapter: CLIProviderAdapter = {
           env: {
             ...process.env,
             GEMINI_SYSTEM_MD: tmpFile,
-            GEMINI_CLI_SYSTEM_SETTINGS_PATH: GEMINI_SETTINGS_FILE,
+            GEMINI_CLI_SYSTEM_SETTINGS_PATH: externalSettings || GEMINI_SETTINGS_FILE,
             NODE_COMPILE_CACHE: join(CACHE_DIR, "gemini-compile-cache"),
           },
         },

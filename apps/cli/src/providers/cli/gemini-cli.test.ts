@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { GEMINI_SETTINGS_FILE, CACHE_DIR } from "../../lib/paths.ts";
 import * as path from "node:path";
-import { GEMINI_OPTIMIZED_SETTINGS } from "./gemini-cli.ts";
+import { GEMINI_OPTIMIZED_SETTINGS, ensureGeminiSettings } from "./gemini-cli.ts";
 
 describe("GEMINI_OPTIMIZED_SETTINGS", () => {
   it("should disable auto-update", () => {
@@ -22,6 +22,85 @@ describe("GEMINI_OPTIMIZED_SETTINGS", () => {
   it("should disable skills and hooks", () => {
     expect(GEMINI_OPTIMIZED_SETTINGS.skills.enabled).toBe(false);
     expect(GEMINI_OPTIMIZED_SETTINGS.hooksConfig.enabled).toBe(false);
+  });
+});
+
+describe("ensureGeminiSettings", () => {
+  let originalFile: typeof Bun.file;
+  let originalWrite: typeof Bun.write;
+  let fileContents: Map<string, string>;
+  let fileExistsMap: Map<string, boolean>;
+
+  beforeEach(() => {
+    fileContents = new Map();
+    fileExistsMap = new Map();
+    originalFile = Bun.file;
+    originalWrite = Bun.write;
+
+    (Bun as any).file = (filePath: string) => ({
+      exists: async () => fileExistsMap.get(filePath) ?? false,
+      text: async () => {
+        const content = fileContents.get(filePath);
+        if (content === undefined) throw new Error("ENOENT");
+        return content;
+      },
+    });
+
+    (Bun as any).write = async (filePath: string, content: string) => {
+      fileContents.set(filePath, content);
+    };
+  });
+
+  afterEach(() => {
+    (Bun as any).file = originalFile;
+    (Bun as any).write = originalWrite;
+  });
+
+  it("should rewrite when file content differs from current settings", async () => {
+    fileExistsMap.set(GEMINI_SETTINGS_FILE, true);
+    fileContents.set(GEMINI_SETTINGS_FILE, JSON.stringify({ old: true }));
+
+    await ensureGeminiSettings();
+
+    expect(fileContents.get(GEMINI_SETTINGS_FILE)).toBe(
+      JSON.stringify(GEMINI_OPTIMIZED_SETTINGS, null, 2),
+    );
+  });
+
+  it("should rewrite when file contains invalid JSON", async () => {
+    fileExistsMap.set(GEMINI_SETTINGS_FILE, true);
+    fileContents.set(GEMINI_SETTINGS_FILE, "not valid json{{{");
+
+    await ensureGeminiSettings();
+
+    expect(fileContents.get(GEMINI_SETTINGS_FILE)).toBe(
+      JSON.stringify(GEMINI_OPTIMIZED_SETTINGS, null, 2),
+    );
+  });
+
+  it("should not throw when write fails (read-only filesystem)", async () => {
+    fileExistsMap.set(GEMINI_SETTINGS_FILE, false);
+    (Bun as any).write = async () => {
+      throw Object.assign(new Error("EACCES"), { code: "EACCES" });
+    };
+
+    // Should not throw
+    await ensureGeminiSettings();
+  });
+
+  it("should skip write when content already matches", async () => {
+    const expected = JSON.stringify(GEMINI_OPTIMIZED_SETTINGS, null, 2);
+    fileExistsMap.set(GEMINI_SETTINGS_FILE, true);
+    fileContents.set(GEMINI_SETTINGS_FILE, expected);
+
+    let writeCalled = false;
+    (Bun as any).write = async () => {
+      writeCalled = true;
+    };
+
+    await ensureGeminiSettings();
+
+    expect(writeCalled).toBe(false);
   });
 });
 
@@ -82,6 +161,26 @@ describe("geminiCliAdapter.invoke", () => {
     expect(spawnCalls).toHaveLength(1);
     const env = spawnCalls[0]!.opts.env!;
     expect(env.NODE_COMPILE_CACHE).toBe(path.join(CACHE_DIR, "gemini-compile-cache"));
+  });
+
+  it("should respect existing GEMINI_CLI_SYSTEM_SETTINGS_PATH from process.env", async () => {
+    const externalPath = "/etc/gemini/managed-settings.json";
+    process.env.GEMINI_CLI_SYSTEM_SETTINGS_PATH = externalPath;
+
+    try {
+      const { geminiCliAdapter } = await import("./gemini-cli.ts");
+      await geminiCliAdapter.invoke({
+        model: "gemini-2.5-flash",
+        system: "test system",
+        prompt: "test prompt",
+      });
+
+      expect(spawnCalls).toHaveLength(1);
+      const env = spawnCalls[0]!.opts.env!;
+      expect(env.GEMINI_CLI_SYSTEM_SETTINGS_PATH).toBe(externalPath);
+    } finally {
+      delete process.env.GEMINI_CLI_SYSTEM_SETTINGS_PATH;
+    }
   });
 
   it("should still set GEMINI_SYSTEM_MD in spawn env", async () => {
