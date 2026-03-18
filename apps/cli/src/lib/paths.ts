@@ -39,6 +39,22 @@ export function resolveCacheDir(): string {
 }
 
 /**
+ * Compute the data directory at call time (testable via env manipulation).
+ * For application data files (e.g. managed settings for child CLIs).
+ */
+export function resolveDataDir(): string {
+  if (isWindows) {
+    return path.join(
+      process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"),
+      "ai-git",
+      "data",
+    );
+  }
+  const xdgData = process.env.XDG_DATA_HOME || path.join(os.homedir(), ".local", "share");
+  return path.join(xdgData, "ai-git");
+}
+
+/**
  * Compute the state directory at call time (testable via env manipulation).
  * For persistent application state that isn't config or cache.
  */
@@ -57,6 +73,7 @@ export function resolveStateDir(): string {
 
 export const CONFIG_DIR = resolveConfigDir();
 export const CACHE_DIR = resolveCacheDir();
+export const DATA_DIR = resolveDataDir();
 export const STATE_DIR = resolveStateDir();
 
 // ── State Files ─────────────────────────────────────────────────────
@@ -80,6 +97,11 @@ export function getModelsDevCacheFilePath(): string {
   if (override) return override;
   return path.join(CACHE_DIR, "models-dev-catalog.json");
 }
+
+// ── Data Files ─────────────────────────────────────────────────────
+// Managed settings files for child CLI invocations (Gemini, Codex, etc.)
+
+export const GEMINI_SETTINGS_FILE = path.join(DATA_DIR, "gemini-settings.json");
 
 // ── Secrets ─────────────────────────────────────────────────────────
 
