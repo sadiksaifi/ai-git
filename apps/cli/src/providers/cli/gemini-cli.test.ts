@@ -4,14 +4,34 @@ import * as path from "node:path";
 import { GEMINI_OPTIMIZED_SETTINGS, ensureGeminiSettings } from "./gemini-cli.ts";
 
 describe("GEMINI_OPTIMIZED_SETTINGS", () => {
-  it("should disable auto-update", () => {
+  it("should disable auto-update and notifications", () => {
     expect(GEMINI_OPTIMIZED_SETTINGS.general.enableAutoUpdate).toBe(false);
     expect(GEMINI_OPTIMIZED_SETTINGS.general.enableAutoUpdateNotification).toBe(false);
+    expect(GEMINI_OPTIMIZED_SETTINGS.general.enableNotifications).toBe(false);
   });
 
-  it("should disable context directory scanning", () => {
+  it("should disable checkpointing and session retention", () => {
+    expect(GEMINI_OPTIMIZED_SETTINGS.general.checkpointing.enabled).toBe(false);
+    expect(GEMINI_OPTIMIZED_SETTINGS.general.sessionRetention.enabled).toBe(false);
+  });
+
+  it("should disable context directory scanning and file filtering", () => {
     expect(GEMINI_OPTIMIZED_SETTINGS.context.includeDirectoryTree).toBe(false);
     expect(GEMINI_OPTIMIZED_SETTINGS.context.discoveryMaxDirs).toBe(0);
+    expect(GEMINI_OPTIMIZED_SETTINGS.context.fileFiltering.enableFuzzySearch).toBe(false);
+    expect(GEMINI_OPTIMIZED_SETTINGS.context.fileFiltering.enableRecursiveFileSearch).toBe(false);
+  });
+
+  it("should disable UI overhead for headless mode", () => {
+    expect(GEMINI_OPTIMIZED_SETTINGS.ui.hideBanner).toBe(true);
+    expect(GEMINI_OPTIMIZED_SETTINGS.ui.hideTips).toBe(true);
+    expect(GEMINI_OPTIMIZED_SETTINGS.ui.hideContextSummary).toBe(true);
+    expect(GEMINI_OPTIMIZED_SETTINGS.ui.autoThemeSwitching).toBe(false);
+    expect(GEMINI_OPTIMIZED_SETTINGS.ui.showSpinner).toBe(false);
+  });
+
+  it("should disable IDE integration", () => {
+    expect(GEMINI_OPTIMIZED_SETTINGS.ide.enabled).toBe(false);
   });
 
   it("should disable telemetry and usage stats", () => {
@@ -118,12 +138,12 @@ describe("geminiCliAdapter.invoke", () => {
     originalFile = Bun.file;
     originalWrite = Bun.write;
 
-    (Bun as any).file = (filePath: string) => ({
+    (Bun as any).file = (_filePath: string) => ({
       exists: async () => true,
       text: async () => JSON.stringify(GEMINI_OPTIMIZED_SETTINGS, null, 2),
     });
 
-    (Bun as any).write = async (filePath: string, content: string) => {
+    (Bun as any).write = async (filePath: string, _content: string) => {
       writtenPaths.push(filePath);
     };
 
@@ -196,6 +216,31 @@ describe("geminiCliAdapter.invoke", () => {
     } finally {
       delete process.env.GEMINI_CLI_SYSTEM_SETTINGS_PATH;
     }
+  });
+
+  it("should set GEMINI_TELEMETRY_ENABLED=false in spawn env", async () => {
+    const { geminiCliAdapter } = await import("./gemini-cli.ts");
+    await geminiCliAdapter.invoke({
+      model: "gemini-2.5-flash",
+      system: "test system",
+      prompt: "test prompt",
+    });
+
+    expect(spawnCalls).toHaveLength(1);
+    const env = spawnCalls[0]!.opts.env!;
+    expect(env.GEMINI_TELEMETRY_ENABLED).toBe("false");
+  });
+
+  it("should not include --sandbox flag", async () => {
+    const { geminiCliAdapter } = await import("./gemini-cli.ts");
+    await geminiCliAdapter.invoke({
+      model: "gemini-2.5-flash",
+      system: "test system",
+      prompt: "test prompt",
+    });
+
+    expect(spawnCalls).toHaveLength(1);
+    expect(spawnCalls[0]!.cmd).not.toContain("--sandbox");
   });
 
   it("should still set GEMINI_SYSTEM_MD in spawn env", async () => {

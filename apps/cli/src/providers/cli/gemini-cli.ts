@@ -17,11 +17,26 @@ export const GEMINI_OPTIMIZED_SETTINGS = {
   general: {
     enableAutoUpdate: false,
     enableAutoUpdateNotification: false,
+    enableNotifications: false,
+    checkpointing: { enabled: false },
+    sessionRetention: { enabled: false },
   },
   context: {
     includeDirectoryTree: false,
     discoveryMaxDirs: 0,
+    fileFiltering: {
+      enableFuzzySearch: false,
+      enableRecursiveFileSearch: false,
+    },
   },
+  ui: {
+    hideBanner: true,
+    hideTips: true,
+    hideContextSummary: true,
+    autoThemeSwitching: false,
+    showSpinner: false,
+  },
+  ide: { enabled: false },
   telemetry: { enabled: false },
   privacy: { usageStatisticsEnabled: false },
   skills: { enabled: false },
@@ -62,12 +77,12 @@ export async function ensureGeminiSettings(): Promise<void> {
  *
  * CLI Pattern:
  *   GEMINI_SYSTEM_MD=/tmp/ai-git-system-xxx.md \
- *     gemini --model <model> --output-format text --sandbox -e none -p "<prompt>"
+ *     gemini --model <model> --output-format text -e none -p "<prompt>"
  *
  * - `-p <prompt>` runs in non-interactive (headless) mode with the given prompt
  * - `--output-format text` ensures clean text output
- * - `--sandbox` enables sandboxed execution for tool isolation
  * - `-e none` disables all extensions (pure text generation)
+ * - No `--sandbox` — extensions are disabled so sandbox is never exercised
  * - No `--allowed-tools` means no tools auto-approved; headless mode can't
  *   prompt for confirmation, so tools are effectively blocked
  * - GEMINI_SYSTEM_MD replaces the entire default system prompt
@@ -93,18 +108,7 @@ export const geminiCliAdapter: CLIProviderAdapter = {
       ]);
 
       const proc = Bun.spawn(
-        [
-          "gemini",
-          "--model",
-          model,
-          "--output-format",
-          "text",
-          "--sandbox",
-          "-e",
-          "none",
-          "-p",
-          prompt,
-        ],
+        ["gemini", "--model", model, "--output-format", "text", "-e", "none", "-p", prompt],
         {
           stdout: "pipe",
           stderr: "pipe",
@@ -112,6 +116,8 @@ export const geminiCliAdapter: CLIProviderAdapter = {
             ...process.env,
             GEMINI_SYSTEM_MD: tmpFile,
             GEMINI_CLI_SYSTEM_SETTINGS_PATH: externalSettings || GEMINI_SETTINGS_FILE,
+            // Env var is checked before settings file is loaded
+            GEMINI_TELEMETRY_ENABLED: "false",
             // Node.js v22.1+ bytecode cache; silently ignored on older versions
             NODE_COMPILE_CACHE: join(CACHE_DIR, "gemini-compile-cache"),
           },
