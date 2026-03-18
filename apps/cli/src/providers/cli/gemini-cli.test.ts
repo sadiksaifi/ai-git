@@ -106,11 +106,26 @@ describe("ensureGeminiSettings", () => {
 
 describe("geminiCliAdapter.invoke", () => {
   let spawnCalls: { cmd: string[]; opts: { env?: Record<string, string> } }[] = [];
+  let writtenPaths: string[] = [];
   let originalSpawn: typeof Bun.spawn;
+  let originalFile: typeof Bun.file;
+  let originalWrite: typeof Bun.write;
 
   beforeEach(() => {
     spawnCalls = [];
+    writtenPaths = [];
     originalSpawn = Bun.spawn;
+    originalFile = Bun.file;
+    originalWrite = Bun.write;
+
+    (Bun as any).file = (filePath: string) => ({
+      exists: async () => true,
+      text: async () => JSON.stringify(GEMINI_OPTIMIZED_SETTINGS, null, 2),
+    });
+
+    (Bun as any).write = async (filePath: string, content: string) => {
+      writtenPaths.push(filePath);
+    };
 
     (Bun as any).spawn = (cmd: string[], opts: any) => {
       spawnCalls.push({ cmd, opts });
@@ -133,6 +148,8 @@ describe("geminiCliAdapter.invoke", () => {
 
   afterEach(() => {
     (Bun as any).spawn = originalSpawn;
+    (Bun as any).file = originalFile;
+    (Bun as any).write = originalWrite;
   });
 
   it("should set GEMINI_CLI_SYSTEM_SETTINGS_PATH in spawn env", async () => {
@@ -192,5 +209,18 @@ describe("geminiCliAdapter.invoke", () => {
     expect(spawnCalls).toHaveLength(1);
     const env = spawnCalls[0]!.opts.env!;
     expect(env.GEMINI_SYSTEM_MD).toBeDefined();
+  });
+
+  it("should only write the temp system prompt file (no real filesystem side-effects)", async () => {
+    const { geminiCliAdapter } = await import("./gemini-cli.ts");
+    await geminiCliAdapter.invoke({
+      model: "gemini-2.5-flash",
+      system: "test system",
+      prompt: "test prompt",
+    });
+
+    // Only the temp system prompt file should be written (settings file is up-to-date via mock)
+    expect(writtenPaths).toHaveLength(1);
+    expect(writtenPaths[0]).toContain("ai-git-system-");
   });
 });
