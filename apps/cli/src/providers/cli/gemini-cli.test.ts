@@ -107,11 +107,9 @@ describe("ensureGeminiSettings", () => {
 describe("geminiCliAdapter.invoke", () => {
   let spawnCalls: { cmd: string[]; opts: { env?: Record<string, string> } }[] = [];
   let originalSpawn: typeof Bun.spawn;
-  let writtenFiles: Map<string, string>;
 
   beforeEach(() => {
     spawnCalls = [];
-    writtenFiles = new Map();
     originalSpawn = Bun.spawn;
 
     (Bun as any).spawn = (cmd: string[], opts: any) => {
