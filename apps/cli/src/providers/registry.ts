@@ -19,11 +19,16 @@ export const PROVIDERS: ProviderDefinition[] = [
     binary: "codex",
     isRecommended: true,
     models: [
+      // gpt-5.4-mini (high, medium, low)
+      { id: "gpt-5.4-mini-xhigh", name: "GPT-5.4 Mini (high)" },
+      { id: "gpt-5.4-mini-high", name: "GPT-5.4 Mini (high)" },
+      { id: "gpt-5.4-mini-medium", name: "GPT-5.4 Mini (medium)" },
+      { id: "gpt-5.4-mini-low", name: "GPT-5.4 Mini (low)", isRecommended: true },
       // gpt-5.4 (xhigh, high, medium, low)
       { id: "gpt-5.4-xhigh", name: "GPT-5.4 (xhigh)" },
       { id: "gpt-5.4-high", name: "GPT-5.4 (high)" },
       { id: "gpt-5.4-medium", name: "GPT-5.4 (medium)" },
-      { id: "gpt-5.4-low", name: "GPT-5.4 (low)", isRecommended: true },
+      { id: "gpt-5.4-low", name: "GPT-5.4 (low)" },
       // gpt-5.3-codex (xhigh, high, medium, low)
       { id: "gpt-5.3-codex-xhigh", name: "GPT-5.3 Codex (xhigh)" },
       { id: "gpt-5.3-codex-high", name: "GPT-5.3 Codex (high)" },
