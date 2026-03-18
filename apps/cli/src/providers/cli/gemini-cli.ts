@@ -1,8 +1,71 @@
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
-import { unlink } from "node:fs/promises";
+import { mkdir, unlink } from "node:fs/promises";
+import { GEMINI_SETTINGS_FILE, DATA_DIR, CACHE_DIR } from "../../lib/paths.ts";
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
+
+/**
+ * Optimized Gemini CLI settings for headless invocation.
+ * Injected via GEMINI_CLI_SYSTEM_SETTINGS_PATH (precedence level 5,
+ * overrides user settings without touching ~/.gemini/settings.json).
+ *
+ * Only overrides settings whose defaults are suboptimal for headless mode.
+ * Verified against settings.schema.json defaults.
+ */
+export const GEMINI_OPTIMIZED_SETTINGS = {
+  general: {
+    enableAutoUpdate: false,
+    enableAutoUpdateNotification: false,
+    enableNotifications: false,
+    checkpointing: { enabled: false },
+    sessionRetention: { enabled: false },
+  },
+  context: {
+    includeDirectoryTree: false,
+    discoveryMaxDirs: 0,
+    fileFiltering: {
+      enableFuzzySearch: false,
+      enableRecursiveFileSearch: false,
+    },
+  },
+  ui: {
+    hideBanner: true,
+    hideTips: true,
+    hideContextSummary: true,
+    autoThemeSwitching: false,
+    showSpinner: false,
+  },
+  ide: { enabled: false },
+  telemetry: { enabled: false },
+  privacy: { usageStatisticsEnabled: false },
+  skills: { enabled: false },
+  hooksConfig: { enabled: false },
+} as const;
+
+/**
+ * Ensure the optimized Gemini settings file exists and is up-to-date.
+ * Compares content to handle stale or malformed files.
+ * Best-effort — silently skips on read-only filesystems (CI, containers).
+ */
+export async function ensureGeminiSettings(): Promise<void> {
+  try {
+    const expected = JSON.stringify(GEMINI_OPTIMIZED_SETTINGS, null, 2);
+    const file = Bun.file(GEMINI_SETTINGS_FILE);
+    if (await file.exists()) {
+      try {
+        const content = await file.text();
+        if (content === expected) return;
+      } catch {
+        // File unreadable — rewrite below
+      }
+    }
+    await mkdir(DATA_DIR, { recursive: true });
+    await Bun.write(GEMINI_SETTINGS_FILE, expected);
+  } catch {
+    // Best-effort: skip if DATA_DIR is not writable (CI, containers, Nix)
+  }
+}
 
 /**
  * Gemini CLI adapter.
@@ -14,12 +77,12 @@ import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
  *
  * CLI Pattern:
  *   GEMINI_SYSTEM_MD=/tmp/ai-git-system-xxx.md \
- *     gemini --model <model> --output-format text --sandbox -e none -p "<prompt>"
+ *     gemini --model <model> --output-format text -e none -p "<prompt>"
  *
  * - `-p <prompt>` runs in non-interactive (headless) mode with the given prompt
  * - `--output-format text` ensures clean text output
- * - `--sandbox` enables sandboxed execution for tool isolation
  * - `-e none` disables all extensions (pure text generation)
+ * - No `--sandbox` — extensions are disabled so sandbox is never exercised
  * - No `--allowed-tools` means no tools auto-approved; headless mode can't
  *   prompt for confirmation, so tools are effectively blocked
  * - GEMINI_SYSTEM_MD replaces the entire default system prompt
@@ -37,27 +100,26 @@ export const geminiCliAdapter: CLIProviderAdapter = {
     );
 
     try {
-      await Bun.write(tmpFile, system);
+      // Respect externally-managed settings (e.g. enterprise Gemini installations)
+      const externalSettings = process.env.GEMINI_CLI_SYSTEM_SETTINGS_PATH;
+      await Promise.all([
+        Bun.write(tmpFile, system),
+        ...(externalSettings ? [] : [ensureGeminiSettings()]),
+      ]);
 
       const proc = Bun.spawn(
-        [
-          "gemini",
-          "--model",
-          model,
-          "--output-format",
-          "text",
-          "--sandbox",
-          "-e",
-          "none",
-          "-p",
-          prompt,
-        ],
+        ["gemini", "--model", model, "--output-format", "text", "-e", "none", "-p", prompt],
         {
           stdout: "pipe",
           stderr: "pipe",
           env: {
             ...process.env,
             GEMINI_SYSTEM_MD: tmpFile,
+            GEMINI_CLI_SYSTEM_SETTINGS_PATH: externalSettings || GEMINI_SETTINGS_FILE,
+            // Env var is checked before settings file is loaded
+            GEMINI_TELEMETRY_ENABLED: "false",
+            // Node.js v22.1+ bytecode cache; silently ignored on older versions
+            NODE_COMPILE_CACHE: join(CACHE_DIR, "gemini-compile-cache"),
           },
         },
       );

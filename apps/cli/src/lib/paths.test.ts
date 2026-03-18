@@ -5,14 +5,17 @@ import * as os from "node:os";
 import {
   CONFIG_DIR,
   CACHE_DIR,
+  DATA_DIR,
   CONFIG_FILE,
   UPDATE_CACHE_FILE,
   getModelCacheFile,
   getModelsDevCacheFilePath,
   SECRETS_FILE,
   TEMP_MSG_FILE,
+  GEMINI_SETTINGS_FILE,
   resolveConfigDir,
   resolveCacheDir,
+  resolveDataDir,
 } from "./paths.ts";
 
 const isWindows = process.platform === "win32";
@@ -37,6 +40,10 @@ describe("paths", () => {
 
       it("CACHE_DIR uses ~/.cache/ai-git on Unix", () => {
         expect(CACHE_DIR).toBe(path.join(os.homedir(), ".cache", "ai-git"));
+      });
+
+      it("DATA_DIR uses ~/.local/share/ai-git on Unix", () => {
+        expect(DATA_DIR).toBe(path.join(os.homedir(), ".local", "share", "ai-git"));
       });
     }
   });
@@ -81,6 +88,7 @@ describe("paths", () => {
     } else {
       const originalXdgConfig = process.env.XDG_CONFIG_HOME;
       const originalXdgCache = process.env.XDG_CACHE_HOME;
+      const originalXdgData = process.env.XDG_DATA_HOME;
 
       afterEach(() => {
         if (originalXdgConfig === undefined) {
@@ -92,6 +100,11 @@ describe("paths", () => {
           delete process.env.XDG_CACHE_HOME;
         } else {
           process.env.XDG_CACHE_HOME = originalXdgCache;
+        }
+        if (originalXdgData === undefined) {
+          delete process.env.XDG_DATA_HOME;
+        } else {
+          process.env.XDG_DATA_HOME = originalXdgData;
         }
       });
 
@@ -113,6 +126,16 @@ describe("paths", () => {
       it("resolveCacheDir falls back to ~/.cache when XDG_CACHE_HOME is unset", () => {
         delete process.env.XDG_CACHE_HOME;
         expect(resolveCacheDir()).toBe(path.join(os.homedir(), ".cache", "ai-git"));
+      });
+
+      it("resolveDataDir respects XDG_DATA_HOME", () => {
+        process.env.XDG_DATA_HOME = "/tmp/xdg-data";
+        expect(resolveDataDir()).toBe("/tmp/xdg-data/ai-git");
+      });
+
+      it("resolveDataDir falls back to ~/.local/share when XDG_DATA_HOME is unset", () => {
+        delete process.env.XDG_DATA_HOME;
+        expect(resolveDataDir()).toBe(path.join(os.homedir(), ".local", "share", "ai-git"));
       });
     }
   });
@@ -153,6 +176,12 @@ describe("paths", () => {
         process.env.AI_GIT_MODELS_DEV_CACHE_FILE = "/tmp/custom-cache.json";
         expect(getModelsDevCacheFilePath()).toBe("/tmp/custom-cache.json");
       });
+    });
+  });
+
+  describe("data files", () => {
+    it("GEMINI_SETTINGS_FILE is gemini-settings.json inside DATA_DIR", () => {
+      expect(GEMINI_SETTINGS_FILE).toBe(path.join(DATA_DIR, "gemini-settings.json"));
     });
   });
 
