@@ -40,6 +40,7 @@ describe("codexAdapter.invoke", () => {
       prompt: "test prompt",
     });
 
+    expect(spawnCalls).toHaveLength(1);
     const cmd = spawnCalls[0]!.cmd;
     const idx = cmd.indexOf("check_for_update_on_startup=false");
     expect(idx).toBeGreaterThan(0);
@@ -54,6 +55,7 @@ describe("codexAdapter.invoke", () => {
       prompt: "test prompt",
     });
 
+    expect(spawnCalls).toHaveLength(1);
     const cmd = spawnCalls[0]!.cmd;
     const disableIdx = cmd.indexOf("shell_snapshot");
     expect(disableIdx).toBeGreaterThan(0);
@@ -68,6 +70,7 @@ describe("codexAdapter.invoke", () => {
       prompt: "test prompt",
     });
 
+    expect(spawnCalls).toHaveLength(1);
     const cmd = spawnCalls[0]!.cmd;
     const idx = cmd.indexOf("analytics.enabled=false");
     expect(idx).toBeGreaterThan(0);
