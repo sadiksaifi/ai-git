@@ -71,19 +71,6 @@ describe("geminiCliAdapter.invoke", () => {
     expect(env.GEMINI_CLI_SYSTEM_SETTINGS_PATH).toBe(GEMINI_SETTINGS_FILE);
   });
 
-  it("should disable Code Assist endpoint to skip network fetch", async () => {
-    const { geminiCliAdapter } = await import("./gemini-cli.ts");
-    await geminiCliAdapter.invoke({
-      model: "gemini-2.5-flash",
-      system: "test system",
-      prompt: "test prompt",
-    });
-
-    expect(spawnCalls).toHaveLength(1);
-    const env = spawnCalls[0]!.opts.env!;
-    expect(env.CODE_ASSIST_ENDPOINT).toBe("http://localhost:1");
-  });
-
   it("should set NODE_COMPILE_CACHE for bytecode caching", async () => {
     const { geminiCliAdapter } = await import("./gemini-cli.ts");
     await geminiCliAdapter.invoke({

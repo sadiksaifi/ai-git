@@ -94,7 +94,6 @@ export const geminiCliAdapter: CLIProviderAdapter = {
             ...process.env,
             GEMINI_SYSTEM_MD: tmpFile,
             GEMINI_CLI_SYSTEM_SETTINGS_PATH: GEMINI_SETTINGS_FILE,
-            CODE_ASSIST_ENDPOINT: "http://localhost:1",
             NODE_COMPILE_CACHE: join(CACHE_DIR, "gemini-compile-cache"),
           },
         },
