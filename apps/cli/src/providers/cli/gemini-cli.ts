@@ -112,6 +112,7 @@ export const geminiCliAdapter: CLIProviderAdapter = {
             ...process.env,
             GEMINI_SYSTEM_MD: tmpFile,
             GEMINI_CLI_SYSTEM_SETTINGS_PATH: externalSettings || GEMINI_SETTINGS_FILE,
+            // Node.js v22.1+ bytecode cache; silently ignored on older versions
             NODE_COMPILE_CACHE: join(CACHE_DIR, "gemini-compile-cache"),
           },
         },
