@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { GEMINI_SETTINGS_FILE } from "../../lib/paths.ts";
+import { GEMINI_SETTINGS_FILE, CACHE_DIR } from "../../lib/paths.ts";
+import * as path from "node:path";
 import { GEMINI_OPTIMIZED_SETTINGS } from "./gemini-cli.ts";
 
 describe("GEMINI_OPTIMIZED_SETTINGS", () => {
@@ -68,6 +69,32 @@ describe("geminiCliAdapter.invoke", () => {
     expect(spawnCalls).toHaveLength(1);
     const env = spawnCalls[0]!.opts.env!;
     expect(env.GEMINI_CLI_SYSTEM_SETTINGS_PATH).toBe(GEMINI_SETTINGS_FILE);
+  });
+
+  it("should disable Code Assist endpoint to skip network fetch", async () => {
+    const { geminiCliAdapter } = await import("./gemini-cli.ts");
+    await geminiCliAdapter.invoke({
+      model: "gemini-2.5-flash",
+      system: "test system",
+      prompt: "test prompt",
+    });
+
+    expect(spawnCalls).toHaveLength(1);
+    const env = spawnCalls[0]!.opts.env!;
+    expect(env.CODE_ASSIST_ENDPOINT).toBe("http://localhost:1");
+  });
+
+  it("should set NODE_COMPILE_CACHE for bytecode caching", async () => {
+    const { geminiCliAdapter } = await import("./gemini-cli.ts");
+    await geminiCliAdapter.invoke({
+      model: "gemini-2.5-flash",
+      system: "test system",
+      prompt: "test prompt",
+    });
+
+    expect(spawnCalls).toHaveLength(1);
+    const env = spawnCalls[0]!.opts.env!;
+    expect(env.NODE_COMPILE_CACHE).toBe(path.join(CACHE_DIR, "gemini-compile-cache"));
   });
 
   it("should still set GEMINI_SYSTEM_MD in spawn env", async () => {

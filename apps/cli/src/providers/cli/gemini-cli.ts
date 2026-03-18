@@ -2,7 +2,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 import { mkdir, unlink } from "node:fs/promises";
-import { GEMINI_SETTINGS_FILE, DATA_DIR } from "../../lib/paths.ts";
+import { GEMINI_SETTINGS_FILE, DATA_DIR, CACHE_DIR } from "../../lib/paths.ts";
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
 
 /**
@@ -94,6 +94,8 @@ export const geminiCliAdapter: CLIProviderAdapter = {
             ...process.env,
             GEMINI_SYSTEM_MD: tmpFile,
             GEMINI_CLI_SYSTEM_SETTINGS_PATH: GEMINI_SETTINGS_FILE,
+            CODE_ASSIST_ENDPOINT: "http://localhost:1",
+            NODE_COMPILE_CACHE: join(CACHE_DIR, "gemini-compile-cache"),
           },
         },
       );
