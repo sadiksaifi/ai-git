@@ -44,6 +44,8 @@ export function resolveCacheDir(): string {
  */
 export function resolveDataDir(): string {
   if (isWindows) {
+    // Extra "data" subdirectory avoids collision with CACHE_DIR,
+    // which shares the same LOCALAPPDATA\ai-git parent on Windows.
     return path.join(
       process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"),
       "ai-git",
