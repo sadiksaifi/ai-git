@@ -171,9 +171,9 @@ describe("claude-code registry", () => {
     expect(modelIds).not.toContain("haiku-high");
   });
 
-  it("should have sonnet-low as the recommended model", () => {
+  it("should have haiku as the recommended model", () => {
     const provider = getProviderById("claude-code");
     const recommendedModel = provider?.models.find((m) => m.isRecommended);
-    expect(recommendedModel?.id).toBe("sonnet-low");
+    expect(recommendedModel?.id).toBe("haiku");
   });
 });
