@@ -19,43 +19,43 @@ export const PROVIDERS: ProviderDefinition[] = [
     binary: "codex",
     isRecommended: true,
     models: [
-      // gpt-5.4-mini (high, medium, low)
-      { id: "gpt-5.4-mini-xhigh", name: "GPT-5.4 Mini (high)" },
-      { id: "gpt-5.4-mini-high", name: "GPT-5.4 Mini (high)" },
-      { id: "gpt-5.4-mini-medium", name: "GPT-5.4 Mini (medium)" },
+      // gpt-5.4-mini (low, medium, high, xhigh)
       { id: "gpt-5.4-mini-low", name: "GPT-5.4 Mini (low)", isRecommended: true },
-      // gpt-5.4 (xhigh, high, medium, low)
-      { id: "gpt-5.4-xhigh", name: "GPT-5.4 (xhigh)" },
-      { id: "gpt-5.4-high", name: "GPT-5.4 (high)" },
-      { id: "gpt-5.4-medium", name: "GPT-5.4 (medium)" },
+      { id: "gpt-5.4-mini-medium", name: "GPT-5.4 Mini (medium)" },
+      { id: "gpt-5.4-mini-high", name: "GPT-5.4 Mini (high)" },
+      { id: "gpt-5.4-mini-xhigh", name: "GPT-5.4 Mini (xhigh)" },
+      // gpt-5.4 (low, medium, high, xhigh)
       { id: "gpt-5.4-low", name: "GPT-5.4 (low)" },
-      // gpt-5.3-codex (xhigh, high, medium, low)
-      { id: "gpt-5.3-codex-xhigh", name: "GPT-5.3 Codex (xhigh)" },
-      { id: "gpt-5.3-codex-high", name: "GPT-5.3 Codex (high)" },
-      { id: "gpt-5.3-codex-medium", name: "GPT-5.3 Codex (medium)" },
+      { id: "gpt-5.4-medium", name: "GPT-5.4 (medium)" },
+      { id: "gpt-5.4-high", name: "GPT-5.4 (high)" },
+      { id: "gpt-5.4-xhigh", name: "GPT-5.4 (xhigh)" },
+      // gpt-5.3-codex (low, medium, high, xhigh)
       { id: "gpt-5.3-codex-low", name: "GPT-5.3 Codex (low)" },
-      // gpt-5.2-codex (xhigh, high, medium, low)
-      { id: "gpt-5.2-codex-xhigh", name: "GPT-5.2 Codex (xhigh)" },
-      { id: "gpt-5.2-codex-high", name: "GPT-5.2 Codex (high)" },
-      { id: "gpt-5.2-codex-medium", name: "GPT-5.2 Codex (medium)" },
+      { id: "gpt-5.3-codex-medium", name: "GPT-5.3 Codex (medium)" },
+      { id: "gpt-5.3-codex-high", name: "GPT-5.3 Codex (high)" },
+      { id: "gpt-5.3-codex-xhigh", name: "GPT-5.3 Codex (xhigh)" },
+      // gpt-5.2-codex (low, medium, high, xhigh)
       { id: "gpt-5.2-codex-low", name: "GPT-5.2 Codex (low)" },
-      // gpt-5.2 (xhigh, high, medium, low)
-      { id: "gpt-5.2-xhigh", name: "GPT-5.2 (xhigh)" },
-      { id: "gpt-5.2-high", name: "GPT-5.2 (high)" },
-      { id: "gpt-5.2-medium", name: "GPT-5.2 (medium)" },
+      { id: "gpt-5.2-codex-medium", name: "GPT-5.2 Codex (medium)" },
+      { id: "gpt-5.2-codex-high", name: "GPT-5.2 Codex (high)" },
+      { id: "gpt-5.2-codex-xhigh", name: "GPT-5.2 Codex (xhigh)" },
+      // gpt-5.2 (low, medium, high, xhigh)
       { id: "gpt-5.2-low", name: "GPT-5.2 (low)" },
-      // gpt-5.1-codex (high, medium, low)
-      { id: "gpt-5.1-codex-high", name: "GPT-5.1 Codex (high)" },
-      { id: "gpt-5.1-codex-medium", name: "GPT-5.1 Codex (medium)" },
-      { id: "gpt-5.1-codex-low", name: "GPT-5.1 Codex (low)" },
-      // gpt-5.1-codex-max (high, medium, low)
-      { id: "gpt-5.1-codex-max-high", name: "GPT-5.1 Codex Max (high)" },
-      { id: "gpt-5.1-codex-max-medium", name: "GPT-5.1 Codex Max (medium)" },
-      { id: "gpt-5.1-codex-max-low", name: "GPT-5.1 Codex Max (low)" },
-      // gpt-5.1-codex-mini (high, medium, low)
-      { id: "gpt-5.1-codex-mini-high", name: "GPT-5.1 Codex Mini (high)" },
-      { id: "gpt-5.1-codex-mini-medium", name: "GPT-5.1 Codex Mini (medium)" },
+      { id: "gpt-5.2-medium", name: "GPT-5.2 (medium)" },
+      { id: "gpt-5.2-high", name: "GPT-5.2 (high)" },
+      { id: "gpt-5.2-xhigh", name: "GPT-5.2 (xhigh)" },
+      // gpt-5.1-codex-mini (low, medium, high)
       { id: "gpt-5.1-codex-mini-low", name: "GPT-5.1 Codex Mini (low)" },
+      { id: "gpt-5.1-codex-mini-medium", name: "GPT-5.1 Codex Mini (medium)" },
+      { id: "gpt-5.1-codex-mini-high", name: "GPT-5.1 Codex Mini (high)" },
+      // gpt-5.1-codex (low, medium, high)
+      { id: "gpt-5.1-codex-low", name: "GPT-5.1 Codex (low)" },
+      { id: "gpt-5.1-codex-medium", name: "GPT-5.1 Codex (medium)" },
+      { id: "gpt-5.1-codex-high", name: "GPT-5.1 Codex (high)" },
+      // gpt-5.1-codex-max (low, medium, high)
+      { id: "gpt-5.1-codex-max-low", name: "GPT-5.1 Codex Max (low)" },
+      { id: "gpt-5.1-codex-max-medium", name: "GPT-5.1 Codex Max (medium)" },
+      { id: "gpt-5.1-codex-max-high", name: "GPT-5.1 Codex Max (high)" },
     ],
   },
   {
@@ -64,6 +64,9 @@ export const PROVIDERS: ProviderDefinition[] = [
     mode: "cli",
     binary: "claude",
     models: [
+      // Haiku does NOT support effort levels — do not add haiku-low/medium/high variants.
+      // The --effort flag is only for Sonnet and Opus (see parseClaudeModelId in cli/claude-code.ts).
+      { id: "haiku", name: "Claude Haiku" },
       // sonnet (low, medium, high)
       { id: "sonnet-low", name: "Claude Sonnet (low)", isRecommended: true },
       { id: "sonnet-medium", name: "Claude Sonnet (medium)" },
@@ -72,9 +75,6 @@ export const PROVIDERS: ProviderDefinition[] = [
       { id: "opus-low", name: "Claude Opus (low)" },
       { id: "opus-medium", name: "Claude Opus (medium)" },
       { id: "opus-high", name: "Claude Opus (high)" },
-      // Haiku does NOT support effort levels — do not add haiku-low/medium/high variants.
-      // The --effort flag is only for Sonnet and Opus (see parseClaudeModelId in cli/claude-code.ts).
-      { id: "haiku", name: "Claude Haiku" },
     ],
   },
   {
