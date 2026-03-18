@@ -1,8 +1,43 @@
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
-import { unlink } from "node:fs/promises";
+import { mkdir, unlink } from "node:fs/promises";
+import { GEMINI_SETTINGS_FILE, DATA_DIR } from "../../lib/paths.ts";
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
+
+/**
+ * Optimized Gemini CLI settings for headless invocation.
+ * Injected via GEMINI_CLI_SYSTEM_SETTINGS_PATH (precedence level 5,
+ * overrides user settings without touching ~/.gemini/settings.json).
+ *
+ * Only overrides settings whose defaults are suboptimal for headless mode.
+ * Verified against settings.schema.json defaults.
+ */
+export const GEMINI_OPTIMIZED_SETTINGS = {
+  general: {
+    enableAutoUpdate: false,
+    enableAutoUpdateNotification: false,
+  },
+  context: {
+    includeDirectoryTree: false,
+    discoveryMaxDirs: 0,
+  },
+  telemetry: { enabled: false },
+  privacy: { usageStatisticsEnabled: false },
+  skills: { enabled: false },
+  hooksConfig: { enabled: false },
+} as const;
+
+/**
+ * Ensure the optimized Gemini settings file exists in DATA_DIR.
+ * Idempotent — writes only if the file is missing.
+ */
+async function ensureGeminiSettings(): Promise<void> {
+  const file = Bun.file(GEMINI_SETTINGS_FILE);
+  if (await file.exists()) return;
+  await mkdir(DATA_DIR, { recursive: true });
+  await Bun.write(GEMINI_SETTINGS_FILE, JSON.stringify(GEMINI_OPTIMIZED_SETTINGS, null, 2));
+}
 
 /**
  * Gemini CLI adapter.
@@ -37,7 +72,7 @@ export const geminiCliAdapter: CLIProviderAdapter = {
     );
 
     try {
-      await Bun.write(tmpFile, system);
+      await Promise.all([Bun.write(tmpFile, system), ensureGeminiSettings()]);
 
       const proc = Bun.spawn(
         [
@@ -58,6 +93,7 @@ export const geminiCliAdapter: CLIProviderAdapter = {
           env: {
             ...process.env,
             GEMINI_SYSTEM_MD: tmpFile,
+            GEMINI_CLI_SYSTEM_SETTINGS_PATH: GEMINI_SETTINGS_FILE,
           },
         },
       );
