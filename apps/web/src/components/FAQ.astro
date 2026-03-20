@@ -1,0 +1,28 @@
+---
+import { faq } from "@ai-git/content/web";
+---
+
+<section id="faq" class="px-6 py-24">
+  <div class="mx-auto max-w-3xl">
+    <h2 class="text-center text-3xl font-bold md:text-4xl">{faq.headline}</h2>
+    <div class="mt-12 divide-y divide-neutral-800">
+      {faq.items.map((item) => (
+        <details class="group py-5">
+          <summary class="flex cursor-pointer items-center justify-between text-left font-medium transition-colors hover:text-neutral-300">
+            {item.question}
+            <svg
+              class="ml-4 h-5 w-5 shrink-0 text-neutral-500 transition-transform group-open:rotate-45"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+          </summary>
+          <p class="mt-3 text-sm leading-relaxed text-neutral-400">{item.answer}</p>
+        </details>
+      ))}
+    </div>
+  </div>
+</section>

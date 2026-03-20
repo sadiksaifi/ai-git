@@ -1,0 +1,15 @@
+{
+  "name": "@ai-git/infra",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "ALCHEMY_DEV=1 alchemy dev",
+    "deploy": "alchemy deploy",
+    "destroy": "alchemy destroy"
+  },
+  "devDependencies": {
+    "@ai-git/config": "workspace:*",
+    "alchemy": "catalog:",
+    "typescript": "catalog:"
+  }
+}

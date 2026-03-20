@@ -1,0 +1,114 @@
+---
+import { quickStart, INSTALL_METHODS } from "@ai-git/content/web";
+---
+
+<section id="installation" class="px-6 py-24">
+  <div class="mx-auto max-w-3xl">
+    <div class="text-center">
+      <h2 class="text-3xl font-bold md:text-4xl">{quickStart.headline}</h2>
+      <p class="mt-4 text-lg text-neutral-400">{quickStart.subheadline}</p>
+    </div>
+
+    <div class="mt-12">
+      <!-- Tab buttons -->
+      <div class="flex gap-1 rounded-lg border border-neutral-800 bg-neutral-900/50 p-1" role="tablist">
+        {INSTALL_METHODS.map((method, i) => (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={i === 0 ? "true" : "false"}
+            class:list={[
+              "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "data-[active]:bg-neutral-800 data-[active]:text-white",
+              "text-neutral-500 hover:text-neutral-300",
+            ]}
+            data-tab-button={method.id}
+            {...(i === 0 ? { "data-active": "" } : {})}
+          >
+            {method.label}
+            {method.recommended && (
+              <span class="ml-1 hidden text-xs text-green-400 sm:inline">*</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      <!-- Tab panels -->
+      {INSTALL_METHODS.map((method, i) => (
+        <div
+          class:list={["mt-4", i !== 0 && "hidden"]}
+          data-tab-panel={method.id}
+        >
+          <div class="group relative rounded-lg border border-neutral-800 bg-neutral-900 p-4">
+            <button
+              type="button"
+              class="absolute top-3 right-3 rounded-md p-1.5 text-neutral-500 opacity-0 transition-opacity hover:text-neutral-300 group-hover:opacity-100"
+              data-copy-button
+              data-copy-text={method.command}
+              aria-label="Copy command"
+            >
+              <svg class="h-4 w-4" data-copy-icon fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <svg class="hidden h-4 w-4 text-green-400" data-copy-check fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            </button>
+            <code class="block font-mono text-sm text-neutral-300">
+              <span class="text-neutral-500">$ </span>{method.command}
+            </code>
+          </div>
+          {(method.note || method.platform) && (
+            <p class="mt-2 text-xs text-neutral-500">
+              {method.platform && <span>{method.platform} only. </span>}
+              {method.note}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script>
+  // Tab switching
+  document.querySelectorAll("[data-tab-button]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.getAttribute("data-tab-button");
+
+      // Update buttons
+      document.querySelectorAll("[data-tab-button]").forEach((btn) => {
+        btn.removeAttribute("data-active");
+        btn.setAttribute("aria-selected", "false");
+      });
+      button.setAttribute("data-active", "");
+      button.setAttribute("aria-selected", "true");
+
+      // Update panels
+      document.querySelectorAll("[data-tab-panel]").forEach((panel) => {
+        panel.classList.toggle("hidden", panel.getAttribute("data-tab-panel") !== id);
+      });
+    });
+  });
+
+  // Copy buttons (reuse pattern from Hero)
+  document.querySelectorAll("[data-copy-button]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const text = button.getAttribute("data-copy-text");
+      if (!text) return;
+
+      await navigator.clipboard.writeText(text);
+
+      const icon = button.querySelector("[data-copy-icon]");
+      const check = button.querySelector("[data-copy-check]");
+
+      icon?.classList.add("hidden");
+      check?.classList.remove("hidden");
+
+      setTimeout(() => {
+        icon?.classList.remove("hidden");
+        check?.classList.add("hidden");
+      }, 2000);
+    });
+  });
+</script>

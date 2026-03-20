@@ -6,7 +6,7 @@ import {
   getFlagsByCategory,
   type FlagDef,
   type CommandDef,
-} from "@ai-git/meta";
+} from "@ai-git/content/cli";
 
 // ==============================================================================
 // HELP RENDERER
@@ -45,7 +45,7 @@ function formatCommand(cmd: CommandDef): string {
 
 /**
  * Render the full help output.
- * All data sourced from @ai-git/meta.
+ * All data sourced from @ai-git/content.
  */
 export function renderHelp(): string {
   const lines: string[] = [];

@@ -1,11 +1,11 @@
 {
-  "name": "@ai-git/meta",
+  "name": "@ai-git/content",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "module": "src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    "./cli": "./src/cli/index.ts",
+    "./web": "./src/web/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

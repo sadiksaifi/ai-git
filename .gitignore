@@ -1,6 +1,9 @@
 # turbo
 .turbo
 
+# alchemy
+.alchemy
+
 # dependencies (bun install)
 node_modules
 

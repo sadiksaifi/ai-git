@@ -6,7 +6,7 @@
 import * as os from "node:os";
 import pc from "picocolors";
 import { BOX } from "./constants.ts";
-import { getRandomTip } from "@ai-git/meta";
+import { getRandomTip } from "@ai-git/content/cli";
 import { getRepoRoot } from "../git.ts";
 
 export interface WelcomeResult {

@@ -6,7 +6,7 @@ import { VERSION } from "./version.ts";
 import type { CLIOptions } from "./machines/cli.machine.ts";
 import { wiredCliMachine } from "./machines/cli.wired.ts";
 import { upgradeMachine } from "./machines/upgrade.machine.ts";
-import { FLAGS, COMMANDS } from "@ai-git/meta";
+import { FLAGS, COMMANDS } from "@ai-git/content/cli";
 import { renderHelp } from "./lib/help.ts";
 import { runConfigureFlow } from "./lib/configure.ts";
 
@@ -47,7 +47,7 @@ cli.command("upgrade", COMMANDS.upgrade.description).action(async () => {
 });
 
 // ── Main Command ─────────────────────────────────────────────────────
-// Default command (no subcommand). Flag definitions sourced from @ai-git/meta.
+// Default command (no subcommand). Flag definitions sourced from @ai-git/content.
 
 cli
   .command("")

@@ -9,7 +9,7 @@
 import { fromPromise } from "xstate";
 import pc from "picocolors";
 import { log, spinner } from "@clack/prompts";
-import { ERROR_TEMPLATES } from "@ai-git/meta";
+import { ERROR_TEMPLATES } from "@ai-git/content/cli";
 import {
   cliMachine,
   type ConfigResolutionResult,

@@ -1,0 +1,87 @@
+---
+import { navigation, CLI_NAME } from "@ai-git/content/web";
+---
+
+<header class="fixed top-0 z-50 w-full border-b border-neutral-800/50 bg-neutral-950/80 backdrop-blur-md">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+    <a href="/" class="flex items-center gap-2 text-lg font-semibold">
+      <img src="/favicon.svg" alt="" class="h-7 w-7" />
+      {CLI_NAME}
+    </a>
+
+    <!-- Desktop nav -->
+    <ul class="hidden items-center gap-8 md:flex">
+      {navigation.header.map((link) => (
+        <li>
+          <a
+            href={link.href}
+            class="text-sm text-neutral-400 transition-colors hover:text-white"
+            {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+          >
+            {link.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <!-- Mobile hamburger -->
+    <button
+      type="button"
+      class="flex h-9 w-9 items-center justify-center rounded-md text-neutral-400 transition-colors hover:text-white md:hidden"
+      aria-label="Toggle menu"
+      data-menu-toggle
+    >
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" data-menu-icon-open />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" class="hidden" data-menu-icon-close />
+      </svg>
+    </button>
+  </nav>
+
+  <!-- Mobile menu -->
+  <div class="hidden border-t border-neutral-800/50 md:hidden" data-menu-panel>
+    <ul class="mx-auto max-w-6xl space-y-1 px-6 py-4">
+      {navigation.header.map((link) => (
+        <li>
+          <a
+            href={link.href}
+            class="block rounded-md px-3 py-2 text-sm text-neutral-400 transition-colors hover:bg-neutral-900 hover:text-white"
+            {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+            data-menu-link
+          >
+            {link.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</header>
+
+<script>
+  const toggle = document.querySelector("[data-menu-toggle]");
+  const panel = document.querySelector("[data-menu-panel]");
+  const iconOpen = document.querySelector("[data-menu-icon-open]");
+  const iconClose = document.querySelector("[data-menu-icon-close]");
+  const links = document.querySelectorAll("[data-menu-link]");
+
+  function closeMenu() {
+    panel?.classList.add("hidden");
+    iconOpen?.classList.remove("hidden");
+    iconClose?.classList.add("hidden");
+  }
+
+  toggle?.addEventListener("click", () => {
+    const isOpen = !panel?.classList.contains("hidden");
+    if (isOpen) {
+      closeMenu();
+    } else {
+      panel?.classList.remove("hidden");
+      iconOpen?.classList.add("hidden");
+      iconClose?.classList.remove("hidden");
+    }
+  });
+
+  for (const link of links) {
+    link.addEventListener("click", closeMenu);
+  }
+</script>
