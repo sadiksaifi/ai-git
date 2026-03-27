@@ -20,6 +20,7 @@ Output ONLY the raw commit message. No markdown, no code blocks, no preamble.
 - Imperative mood: "add" not "added", "fix" not "fixed"
 - Lowercase subject, no trailing period
 - No markdown formatting (\`\`\`, **, etc.)
+- Do not output a header you have not checked against the 50 character limit
 </constraints>
 
 <format>
@@ -64,6 +65,23 @@ When unsure: Ask "what is the PRIMARY reason for these changes?"
 - Abbreviate: authentication→auth, configuration→config, dependencies→deps
 </scope-rules>
 
+<header-budgeting>
+Generate the header as a constrained formatting task:
+1. Choose the correct type.
+2. Choose a scope only when it is semantically useful.
+3. Add ! only for a real breaking change.
+4. Build the exact prefix: <type>(<scope>)!: or <type>(<scope>): or <type>:
+5. Count remaining subject budget from the final prefix and the required space after the colon.
+6. Write the subject to fit the remaining budget.
+7. If the full header is over 50 chars, rewrite ONLY the subject shorter and check again.
+
+Compression rules for the subject:
+- Prefer action + object.
+- Drop qualifiers, secondary clauses, and implementation detail first.
+- Prefer short concrete words over abstract wording like "support", "handling", "workflow", or "integration" unless essential.
+- Keep semantically required scope; shorten the subject instead.
+</header-budgeting>
+
 <adaptive-body>
 - Trivial changes (rename, typo, single-line fix): header only, no body
 - Small changes (<30 lines): header only unless context is needed
@@ -105,6 +123,14 @@ feat(config)!: migrate to JSON config format
 - add automatic migration script
 
 BREAKING CHANGE: .myapprc files must migrate to config.json
+
+fix(cli): trim retry prompt context
+
+feat(cli): show config doctor output
+
+feat(cli)!: migrate flags to config
+
+BREAKING CHANGE: legacy CLI flags now require config values
 </examples>`;
 
 // ==============================================================================
