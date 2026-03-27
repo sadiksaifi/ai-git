@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { validateCommitMessage, type ValidationResult } from "./validation.ts";
+import { buildRetryContext, validateCommitMessage } from "./validation.ts";
 
 describe("validateCommitMessage", () => {
   // Critical: header length
@@ -139,5 +139,33 @@ describe("validateCommitMessage", () => {
       "feat(api)!: remove v1 endpoints\n\n- remove all v1 routes\n\nBREAKING CHANGE: v1 API no longer available";
     const result = validateCommitMessage(msg);
     expect(result.errors.some((e) => e.rule === "breaking-change-consistency")).toBe(false);
+  });
+});
+
+describe("buildRetryContext", () => {
+  test("includes exact header budget details for length-only failures", () => {
+    const previousMsg = "feat(cli)!: require budget-aware migration output for config v2";
+    const result = validateCommitMessage(previousMsg);
+
+    const context = buildRetryContext(result.errors, previousMsg);
+
+    expect(context).toContain(
+      'Previous output:\n"feat(cli)!: require budget-aware migration output for config v2"',
+    );
+    expect(context).toContain("- Current header length: 63");
+    expect(context).toContain("- Over limit by: 13");
+    expect(context).toContain('- Fixed prefix: "feat(cli)!: " (12 chars)');
+    expect(context).toContain("- Remaining subject budget: 38 chars");
+    expect(context).toContain("- Rewrite only the subject so the full header fits.");
+  });
+
+  test("does not add prefix-preservation guidance for mixed critical failures", () => {
+    const previousMsg = "Here is your commit message:\n\nfeat(cli): add config doctor";
+    const result = validateCommitMessage(previousMsg);
+
+    const context = buildRetryContext(result.errors, previousMsg);
+
+    expect(context).not.toContain("Remaining subject budget");
+    expect(context).not.toContain("Keep the current type, scope, and ! marker");
   });
 });

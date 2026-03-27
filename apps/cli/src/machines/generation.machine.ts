@@ -19,6 +19,7 @@ import { extractErrorMessage } from "../lib/errors.ts";
 import type { CommitResult } from "../lib/git.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
 import type { PromptCustomization } from "../config.ts";
+import { normalizeAICommitMessage } from "../lib/ai-response.ts";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -74,18 +75,6 @@ export interface GenerationOutput {
   message: string;
   committed: boolean;
   aborted: boolean;
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────
-
-/**
- * Clean markdown code blocks and stray backticks from AI response.
- */
-function cleanAIResponse(raw: string): string {
-  return raw
-    .replace(/^```\w*$/gm, "") // Remove opening fence lines (```lang)
-    .replace(/^```$/gm, "") // Remove closing fence lines
-    .trim();
 }
 
 // ── Machine ──────────────────────────────────────────────────────────
@@ -146,7 +135,7 @@ export const generationMachine = setup({
     assignAIResponse: assign({
       currentMessage: ({ event }) => {
         const raw = (event as { output?: string }).output ?? "";
-        return cleanAIResponse(raw);
+        return normalizeAICommitMessage(raw);
       },
     }),
     assignValidationResult: assign({
@@ -211,6 +200,8 @@ export const generationMachine = setup({
     options: input.options,
     slowWarningThresholdMs: input.slowWarningThresholdMs,
     adapter: input.adapter,
+    promptCustomization: input.promptCustomization,
+    editor: input.editor,
     branchName: null,
     diff: "",
     commits: "",
@@ -321,7 +312,7 @@ export const generationMachine = setup({
 
               return {
                 model: context.model,
-                system: buildSystemPrompt(),
+                system: buildSystemPrompt(context.promptCustomization),
                 prompt: userPrompt,
                 modelName: context.modelName,
                 slowThresholdMs: context.slowWarningThresholdMs,

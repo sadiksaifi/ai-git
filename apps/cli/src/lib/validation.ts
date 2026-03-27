@@ -29,6 +29,18 @@ const VALID_TYPES = [
   "revert",
 ];
 
+function getHeaderParts(header: string): { prefix: string; subject: string } | null {
+  const match = header.match(/^(\w+(?:\([^)]*\))?!?: )(.+)$/);
+  if (!match) {
+    return null;
+  }
+
+  return {
+    prefix: match[1]!,
+    subject: match[2]!,
+  };
+}
+
 /**
  * Validate a commit message against Conventional Commits rules.
  * Returns validation result with errors categorized by severity.
@@ -131,11 +143,31 @@ export function validateCommitMessage(msg: string): ValidationResult {
  * Injected into the next AI generation attempt.
  */
 export function buildRetryContext(errors: ValidationError[], previousMsg: string): string {
+  const criticalErrors = errors.filter((e) => e.severity === "critical");
+  const header = previousMsg.split("\n")[0] ?? "";
+  const headerParts = getHeaderParts(header);
+  const hasOnlyHeaderLengthError =
+    criticalErrors.length === 1 && criticalErrors[0]?.rule === "header-length";
+
   let context = `# VALIDATION ERRORS IN PREVIOUS ATTEMPT\n`;
-  context += `Previous output:\n"${previousMsg.split("\n")[0]}"\n\n`;
+  context += `Previous output:\n"${header}"\n\n`;
+
+  if (hasOnlyHeaderLengthError && headerParts) {
+    const overBy = Math.max(header.length - 50, 0);
+    const subjectBudget = Math.max(50 - headerParts.prefix.length, 0);
+
+    context += `Header budget:\n`;
+    context += `- Current header length: ${header.length}\n`;
+    context += `- Over limit by: ${overBy}\n`;
+    context += `- Fixed prefix: "${headerParts.prefix}" (${headerParts.prefix.length} chars)\n`;
+    context += `- Remaining subject budget: ${subjectBudget} chars\n`;
+    context += `- Keep the current type, scope, and ! marker if they are semantically correct.\n`;
+    context += `- Rewrite only the subject so the full header fits.\n\n`;
+  }
+
   context += `Issues:\n`;
 
-  for (const err of errors.filter((e) => e.severity === "critical")) {
+  for (const err of criticalErrors) {
     context += `- ${err.message}. Fix: ${err.suggestion}\n`;
   }
 

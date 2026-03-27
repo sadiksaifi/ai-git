@@ -146,6 +146,45 @@ describe("generationMachine", () => {
     expect(snap.output!.aborted).toBe(true);
   });
 
+  test("normalizes noisy AI output before validation", async () => {
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({
+          diff: "",
+          commits: "",
+          fileList: "",
+        })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(
+          async () =>
+            "<|channel|>analysis<|message|>thinking<|end|>\n" +
+            "<|channel|>final<|message|>feat: add login<|end|>",
+        ),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => "commit"),
+        // @ts-expect-error — XState v5 test mock type inference
+        commitActor: fromPromise(async () => ({
+          hash: "abc1234",
+          branch: "main",
+          subject: "feat: add login",
+          filesChanged: 1,
+          insertions: 1,
+          deletions: 0,
+          files: [],
+          isRoot: false,
+        })),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(snap.output!.message).toBe("feat: add login");
+    expect(snap.output!.committed).toBe(true);
+  });
+
   // GN14: dry-run
   test("GN14: dry-run skips AI call and returns done", async () => {
     let aiCalled = false;
@@ -263,6 +302,59 @@ describe("generationMachine", () => {
     const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 10000 });
     expect(genCount).toBe(2);
     expect(snap.output!.committed).toBe(true);
+  });
+
+  test("passes prompt customization into the machine system prompt", async () => {
+    let capturedSystemPrompt = "";
+
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({ diff: "", commits: "", fileList: "" })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(
+          async ({
+            input,
+          }: {
+            input: {
+              system: string;
+            };
+          }) => {
+            capturedSystemPrompt = input.system;
+            return "feat: add login";
+          },
+        ),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => "commit"),
+        // @ts-expect-error — XState v5 test mock type inference
+        commitActor: fromPromise(async () => ({
+          hash: "abc",
+          branch: "main",
+          subject: "feat: add login",
+          filesChanged: 1,
+          insertions: 1,
+          deletions: 0,
+          files: [],
+          isRoot: false,
+        })),
+      },
+    });
+
+    const actor = createActor(machine, {
+      input: mockInput({
+        promptCustomization: {
+          context: "Generate commits for the CLI package.",
+          style: "Prefer short direct subjects.",
+        },
+      }),
+    });
+    actor.start();
+    await waitFor(actor, (s) => s.status === "done");
+
+    expect(capturedSystemPrompt).toContain("About: Generate commits for the CLI package.");
+    expect(capturedSystemPrompt).toContain("Style: Prefer short direct subjects.");
   });
 
   // GN-ERR: gatherContext failure → aborted
