@@ -429,4 +429,60 @@ describe("generationMachine", () => {
     expect(snap.output!.aborted).toBe(true);
     expect(warningsCalled).toBe(true);
   });
+
+  // Bug: user retry after exhausted auto-retries should get fresh auto-retry budget
+  test("user retry resets auto-retry budget for next generation cycle", async () => {
+    let genCount = 0;
+    let autoRetryCount = 0;
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({ diff: "", commits: "", fileList: "" })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => {
+          genCount++;
+          // First 4 calls: invalid (3 auto-retries + 1 initial = 4 calls before prompt)
+          // After user retry: 4 more invalid calls (3 auto-retries + 1 = 4)
+          // Then: valid message
+          if (genCount <= 8) return "This is not a valid conventional commit message at all";
+          return "feat: add login";
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayCommitMessageActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayValidationWarningsActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => {
+          // First prompt (after 4 invalid): retry
+          // Second prompt (after 4 more invalid): commit
+          autoRetryCount++;
+          return autoRetryCount === 1 ? "retry" : "commit";
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        textActor: fromPromise(async () => "try harder"),
+        // @ts-expect-error — XState v5 test mock type inference
+        commitActor: fromPromise(async () => ({
+          hash: "abc",
+          branch: "main",
+          subject: "feat: add login",
+          filesChanged: 1,
+          insertions: 1,
+          deletions: 0,
+          files: [],
+          isRoot: false,
+        })),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayCommitResultActor: fromPromise(async () => {}),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 15000 });
+    // 4 calls (initial + 3 auto-retries) + 4 calls (retry + 3 auto-retries) = 8
+    // Second prompt: user commits with the invalid message (menu allows "commit with warnings")
+    expect(genCount).toBe(8);
+    expect(snap.output!.committed).toBe(true);
+  });
 });

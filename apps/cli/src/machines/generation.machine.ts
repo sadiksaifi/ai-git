@@ -667,12 +667,12 @@ export const generationMachine = setup({
           {
             guard: "isRefinementNonEmpty",
             target: "generate",
-            actions: "appendRefinement",
+            actions: ["appendRefinement", "resetRetryCounts"],
           },
           {
             // GN25: blank → clear refinements
             target: "generate",
-            actions: "clearRefinements",
+            actions: ["clearRefinements", "resetRetryCounts"],
           },
         ],
         onError: {
