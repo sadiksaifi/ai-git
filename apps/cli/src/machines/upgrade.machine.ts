@@ -92,7 +92,6 @@ export const upgradeMachine = setup({
       return output === null;
     },
   },
-  actions: {},
 }).createMachine({
   id: "upgrade",
   initial: "detectMethod",

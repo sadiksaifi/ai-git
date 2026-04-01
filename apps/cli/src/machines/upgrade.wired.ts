@@ -69,10 +69,7 @@ export const wiredUpgradeMachine = upgradeMachine.provide({
             input.checksumsContent,
             input.archiveName,
           );
-          if (!valid) {
-            s.stop("Checksum verification failed", 1);
-            throw new Error("Checksum verification failed. Aborting upgrade.");
-          }
+          if (!valid) throw new Error("Checksum verification failed. Aborting upgrade.");
           s.stop("Checksum verified");
         } catch (error) {
           s.stop(extractErrorMessage(error), 1);
