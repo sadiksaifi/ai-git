@@ -360,4 +360,73 @@ describe("generationMachine", () => {
     await waitFor(actor, (s) => s.status === "done");
     expect(capturedSystem).toContain("This is a React project");
   });
+
+  // AC-3: commit result display actor is invoked after commit
+  test("displayCommitResultActor is invoked after successful commit", async () => {
+    let displayCalled = false;
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({ diff: "", commits: "", fileList: "" })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => "feat: add login"),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayCommitMessageActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayValidationWarningsActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => "commit"),
+        // @ts-expect-error — XState v5 test mock type inference
+        commitActor: fromPromise(async () => ({
+          hash: "abc1234",
+          branch: "main",
+          subject: "feat: add login",
+          filesChanged: 1,
+          insertions: 10,
+          deletions: 0,
+          files: [],
+          isRoot: false,
+        })),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayCommitResultActor: fromPromise(async () => {
+          displayCalled = true;
+        }),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(snap.output!.committed).toBe(true);
+    expect(displayCalled).toBe(true);
+  });
+
+  // AC-4: validation warnings display actor is invoked
+  test("displayValidationWarningsActor is invoked when entering prompt", async () => {
+    let warningsCalled = false;
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({ diff: "", commits: "", fileList: "" })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => "feat: add login"),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayCommitMessageActor: fromPromise(async () => {}),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayValidationWarningsActor: fromPromise(async () => {
+          warningsCalled = true;
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => "cancel"),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(snap.output!.aborted).toBe(true);
+    expect(warningsCalled).toBe(true);
+  });
 });

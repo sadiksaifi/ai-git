@@ -10,6 +10,11 @@ import {
   textActor as defaultTextActor,
 } from "./actors/clack.actors.ts";
 import {
+  displayCommitResultActor as defaultDisplayCommitResultActor,
+  displayValidationWarningsActor as defaultDisplayValidationWarningsActor,
+  displayCommitMessageActor as defaultDisplayCommitMessageActor,
+} from "./actors/display.actors.ts";
+import {
   validateCommitMessage,
   buildRetryContext,
   type ValidationResult,
@@ -107,6 +112,15 @@ export const generationMachine = setup({
     commitActor: defaultCommitActor as ActorLogicFrom<typeof defaultCommitActor>,
     selectActor: defaultSelectActor as ActorLogicFrom<typeof defaultSelectActor>,
     textActor: defaultTextActor as ActorLogicFrom<typeof defaultTextActor>,
+    displayCommitResultActor: defaultDisplayCommitResultActor as ActorLogicFrom<
+      typeof defaultDisplayCommitResultActor
+    >,
+    displayValidationWarningsActor: defaultDisplayValidationWarningsActor as ActorLogicFrom<
+      typeof defaultDisplayValidationWarningsActor
+    >,
+    displayCommitMessageActor: defaultDisplayCommitMessageActor as ActorLogicFrom<
+      typeof defaultDisplayCommitMessageActor
+    >,
   },
   guards: {
     isDryRun: ({ context }) => context.options.dryRun,
@@ -397,8 +411,13 @@ export const generationMachine = setup({
         },
         {
           // GN7: Critical errors + retries exhausted → prompt anyway
-          // GN4/GN5: Valid → prompt
+          guard: "hasCriticalErrors",
           target: "prompt",
+        },
+        {
+          // GN4/GN5: Valid → prompt (reset counters for fresh cycle)
+          target: "prompt",
+          actions: "resetRetryCounts",
         },
       ],
     },
@@ -417,8 +436,37 @@ export const generationMachine = setup({
     // ── PROMPT (compound state) ───────────────────────────────────────
     // ══════════════════════════════════════════════════════════════════
     prompt: {
-      initial: "checkCommitMode",
+      initial: "displayMessage",
       states: {
+        // ── Display commit message before menu/auto-commit ─────────
+        displayMessage: {
+          // @ts-expect-error — XState v5 invoke type inference
+          invoke: {
+            src: "displayCommitMessageActor",
+            input: ({ context }) => ({
+              message: context.currentMessage,
+              hasWarnings: context.validationResult ? !context.validationResult.valid : false,
+            }),
+            onDone: "displayWarnings",
+            onError: "displayWarnings", // non-fatal
+          },
+        },
+
+        // ── Display validation warnings ────────────────────────────
+        displayWarnings: {
+          // @ts-expect-error — XState v5 invoke type inference
+          invoke: {
+            src: "displayValidationWarningsActor",
+            input: ({ context }) => ({
+              validationResult: context.validationResult!,
+              autoRetries: context.autoRetries,
+              editedManually: context.editedManually,
+            }),
+            onDone: "checkCommitMode",
+            onError: "checkCommitMode", // non-fatal
+          },
+        },
+
         // ── GN15-GN17: Check if auto-commit ────────────────────────
         checkCommitMode: {
           always: [
@@ -439,7 +487,7 @@ export const generationMachine = setup({
             src: "commitActor",
             input: ({ context }) => ({ message: context.currentMessage }),
             onDone: {
-              target: "committed",
+              target: "showCommitResult",
               actions: "assignCommitResult",
             },
             onError: {
@@ -501,13 +549,24 @@ export const generationMachine = setup({
             src: "commitActor",
             input: ({ context }) => ({ message: context.currentMessage }),
             onDone: {
-              target: "committed",
+              target: "showCommitResult",
               actions: "assignCommitResult",
             },
             onError: {
               // GN19: commit error → back to menu
               target: "showMenu",
             },
+          },
+        },
+
+        // ── Display commit result after successful commit ──────────
+        showCommitResult: {
+          // @ts-expect-error — XState v5 invoke type inference
+          invoke: {
+            src: "displayCommitResultActor",
+            input: ({ context }) => ({ commitResult: context.commitResult! }),
+            onDone: "committed",
+            onError: "committed", // display failure is non-fatal
           },
         },
 
