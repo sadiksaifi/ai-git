@@ -1,8 +1,9 @@
 import { fromPromise } from "xstate";
-import { note } from "@clack/prompts";
+import { log, note } from "@clack/prompts";
 import pc from "picocolors";
 import { getStagedFilesWithStatus, getUnstagedFilesWithStatus, type CommitResult } from "../../lib/git.ts";
 import { displayFileList } from "../../lib/display.ts";
+import type { ValidationResult } from "../../lib/validation.ts";
 
 // ── Display staged result (after staging resolves) ────────────────────
 
@@ -99,3 +100,47 @@ export function createDisplayCommitResultActor(
 }
 
 export const displayCommitResultActor = createDisplayCommitResultActor();
+
+// ── Display validation warnings ─────────────────────────────────────
+
+export interface DisplayValidationWarningsInput {
+  validationResult: ValidationResult;
+  autoRetries: number;
+  editedManually: boolean;
+}
+
+export function createDisplayValidationWarningsActor(
+  resolver?: (input: DisplayValidationWarningsInput) => Promise<void>,
+) {
+  const defaultResolver = async (input: DisplayValidationWarningsInput) => {
+    const { validationResult, autoRetries, editedManually } = input;
+    if (!validationResult) return;
+
+    if (!validationResult.valid) {
+      // Retries exhausted — show all errors
+      log.warn(
+        pc.yellow(
+          editedManually
+            ? "Validation failed on manually edited message"
+            : `Maximum validation retries reached (${autoRetries}/3)`,
+        ),
+      );
+      for (const err of validationResult.errors) {
+        log.warn(pc.yellow(`${err.severity}: ${err.message} — ${err.suggestion}`));
+      }
+    } else {
+      // Valid — show non-critical warnings if any
+      const warnings = validationResult.errors.filter(
+        (e) => e.severity === "important" || e.severity === "minor",
+      );
+      for (const w of warnings) {
+        log.warn(pc.yellow(`${w.severity}: ${w.message} — ${w.suggestion}`));
+      }
+    }
+  };
+  return fromPromise(async ({ input }: { input: DisplayValidationWarningsInput }) =>
+    (resolver ?? defaultResolver)(input),
+  );
+}
+
+export const displayValidationWarningsActor = createDisplayValidationWarningsActor();

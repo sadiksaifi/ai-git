@@ -4,6 +4,7 @@ import {
   createDisplayStagedResultActor,
   createDisplayFileSummaryActor,
   createDisplayCommitResultActor,
+  createDisplayValidationWarningsActor,
 } from "./display.actors.ts";
 
 describe("displayStagedResultActor", () => {
@@ -55,5 +56,26 @@ describe("displayCommitResultActor", () => {
     a.start();
     await waitFor(a, (s) => s.status === "done");
     expect(receivedResult).toEqual(commitResult);
+  });
+});
+
+describe("displayValidationWarningsActor", () => {
+  test("calls resolver with validation input and completes", async () => {
+    let receivedInput: unknown = null;
+    const actor = createDisplayValidationWarningsActor(async (input) => {
+      receivedInput = input;
+    });
+    const input = {
+      validationResult: {
+        valid: true,
+        errors: [{ rule: "lowercase-subject", severity: "important" as const, message: "Subject should be lowercase", suggestion: "Use lowercase" }],
+      },
+      autoRetries: 0,
+      editedManually: false,
+    };
+    const a = createActor(actor, { input });
+    a.start();
+    await waitFor(a, (s) => s.status === "done");
+    expect(receivedInput).toEqual(input);
   });
 });
