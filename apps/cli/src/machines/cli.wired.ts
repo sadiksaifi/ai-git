@@ -16,8 +16,7 @@ import {
   type OnboardingActorResult,
 } from "./cli.machine.ts";
 import { stagingMachine } from "./staging.machine.ts";
-import type { ProviderAdapter } from "../providers/types.ts";
-import type { ResolvedConfig, PromptCustomization } from "../config.ts";
+import type { ResolvedConfig } from "../config.ts";
 import {
   loadUserConfig,
   loadProjectConfig,
@@ -38,9 +37,17 @@ import {
   getRemoteAheadCount,
   pullRebase,
 } from "../lib/git.ts";
-import { runGenerationLoop } from "../lib/generation.ts";
+import { generationMachine } from "./generation.machine.ts";
 import { pushMachine } from "./push.machine.ts";
-import { confirmActor, textActor } from "./actors/clack.actors.ts";
+import { getBranchNameActor, gatherContextActor, commitActor } from "./actors/git.actors.ts";
+import { invokeAIActor } from "./actors/ai.actors.ts";
+import { confirmActor, selectActor, textActor } from "./actors/clack.actors.ts";
+import {
+  displayCommitResultActor,
+  displayValidationWarningsActor,
+  displayCommitMessageActor,
+  displayDryRunActor,
+} from "./actors/display.actors.ts";
 import { showWelcomeScreen, type WelcomeOptions } from "../lib/ui/welcome.ts";
 import { startUpdateCheck, showUpdateNotification } from "../lib/update-check.ts";
 import { assertConfiguredModelAllowed } from "../providers/api/models/index.ts";
@@ -295,30 +302,19 @@ export const wiredCliMachine = cliMachine.provide({
     }),
 
     // ── Generation ───────────────────────────────────────────────────
-    generationMachine: fromPromise(async ({ input }: { input: Record<string, unknown> }) => {
-      const ctx = input as {
-        adapter: ProviderAdapter;
-        model: string;
-        modelName: string;
-        options: {
-          commit: boolean;
-          dangerouslyAutoApprove: boolean;
-          dryRun: boolean;
-          hint?: string;
-        };
-        slowWarningThresholdMs: number;
-        promptCustomization?: PromptCustomization;
-        editor?: string;
-      };
-      return runGenerationLoop({
-        adapter: ctx.adapter,
-        model: ctx.model,
-        modelName: ctx.modelName,
-        options: ctx.options,
-        promptCustomization: ctx.promptCustomization,
-        editor: ctx.editor,
-        slowWarningThresholdMs: ctx.slowWarningThresholdMs,
-      });
+    generationMachine: generationMachine.provide({
+      actors: {
+        getBranchNameActor,
+        gatherContextActor,
+        invokeAIActor,
+        commitActor,
+        selectActor,
+        textActor,
+        displayCommitResultActor,
+        displayValidationWarningsActor,
+        displayCommitMessageActor,
+        displayDryRunActor,
+      } as any,
     }),
 
     // ── Push ─────────────────────────────────────────────────────────
