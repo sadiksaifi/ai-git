@@ -1,9 +1,14 @@
 import { fromPromise } from "xstate";
 import { log, note } from "@clack/prompts";
 import pc from "picocolors";
-import { getStagedFilesWithStatus, getUnstagedFilesWithStatus, type CommitResult } from "../../lib/git.ts";
-import { displayFileList } from "../../lib/display.ts";
+import {
+  getStagedFilesWithStatus,
+  getUnstagedFilesWithStatus,
+  type CommitResult,
+} from "../../lib/git.ts";
+import { displayFileList, displayCommitMessage } from "../../lib/display.ts";
 import type { ValidationResult } from "../../lib/validation.ts";
+import { wrapText } from "../../lib/utils.ts";
 
 // ── Display staged result (after staging resolves) ────────────────────
 
@@ -73,7 +78,9 @@ export function createDisplayCommitResultActor(
       stats.push(`${result.filesChanged} file${result.filesChanged === 1 ? "" : "s"} changed`);
     }
     if (result.insertions > 0) {
-      stats.push(pc.green(`${result.insertions} insertion${result.insertions === 1 ? "" : "s"}(+)`));
+      stats.push(
+        pc.green(`${result.insertions} insertion${result.insertions === 1 ? "" : "s"}(+)`),
+      );
     }
     if (result.deletions > 0) {
       stats.push(pc.red(`${result.deletions} deletion${result.deletions === 1 ? "" : "s"}(-)`));
@@ -156,7 +163,6 @@ export function createDisplayCommitMessageActor(
   resolver?: (input: DisplayCommitMessageInput) => Promise<void>,
 ) {
   const defaultResolver = async (input: DisplayCommitMessageInput) => {
-    const { displayCommitMessage } = await import("../../lib/display.ts");
     displayCommitMessage(input.message, input.hasWarnings);
   };
   return fromPromise(async ({ input }: { input: DisplayCommitMessageInput }) =>
@@ -173,11 +179,8 @@ export interface DisplayDryRunInput {
   userPrompt: string;
 }
 
-export function createDisplayDryRunActor(
-  resolver?: (input: DisplayDryRunInput) => Promise<void>,
-) {
+export function createDisplayDryRunActor(resolver?: (input: DisplayDryRunInput) => Promise<void>) {
   const defaultResolver = async (input: DisplayDryRunInput) => {
-    const { wrapText } = await import("../../lib/utils.ts");
     const width = process.stdout.columns || 80;
     const border = pc.dim("─".repeat(width));
 

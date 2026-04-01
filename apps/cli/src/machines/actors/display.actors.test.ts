@@ -69,7 +69,14 @@ describe("displayValidationWarningsActor", () => {
     const input = {
       validationResult: {
         valid: true,
-        errors: [{ rule: "lowercase-subject", severity: "important" as const, message: "Subject should be lowercase", suggestion: "Use lowercase" }],
+        errors: [
+          {
+            rule: "lowercase-subject",
+            severity: "important" as const,
+            message: "Subject should be lowercase",
+            suggestion: "Use lowercase",
+          },
+        ],
       },
       autoRetries: 0,
       editedManually: false,
