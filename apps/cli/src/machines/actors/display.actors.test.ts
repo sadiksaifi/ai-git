@@ -5,6 +5,7 @@ import {
   createDisplayFileSummaryActor,
   createDisplayCommitResultActor,
   createDisplayValidationWarningsActor,
+  createDisplayCommitMessageActor,
 } from "./display.actors.ts";
 
 describe("displayStagedResultActor", () => {
@@ -77,5 +78,21 @@ describe("displayValidationWarningsActor", () => {
     a.start();
     await waitFor(a, (s) => s.status === "done");
     expect(receivedInput).toEqual(input);
+  });
+});
+
+describe("displayCommitMessageActor", () => {
+  test("calls resolver with message and hasWarnings and completes", async () => {
+    let receivedMessage = "";
+    let receivedWarnings = false;
+    const actor = createDisplayCommitMessageActor(async (input) => {
+      receivedMessage = input.message;
+      receivedWarnings = input.hasWarnings;
+    });
+    const a = createActor(actor, { input: { message: "feat: add login", hasWarnings: true } });
+    a.start();
+    await waitFor(a, (s) => s.status === "done");
+    expect(receivedMessage).toBe("feat: add login");
+    expect(receivedWarnings).toBe(true);
   });
 });

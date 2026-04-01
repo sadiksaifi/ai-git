@@ -144,3 +144,24 @@ export function createDisplayValidationWarningsActor(
 }
 
 export const displayValidationWarningsActor = createDisplayValidationWarningsActor();
+
+// ── Display commit message (before menu/auto-commit) ────────────────
+
+export interface DisplayCommitMessageInput {
+  message: string;
+  hasWarnings: boolean;
+}
+
+export function createDisplayCommitMessageActor(
+  resolver?: (input: DisplayCommitMessageInput) => Promise<void>,
+) {
+  const defaultResolver = async (input: DisplayCommitMessageInput) => {
+    const { displayCommitMessage } = await import("../../lib/display.ts");
+    displayCommitMessage(input.message, input.hasWarnings);
+  };
+  return fromPromise(async ({ input }: { input: DisplayCommitMessageInput }) =>
+    (resolver ?? defaultResolver)(input),
+  );
+}
+
+export const displayCommitMessageActor = createDisplayCommitMessageActor();
