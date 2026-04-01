@@ -13,6 +13,7 @@ import {
   displayCommitResultActor as defaultDisplayCommitResultActor,
   displayValidationWarningsActor as defaultDisplayValidationWarningsActor,
   displayCommitMessageActor as defaultDisplayCommitMessageActor,
+  displayDryRunActor as defaultDisplayDryRunActor,
 } from "./actors/display.actors.ts";
 import {
   validateCommitMessage,
@@ -120,6 +121,9 @@ export const generationMachine = setup({
     >,
     displayCommitMessageActor: defaultDisplayCommitMessageActor as ActorLogicFrom<
       typeof defaultDisplayCommitMessageActor
+    >,
+    displayDryRunActor: defaultDisplayDryRunActor as ActorLogicFrom<
+      typeof defaultDisplayDryRunActor
     >,
   },
   guards: {
@@ -291,7 +295,7 @@ export const generationMachine = setup({
           always: [
             {
               guard: "isDryRun",
-              target: "dryRunDone",
+              target: "displayDryRun",
             },
             {
               target: "invokeAI",
@@ -299,7 +303,28 @@ export const generationMachine = setup({
           ],
         },
 
-        // ── GN14: dry-run → done without AI call ───────────────────
+        // ── GN14: dry-run → display prompts → done ────────────────
+        displayDryRun: {
+          // @ts-expect-error — XState v5 invoke type inference
+          invoke: {
+            src: "displayDryRunActor",
+            input: ({ context }) => ({
+              systemPrompt: buildSystemPrompt(context.promptCustomization),
+              userPrompt: buildUserPrompt({
+                branchName: context.branchName ?? "main",
+                hint: context.options.hint,
+                recentCommits: context.commits
+                  ? context.commits.split("\n").filter(Boolean)
+                  : undefined,
+                stagedFileList: context.fileList || undefined,
+                diff: context.diff,
+              }),
+            }),
+            onDone: "dryRunDone",
+            onError: "dryRunDone", // non-fatal
+          },
+        },
+
         dryRunDone: {
           type: "final" as const,
         },

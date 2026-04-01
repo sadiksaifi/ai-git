@@ -165,3 +165,37 @@ export function createDisplayCommitMessageActor(
 }
 
 export const displayCommitMessageActor = createDisplayCommitMessageActor();
+
+// ── Display dry-run output (system + user prompts) ──────────────────
+
+export interface DisplayDryRunInput {
+  systemPrompt: string;
+  userPrompt: string;
+}
+
+export function createDisplayDryRunActor(
+  resolver?: (input: DisplayDryRunInput) => Promise<void>,
+) {
+  const defaultResolver = async (input: DisplayDryRunInput) => {
+    const { wrapText } = await import("../../lib/utils.ts");
+    const width = process.stdout.columns || 80;
+    const border = pc.dim("─".repeat(width));
+
+    console.log("");
+    console.log(pc.bgCyan(pc.black(" DRY RUN: SYSTEM PROMPT ")));
+    console.log(border);
+    console.log(wrapText(input.systemPrompt, width));
+    console.log(border);
+    console.log("");
+    console.log(pc.bgCyan(pc.black(" DRY RUN: USER PROMPT ")));
+    console.log(border);
+    console.log(wrapText(input.userPrompt, width));
+    console.log(border);
+    console.log("");
+  };
+  return fromPromise(async ({ input }: { input: DisplayDryRunInput }) =>
+    (resolver ?? defaultResolver)(input),
+  );
+}
+
+export const displayDryRunActor = createDisplayDryRunActor();
