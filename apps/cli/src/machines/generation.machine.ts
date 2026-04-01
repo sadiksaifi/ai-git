@@ -211,6 +211,8 @@ export const generationMachine = setup({
     options: input.options,
     slowWarningThresholdMs: input.slowWarningThresholdMs,
     adapter: input.adapter,
+    promptCustomization: input.promptCustomization,
+    editor: input.editor,
     branchName: null,
     diff: "",
     commits: "",
@@ -321,7 +323,7 @@ export const generationMachine = setup({
 
               return {
                 model: context.model,
-                system: buildSystemPrompt(),
+                system: buildSystemPrompt(context.promptCustomization),
                 prompt: userPrompt,
                 modelName: context.modelName,
                 slowThresholdMs: context.slowWarningThresholdMs,

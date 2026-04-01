@@ -330,4 +330,34 @@ describe("generationMachine", () => {
     const snap = await waitFor(actor, (s) => s.status === "done");
     expect(snap.output!.committed).toBe(true);
   });
+
+  // promptCustomization is forwarded to buildSystemPrompt
+  test("promptCustomization is forwarded to invokeAIActor input", async () => {
+    let capturedSystem = "";
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({ diff: "", commits: "", fileList: "" })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async ({ input }: { input: { system: string } }) => {
+          capturedSystem = input.system;
+          return "feat: add login";
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => "cancel"),
+      },
+    });
+    const actor = createActor(machine, {
+      input: mockInput({
+        promptCustomization: {
+          context: "This is a React project",
+        },
+      }),
+    });
+    actor.start();
+    await waitFor(actor, (s) => s.status === "done");
+    expect(capturedSystem).toContain("This is a React project");
+  });
 });
