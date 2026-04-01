@@ -361,7 +361,7 @@ export const pushMachine = setup({
         onError: {
           // PU5: remote add/push failed
           target: "done",
-          actions: "storeErrorMessage",
+          actions: ["storeErrorMessage", "markExitError"],
         },
       },
     },
