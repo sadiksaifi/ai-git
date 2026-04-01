@@ -1,35 +1,24 @@
 import { describe, test, expect } from "bun:test";
 import { DEFAULT_SLOW_WARNING_THRESHOLD_MS } from "../config.ts";
-import {
-  createSlowWarningTimer,
-  resolveSlowWarningThreshold,
-  type GenerationContext,
-  type GenerationState,
-} from "./generation.ts";
+import { createSlowWarningTimer, resolveSlowWarningThreshold } from "./generation-utils.ts";
 import { validateCommitMessage } from "./validation.ts";
 
-describe("GenerationContext slow warning", () => {
+describe("resolveSlowWarningThreshold", () => {
   test("DEFAULT_SLOW_WARNING_THRESHOLD_MS is a positive number", () => {
     expect(DEFAULT_SLOW_WARNING_THRESHOLD_MS).toBeGreaterThan(0);
     expect(typeof DEFAULT_SLOW_WARNING_THRESHOLD_MS).toBe("number");
   });
 
-  test("slowWarningThresholdMs defaults to DEFAULT_SLOW_WARNING_THRESHOLD_MS when undefined", () => {
-    const ctx: Partial<GenerationContext> = {};
-    expect(resolveSlowWarningThreshold(ctx as GenerationContext)).toBe(
-      DEFAULT_SLOW_WARNING_THRESHOLD_MS,
-    );
+  test("defaults to DEFAULT_SLOW_WARNING_THRESHOLD_MS when undefined", () => {
+    expect(resolveSlowWarningThreshold({})).toBe(DEFAULT_SLOW_WARNING_THRESHOLD_MS);
   });
 
   test("slowWarningThresholdMs of 0 disables the warning", () => {
-    const ctx: Partial<GenerationContext> = { slowWarningThresholdMs: 0 };
-    const threshold = resolveSlowWarningThreshold(ctx as GenerationContext);
-    expect(threshold).toBe(0);
+    expect(resolveSlowWarningThreshold({ slowWarningThresholdMs: 0 })).toBe(0);
   });
 
   test("custom slowWarningThresholdMs overrides default", () => {
-    const ctx: Partial<GenerationContext> = { slowWarningThresholdMs: 10_000 };
-    expect(resolveSlowWarningThreshold(ctx as GenerationContext)).toBe(10_000);
+    expect(resolveSlowWarningThreshold({ slowWarningThresholdMs: 10_000 })).toBe(10_000);
   });
 });
 
@@ -79,22 +68,6 @@ describe("createSlowWarningTimer", () => {
     cleanup();
     cleanup(); // second call should not throw
     cleanup();
-  });
-});
-
-describe("GenerationState type", () => {
-  test("state types are well-formed discriminated union", () => {
-    // Type-level test: ensure all state variants compile
-    const states: GenerationState[] = [
-      { type: "generate" },
-      { type: "validate", message: "feat: test" },
-      { type: "auto_retry", message: "feat: test", errors: ["too long"] },
-      { type: "prompt", message: "feat: test", validationFailed: false, warnings: [] },
-      { type: "retry", message: "feat: test" },
-      { type: "edit", message: "feat: test" },
-      { type: "done", result: { message: "feat: test", committed: true, aborted: false } },
-    ];
-    expect(states).toHaveLength(7);
   });
 });
 

@@ -2,7 +2,7 @@ import { fromPromise } from "xstate";
 import { spinner } from "@clack/prompts";
 import pc from "picocolors";
 import type { ProviderAdapter } from "../../providers/types.ts";
-import { createSlowWarningTimer } from "../../lib/generation.ts";
+import { createSlowWarningTimer } from "../../lib/generation-utils.ts";
 
 // ── Types ────────────────────────────────────────────────────────────
 
