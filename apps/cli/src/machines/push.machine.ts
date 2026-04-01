@@ -281,7 +281,7 @@ export const pushMachine = setup({
           {
             // PU8: other push error
             target: "done",
-            actions: "storeErrorMessage",
+            actions: ["storeErrorMessage", "markExitError"],
           },
         ],
       },

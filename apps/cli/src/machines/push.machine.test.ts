@@ -45,6 +45,7 @@ describe("pushMachine", () => {
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 5000 });
     expect(snap.output!.pushed).toBe(false);
+    expect(snap.output!.exitCode).toBe(1);
   });
 
   // PU2-PU3: missing remote → recovery flow
