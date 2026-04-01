@@ -5,7 +5,7 @@ import pc from "picocolors";
 import { VERSION } from "./version.ts";
 import type { CLIOptions } from "./machines/cli.machine.ts";
 import { wiredCliMachine } from "./machines/cli.wired.ts";
-import { upgradeMachine } from "./machines/upgrade.machine.ts";
+import { wiredUpgradeMachine } from "./machines/upgrade.wired.ts";
 import { FLAGS, COMMANDS } from "@ai-git/meta";
 import { renderHelp } from "./lib/help.ts";
 import { runConfigureFlow } from "./lib/configure.ts";
@@ -40,7 +40,7 @@ cli.command("configure", COMMANDS.configure.description).action(async () => {
 });
 
 cli.command("upgrade", COMMANDS.upgrade.description).action(async () => {
-  const actor = createActor(upgradeMachine, { input: { version: VERSION } });
+  const actor = createActor(wiredUpgradeMachine, { input: { version: VERSION } });
   actor.start();
   const snapshot = await waitFor(actor, (s) => s.status === "done", { timeout: 600_000 });
   process.exit(snapshot.output!.exitCode);
