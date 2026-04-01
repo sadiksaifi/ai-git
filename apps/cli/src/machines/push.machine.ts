@@ -281,7 +281,7 @@ export const pushMachine = setup({
           {
             // PU8: other push error
             target: "done",
-            actions: "storeErrorMessage",
+            actions: ["storeErrorMessage", "markExitError"],
           },
         ],
       },
@@ -361,7 +361,7 @@ export const pushMachine = setup({
         onError: {
           // PU5: remote add/push failed
           target: "done",
-          actions: "storeErrorMessage",
+          actions: ["storeErrorMessage", "markExitError"],
         },
       },
     },
