@@ -1,3 +1,4 @@
+import { log } from "@clack/prompts";
 import { BunSecretsManager } from "./bun-secrets.ts";
 import { EncryptedFileSecretsManager } from "./encrypted-file.ts";
 import { type SecretsManager, API_KEY_SERVICE, getApiKeyAccount } from "./types.ts";
@@ -12,6 +13,9 @@ export { type SecretsManager, API_KEY_SERVICE, getApiKeyAccount };
 /** Cached singleton promise for the secrets manager */
 let secretsManagerPromise: Promise<SecretsManager> | null = null;
 
+/** Guard to emit the fallback warning only once per session */
+let warnedFallback = false;
+
 /**
  * Get the platform-appropriate secrets manager.
  *
@@ -25,6 +29,10 @@ export async function getSecretsManager(): Promise<SecretsManager> {
       const bun = new BunSecretsManager();
       if (await bun.isAvailable()) {
         return bun;
+      }
+      if (!warnedFallback) {
+        warnedFallback = true;
+        log.warn("Native keychain unavailable — using encrypted file storage for API keys.");
       }
       return new EncryptedFileSecretsManager();
     })();

@@ -64,6 +64,18 @@ export function validateCommitMessage(msg: string): ValidationResult {
     });
   }
 
+  // Critical: Valid scope format
+  const scopeMatch = header.match(/^\w+\(([^)]*)\)/);
+  if (scopeMatch && !/^\w[\w./-]*$/.test(scopeMatch[1]!)) {
+    errors.push({
+      rule: "valid-scope",
+      severity: "critical",
+      message: `Scope "${scopeMatch[1]}" contains invalid characters`,
+      suggestion:
+        "Scope must be alphanumeric, underscores, dots, hyphens, or slashes (e.g. auth, api-v2, apps/cli)",
+    });
+  }
+
   // Critical: No markdown
   // Bold regex requires non-/ after opening ** to avoid flagging glob paths (src/**/routes)
   if (/```/.test(msg) || /\*\*[^*/][^*]*\*\*/.test(msg)) {

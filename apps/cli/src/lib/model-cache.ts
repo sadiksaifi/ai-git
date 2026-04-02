@@ -22,6 +22,8 @@ export interface CachedModel {
  * Schema for the model cache file.
  */
 interface ModelCache {
+  /** Schema version for forward compatibility */
+  version: number;
   /** ISO timestamp when the cache was created */
   fetchedAt: string;
   /** Provider this cache belongs to */
@@ -52,7 +54,9 @@ async function loadCache(provider: string): Promise<ModelCache | null> {
     const exists = await file.exists();
     if (!exists) return null;
     const content = await file.text();
-    return JSON.parse(content) as ModelCache;
+    const parsed = JSON.parse(content) as ModelCache;
+    parsed.version ??= 1;
+    return parsed;
   } catch {
     return null;
   }
@@ -69,6 +73,7 @@ async function saveCache(provider: string, models: CachedModel[]): Promise<void>
     await mkdir(CACHE_DIR, { recursive: true });
 
     const cache: ModelCache = {
+      version: 1,
       fetchedAt: new Date().toISOString(),
       provider,
       models,

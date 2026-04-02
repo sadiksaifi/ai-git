@@ -264,6 +264,30 @@ const DEFAULT_WORKFLOW_OPTIONS = {
 export const DEFAULT_SLOW_WARNING_THRESHOLD_MS = 5_000;
 
 /**
+ * Deep-merge two PromptCustomization objects.
+ * `context` and `style`: project overrides global.
+ * `examples`: concatenated (global first, then project).
+ */
+export function mergePromptConfig(
+  global: PromptCustomization | undefined,
+  project: PromptCustomization | undefined,
+): PromptCustomization | undefined {
+  if (!global && !project) return undefined;
+  if (!global) return project;
+  if (!project) return global;
+
+  const merged: PromptCustomization = { ...global, ...project };
+
+  const globalExamples = global.examples ?? [];
+  const projectExamples = project.examples ?? [];
+  if (globalExamples.length > 0 || projectExamples.length > 0) {
+    merged.examples = [...globalExamples, ...projectExamples];
+  }
+
+  return merged;
+}
+
+/**
  * Resolve configuration by merging CLI options with user config.
  * Priority: CLI flags > Project config file > User config file
  *
@@ -294,7 +318,7 @@ export async function resolveConfigAsync(
     ...baseConfig,
     ...projectConfig,
     defaults: { ...baseConfig.defaults, ...projectConfig?.defaults },
-    prompt: { ...baseConfig.prompt, ...projectConfig?.prompt },
+    prompt: mergePromptConfig(baseConfig.prompt, projectConfig?.prompt),
   };
 
   // Fallbacks are just for safety, the check above ensures we should have them.
