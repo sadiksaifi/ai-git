@@ -1,6 +1,6 @@
 import type { ProviderAdapter } from "./types.ts";
-import { getCLIAdapter, getCLIAdapterByBinary } from "./cli/index.ts";
-import { getAPIAdapter } from "./api/index.ts";
+import { getCLIAdapter, getCLIAdapterByBinary, getCLIProviderIds } from "./cli/index.ts";
+import { getAPIAdapter, getAPIProviderIds } from "./api/index.ts";
 
 // ==============================================================================
 // UNIFIED PROVIDER ADAPTER REGISTRY
@@ -44,17 +44,7 @@ export function getAdapterByBinary(binary: string): ProviderAdapter | undefined 
  * Get all registered provider IDs across all modes.
  */
 export function getRegisteredProviderIds(): string[] {
-  const ids: string[] = [];
-
-  // Add CLI provider IDs
-  const { getCLIProviderIds } = require("./cli/index.ts");
-  ids.push(...getCLIProviderIds());
-
-  // Add API provider IDs
-  const { getAPIProviderIds } = require("./api/index.ts");
-  ids.push(...getAPIProviderIds());
-
-  return ids;
+  return [...getCLIProviderIds(), ...getAPIProviderIds()];
 }
 
 // Re-export types for convenience
