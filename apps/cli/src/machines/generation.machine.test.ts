@@ -827,4 +827,48 @@ describe("generationMachine", () => {
     expect(setBranchInput).toBe("main");
     expect(snap.output!.aborted).toBe(false);
   });
+
+  // IB-2 (AC-2): user enters custom branch name → setBranchName called with it
+  test("IB-2: custom branch name → setBranchName called with user input", async () => {
+    let setBranchInput = "";
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => null),
+        // @ts-expect-error — XState v5 test mock type inference
+        textActor: fromPromise(async () => "develop"),
+        // @ts-expect-error — XState v5 test mock type inference
+        setBranchNameActor: fromPromise(async ({ input }) => {
+          setBranchInput = (input as { name: string }).name;
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({
+          diff: "diff",
+          commits: "commits",
+          fileList: "M file.ts",
+        })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => "feat: add login"),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => "commit"),
+        // @ts-expect-error — XState v5 test mock type inference
+        commitActor: fromPromise(async () => ({
+          hash: "abc",
+          branch: "develop",
+          subject: "feat: add login",
+          filesChanged: 1,
+          insertions: 1,
+          deletions: 0,
+          files: [],
+          isRoot: false,
+        })),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(setBranchInput).toBe("develop");
+    expect(snap.output!.committed).toBe(true);
+    expect(snap.output!.aborted).toBe(false);
+  });
 });
