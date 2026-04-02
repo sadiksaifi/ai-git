@@ -1,3 +1,4 @@
+import pc from "picocolors";
 import type { ProviderAdapter } from "../providers/types.ts";
 import { extractErrorMessage } from "./errors.ts";
 import { getProviderById } from "../providers/registry.ts";
@@ -62,13 +63,13 @@ export function displayAIError(categorized: CategorizedError): void {
 
   switch (category) {
     case "model-not-found": {
-      console.error(`\nModel not found: ${model ?? "unknown"}`);
+      console.error(`\n${pc.red("Model not found:")} ${model ?? "unknown"}`);
       console.error("The requested model does not exist or is not available on your account.");
       console.error(`Run 'ai-git configure' to select a different model.\n`);
       break;
     }
     case "api-error": {
-      console.error(`\n${providerName} error: ${message}`);
+      console.error(`\n${pc.red(`${providerName} error:`)} ${message}`);
       console.error("This error is from the API provider, not ai-git.");
       console.error("Suggestions:");
       console.error("  - Check your API key — run 'ai-git configure'");
@@ -77,7 +78,7 @@ export function displayAIError(categorized: CategorizedError): void {
       break;
     }
     case "cli-error": {
-      console.error(`\n${message}\n`);
+      console.error(`\n${pc.red(message)}\n`);
       break;
     }
   }
