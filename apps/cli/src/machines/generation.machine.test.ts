@@ -698,4 +698,42 @@ describe("generationMachine", () => {
     expect(capturedInput!.model).toBe("test-model");
     expect(capturedInput!.modelName).toBe("Test Model");
   });
+
+  // ── AC-2: API auth error invokes displayAIErrorActor ─────────────
+  test("AC-2: API auth error (401) invokes displayAIErrorActor with adapter", async () => {
+    let capturedInput: Record<string, unknown> | null = null;
+    const apiAdapter = {
+      providerId: "openai",
+      mode: "api" as const,
+      invoke: async () => "",
+      checkAvailable: async () => true,
+    };
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({
+          diff: "diff",
+          commits: "",
+          fileList: "M file.ts",
+        })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => {
+          throw Object.assign(new Error("authentication failed"), { statusCode: 401 });
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayAIErrorActor: fromPromise(async ({ input }) => {
+          capturedInput = input as Record<string, unknown>;
+        }),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput({ adapter: apiAdapter }) });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(snap.output!.aborted).toBe(true);
+    expect(capturedInput).not.toBeNull();
+    expect((capturedInput!.adapter as typeof apiAdapter).providerId).toBe("openai");
+    expect((capturedInput!.adapter as typeof apiAdapter).mode).toBe("api");
+  });
 });
