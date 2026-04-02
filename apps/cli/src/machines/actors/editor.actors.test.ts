@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { resolveEditor } from "./editor.actors.ts";
-import { NoEditorError } from "../../lib/errors.ts";
+import { createActor, waitFor } from "xstate";
+import { resolveEditor, createEditorActor } from "./editor.actors.ts";
+import { NoEditorError, EmptyEditError } from "../../lib/errors.ts";
 
 describe("resolveEditor", () => {
   const originalEnv = { ...process.env };
@@ -63,5 +64,49 @@ describe("resolveEditor", () => {
     const which = async (cmd: string) => (cmd === "nano" ? "/usr/bin/nano" : null);
     const result = await resolveEditor("nonexistent", which);
     expect(result).toBe("nano");
+  });
+});
+
+describe("createEditorActor", () => {
+  test("returns edited message on success", async () => {
+    const actor = createActor(
+      createEditorActor(async () => "feat: edited message"),
+      { input: { message: "feat: original" } },
+    );
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status !== "active");
+    expect(snap.output).toBe("feat: edited message");
+  });
+
+  test("propagates EmptyEditError", async () => {
+    const actor = createActor(
+      createEditorActor(async () => {
+        throw new EmptyEditError();
+      }),
+      { input: { message: "feat: original" } },
+    );
+    actor.start();
+    try {
+      await waitFor(actor, (s) => s.status === "done");
+      expect(true).toBe(false); // should not reach
+    } catch (e) {
+      expect(e).toBeInstanceOf(EmptyEditError);
+    }
+  });
+
+  test("propagates NoEditorError", async () => {
+    const actor = createActor(
+      createEditorActor(async () => {
+        throw new NoEditorError();
+      }),
+      { input: { message: "feat: original" } },
+    );
+    actor.start();
+    try {
+      await waitFor(actor, (s) => s.status === "done");
+      expect(true).toBe(false); // should not reach
+    } catch (e) {
+      expect(e).toBeInstanceOf(NoEditorError);
+    }
   });
 });
