@@ -39,7 +39,12 @@ import {
 } from "../lib/git.ts";
 import { generationMachine } from "./generation.machine.ts";
 import { pushMachine } from "./push.machine.ts";
-import { getBranchNameActor, gatherContextActor, commitActor } from "./actors/git.actors.ts";
+import {
+  getBranchNameActor,
+  setBranchNameActor,
+  gatherContextActor,
+  commitActor,
+} from "./actors/git.actors.ts";
 import { invokeAIActor } from "./actors/ai.actors.ts";
 import { confirmActor, selectActor, textActor } from "./actors/clack.actors.ts";
 import {
@@ -307,6 +312,7 @@ export const wiredCliMachine = cliMachine.provide({
     generationMachine: generationMachine.provide({
       actors: {
         getBranchNameActor,
+        setBranchNameActor,
         gatherContextActor,
         invokeAIActor,
         commitActor,

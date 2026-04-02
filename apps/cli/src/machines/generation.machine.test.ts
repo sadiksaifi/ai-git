@@ -774,4 +774,218 @@ describe("generationMachine", () => {
     expect((capturedInput!.adapter as typeof cliAdapter).providerId).toBe("gemini-cli");
     expect((capturedInput!.adapter as typeof cliAdapter).mode).toBe("cli");
   });
+
+  // ── Init Branch Prompt ──────────────────────────────────────────────
+
+  // IB-1 (AC-1): null branch → prompt shown → setBranchName called
+  test("IB-1: null branch → prompts user and sets branch name", async () => {
+    let setBranchCalled = false;
+    let setBranchInput = "";
+    let textActorCalled = false;
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => null),
+        // @ts-expect-error — XState v5 test mock type inference
+        textActor: fromPromise(async () => {
+          textActorCalled = true;
+          return "main";
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        setBranchNameActor: fromPromise(async ({ input }) => {
+          setBranchCalled = true;
+          setBranchInput = (input as { name: string }).name;
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({
+          diff: "diff",
+          commits: "commits",
+          fileList: "M file.ts",
+        })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => "feat: add login"),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => "commit"),
+        // @ts-expect-error — XState v5 test mock type inference
+        commitActor: fromPromise(async () => ({
+          hash: "abc",
+          branch: "main",
+          subject: "feat: add login",
+          filesChanged: 1,
+          insertions: 1,
+          deletions: 0,
+          files: [],
+          isRoot: false,
+        })),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(textActorCalled).toBe(true);
+    expect(setBranchCalled).toBe(true);
+    expect(setBranchInput).toBe("main");
+    expect(snap.output!.aborted).toBe(false);
+  });
+
+  // IB-2 (AC-2): user enters custom branch name → setBranchName called with it
+  test("IB-2: custom branch name → setBranchName called with user input", async () => {
+    let setBranchInput = "";
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => null),
+        // @ts-expect-error — XState v5 test mock type inference
+        textActor: fromPromise(async () => "develop"),
+        // @ts-expect-error — XState v5 test mock type inference
+        setBranchNameActor: fromPromise(async ({ input }) => {
+          setBranchInput = (input as { name: string }).name;
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({
+          diff: "diff",
+          commits: "commits",
+          fileList: "M file.ts",
+        })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => "feat: add login"),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => "commit"),
+        // @ts-expect-error — XState v5 test mock type inference
+        commitActor: fromPromise(async () => ({
+          hash: "abc",
+          branch: "develop",
+          subject: "feat: add login",
+          filesChanged: 1,
+          insertions: 1,
+          deletions: 0,
+          files: [],
+          isRoot: false,
+        })),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(setBranchInput).toBe("develop");
+    expect(snap.output!.committed).toBe(true);
+    expect(snap.output!.aborted).toBe(false);
+  });
+
+  // IB-3 (AC-3): dangerouslyAutoApprove → "main" without prompt
+  test("IB-3: auto-approve uses 'main' without prompting", async () => {
+    let textActorCalled = false;
+    let setBranchInput = "";
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => null),
+        // @ts-expect-error — XState v5 test mock type inference
+        textActor: fromPromise(async () => {
+          textActorCalled = true;
+          return "main";
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        setBranchNameActor: fromPromise(async ({ input }) => {
+          setBranchInput = (input as { name: string }).name;
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({
+          diff: "diff",
+          commits: "commits",
+          fileList: "M file.ts",
+        })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => "feat: add login"),
+        // @ts-expect-error — XState v5 test mock type inference
+        commitActor: fromPromise(async () => ({
+          hash: "abc",
+          branch: "main",
+          subject: "feat: add login",
+          filesChanged: 1,
+          insertions: 1,
+          deletions: 0,
+          files: [],
+          isRoot: false,
+        })),
+      },
+    });
+    const actor = createActor(machine, {
+      input: mockInput({ options: { dangerouslyAutoApprove: true } }),
+    });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(textActorCalled).toBe(false);
+    expect(setBranchInput).toBe("main");
+    expect(snap.output!.committed).toBe(true);
+  });
+
+  // IB-4 (AC-4): cancel at branch prompt → abort
+  test("IB-4: cancel at branch prompt → aborted", async () => {
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => null),
+        // @ts-expect-error — XState v5 test mock type inference
+        textActor: fromPromise(async () => {
+          throw new Error("User cancelled");
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({
+          diff: "diff",
+          commits: "commits",
+          fileList: "M file.ts",
+        })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => "feat: add login"),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(snap.output!.aborted).toBe(true);
+    expect(snap.output!.committed).toBe(false);
+  });
+
+  // IB-5 (AC-5): non-null branch → initBranch skipped entirely
+  test("IB-5: non-null branch skips initBranch", async () => {
+    let setBranchCalled = false;
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        setBranchNameActor: fromPromise(async () => {
+          setBranchCalled = true;
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({
+          diff: "diff",
+          commits: "commits",
+          fileList: "M file.ts",
+        })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => "feat: add login"),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => "commit"),
+        // @ts-expect-error — XState v5 test mock type inference
+        commitActor: fromPromise(async () => ({
+          hash: "abc",
+          branch: "main",
+          subject: "feat: add login",
+          filesChanged: 1,
+          insertions: 1,
+          deletions: 0,
+          files: [],
+          isRoot: false,
+        })),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(setBranchCalled).toBe(false);
+    expect(snap.output!.committed).toBe(true);
+    expect(snap.output!.aborted).toBe(false);
+  });
 });
