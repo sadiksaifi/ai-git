@@ -29,7 +29,7 @@ describe("initMachine", () => {
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
     expect(savedConfig?.provider).toBe("claude-code");
-    expect(snap.output!.continue).toBe(true);
+    expect(snap.output!.continueToRun).toBe(true);
   });
 
   // IN2: global config exists, run wizard
@@ -57,7 +57,7 @@ describe("initMachine", () => {
     const actor = createActor(machine, { input: {} });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output!.continue).toBe(false);
+    expect(snap.output!.continueToRun).toBe(false);
     expect(snap.output!.exitCode).toBe(0);
   });
 
@@ -81,7 +81,7 @@ describe("initMachine", () => {
     const actor = createActor(machine, { input: {} });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output!.continue).toBe(true);
+    expect(snap.output!.continueToRun).toBe(true);
   });
 
   // IN4: no global config, decline setup
@@ -99,7 +99,7 @@ describe("initMachine", () => {
     const actor = createActor(machine, { input: {} });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output!.continue).toBe(false);
+    expect(snap.output!.continueToRun).toBe(false);
     expect(snap.output!.exitCode).toBe(0);
   });
 
@@ -129,7 +129,7 @@ describe("initMachine", () => {
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
     expect(confirmCount).toBe(2); // overwrite + tryNow
-    expect(snap.output!.continue).toBe(true);
+    expect(snap.output!.continueToRun).toBe(true);
   });
 
   // IN6/IN7: decline overwrite → exit
@@ -145,7 +145,7 @@ describe("initMachine", () => {
     const actor = createActor(machine, { input: {} });
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
-    expect(snap.output!.continue).toBe(false);
+    expect(snap.output!.continueToRun).toBe(false);
     expect(snap.output!.exitCode).toBe(0);
   });
 
@@ -193,6 +193,6 @@ describe("initMachine", () => {
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
     expect(snap.output!.exitCode).toBe(1);
-    expect(snap.output!.continue).toBe(false);
+    expect(snap.output!.continueToRun).toBe(false);
   });
 });

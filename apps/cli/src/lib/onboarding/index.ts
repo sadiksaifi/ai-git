@@ -27,6 +27,8 @@ export interface OnboardingResult {
   completed: boolean;
   /** Whether user wants to continue running ai-git now. */
   continueToRun: boolean;
+  /** Exit code: 0 = success, 1 = error/cancelled. */
+  exitCode: 0 | 1;
 }
 
 /**
@@ -56,7 +58,7 @@ export async function runOnboarding(options: OnboardingOptions): Promise<Onboard
 
   if (!wizardResult.completed || !wizardResult.config) {
     outro(pc.dim("Run ai-git configure to try again"));
-    return { config: null, completed: false, continueToRun: false };
+    return { config: null, completed: false, continueToRun: false, exitCode: 1 };
   }
 
   // Step 2: Ask if user wants to try now (for both global and project setup).
@@ -65,7 +67,7 @@ export async function runOnboarding(options: OnboardingOptions): Promise<Onboard
     outro(pc.green("You're all set!"));
   }
 
-  return { config: wizardResult.config, completed: true, continueToRun };
+  return { config: wizardResult.config, completed: true, continueToRun, exitCode: 0 };
 }
 
 // ==============================================================================

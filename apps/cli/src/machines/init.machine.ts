@@ -17,14 +17,14 @@ import { setupWizardMachine as defaultSetupWizardMachine } from "./setup-wizard.
 export interface InitInput {}
 
 export interface InitOutput {
-  continue: boolean; // true = continue to normal flow (IN9)
+  continueToRun: boolean; // true = continue to normal flow (IN9)
   exitCode: 0 | 1; // 0 = success/user chose to exit, 1 = error/cancel
 }
 
 interface InitContext {
   projectConfig: UserConfig | null;
   globalConfig: UserConfig | null;
-  continue: boolean;
+  continueToRun: boolean;
   exitCode: 0 | 1;
 }
 
@@ -91,7 +91,7 @@ export const initMachine = setup({
       globalConfig: ({ event }) =>
         ((event as { output?: UserConfig | null }).output ?? null) as UserConfig | null,
     }),
-    setContinueTrue: assign({ continue: true }),
+    setContinueTrue: assign({ continueToRun: true }),
     setExitError: assign({ exitCode: 1 as const }),
   },
 }).createMachine({
@@ -100,11 +100,11 @@ export const initMachine = setup({
   context: () => ({
     projectConfig: null,
     globalConfig: null,
-    continue: false,
+    continueToRun: false,
     exitCode: 0 as const,
   }),
   output: ({ context }) => ({
-    continue: context.continue,
+    continueToRun: context.continueToRun,
     exitCode: context.exitCode,
   }),
   states: {
