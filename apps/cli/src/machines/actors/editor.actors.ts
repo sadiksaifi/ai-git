@@ -1,0 +1,75 @@
+import { fromPromise } from "xstate";
+import { unlink } from "node:fs/promises";
+import { NoEditorError, EmptyEditError } from "../../lib/errors.ts";
+import { TEMP_MSG_FILE } from "../../lib/paths.ts";
+
+// ── Types ───────────────────────────────────────────────────────────
+
+export interface EditorInput {
+  message: string;
+  editor?: string;
+}
+
+type WhichFn = (cmd: string) => Promise<string | null>;
+
+// ── Editor Detection ────────────────────────────────────────────────
+
+const UNIX_FALLBACKS = ["nvim", "vim", "nano", "vi"];
+const WIN_FALLBACKS = ["code --wait", "notepad"];
+
+export async function resolveEditor(
+  configEditor?: string,
+  which: WhichFn = (cmd) => Bun.which(cmd) as Promise<string | null>,
+): Promise<string> {
+  const candidates: string[] = [];
+
+  if (configEditor) candidates.push(configEditor);
+  if (process.env.VISUAL) candidates.push(process.env.VISUAL);
+  if (process.env.EDITOR) candidates.push(process.env.EDITOR);
+
+  const fallbacks = process.platform === "win32" ? WIN_FALLBACKS : UNIX_FALLBACKS;
+  candidates.push(...fallbacks);
+
+  for (const candidate of candidates) {
+    const firstToken = candidate.split(" ")[0];
+    if (await which(firstToken)) return candidate;
+  }
+
+  throw new NoEditorError();
+}
+
+// ── Actor Factory ───────────────────────────────────────────────────
+
+export function createEditorActor(
+  resolver: (input: EditorInput) => Promise<string> = async (input) => {
+    const editor = await resolveEditor(input.editor);
+    const args = editor.split(" ");
+    args.push(TEMP_MSG_FILE);
+
+    await Bun.write(TEMP_MSG_FILE, input.message);
+
+    try {
+      const proc = Bun.spawn(args, {
+        stdin: "inherit",
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+
+      const exitCode = await proc.exited;
+      if (exitCode !== 0) throw new EmptyEditError();
+
+      const content = (await Bun.file(TEMP_MSG_FILE).text()).trim();
+      if (!content) throw new EmptyEditError();
+
+      return content;
+    } finally {
+      await unlink(TEMP_MSG_FILE).catch(() => {});
+    }
+  },
+) {
+  return fromPromise(async ({ input }: { input: EditorInput }) => {
+    return resolver(input);
+  });
+}
+
+export const editorActor = createEditorActor();
