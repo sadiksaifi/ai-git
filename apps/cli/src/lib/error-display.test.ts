@@ -72,4 +72,25 @@ describe("displayAIError", () => {
     expect(output).toContain("gpt-99-turbo");
     expect(output).toContain("ai-git configure");
   });
+
+  test("api-error includes provider name and 'not ai-git' guidance", () => {
+    const lines: string[] = [];
+    const origError = console.error;
+    console.error = (...args: unknown[]) => lines.push(args.join(" "));
+    try {
+      displayAIError({
+        category: "api-error",
+        message: "authentication failed",
+        providerName: "OpenAI",
+      });
+    } finally {
+      console.error = origError;
+    }
+    const output = lines.join("\n");
+    expect(output).toContain("OpenAI");
+    expect(output).toContain("authentication failed");
+    expect(output).toContain("not ai-git");
+    expect(output).toContain("API key");
+    expect(output).toContain("status page");
+  });
 });
