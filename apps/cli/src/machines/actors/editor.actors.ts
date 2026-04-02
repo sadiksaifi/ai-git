@@ -8,10 +8,10 @@ import { NoEditorError, EmptyEditError } from "../../lib/errors.ts";
 
 // ── Types ───────────────────────────────────────────────────────────
 
-export interface EditorInput {
+export type EditorInput = {
   message: string;
   editor?: string;
-}
+};
 
 type WhichFn = (cmd: string) => string | null | Promise<string | null>;
 
