@@ -12,6 +12,8 @@ export interface SetupWizardInput {
 
 export interface SetupWizardOutput {
   completed: boolean;
+  continueToRun: boolean;
+  exitCode: 0 | 1;
   config: UserConfig | null;
 }
 
@@ -19,6 +21,7 @@ interface SetupWizardContext {
   target: "global" | "project";
   defaults?: Partial<UserConfig>;
   completed: boolean;
+  exitCode: 0 | 1;
   config: UserConfig | null;
 }
 
@@ -48,6 +51,7 @@ export const setupWizardMachine = setup({
     target: input.target,
     defaults: input.defaults,
     completed: false,
+    exitCode: 1 as const,
     config: null,
   }),
   states: {
@@ -62,6 +66,7 @@ export const setupWizardMachine = setup({
           target: "done",
           actions: assign({
             completed: ({ event }) => event.output.completed,
+            exitCode: ({ event }) => (event.output.completed ? (0 as const) : (1 as const)),
             config: ({ event }) => event.output.config,
           }),
         },
@@ -81,6 +86,8 @@ export const setupWizardMachine = setup({
   },
   output: ({ context }) => ({
     completed: context.completed,
+    continueToRun: false,
+    exitCode: context.exitCode,
     config: context.config,
   }),
 });

@@ -20,6 +20,8 @@ describe("setupWizardMachine", () => {
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
     expect(snap.output!.completed).toBe(true);
+    expect(snap.output!.exitCode).toBe(0);
+    expect(snap.output!.continueToRun).toBe(false);
     expect(snap.output!.config?.provider).toBe("claude-code");
   });
 
@@ -40,6 +42,8 @@ describe("setupWizardMachine", () => {
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
     expect(snap.output!.completed).toBe(false);
+    expect(snap.output!.exitCode).toBe(1);
+    expect(snap.output!.continueToRun).toBe(false);
     expect(snap.output!.config).toBeNull();
   });
 
@@ -79,6 +83,8 @@ describe("setupWizardMachine", () => {
     actor.start();
     const snap = await waitFor(actor, (s) => s.status === "done");
     expect(snap.output!.completed).toBe(false);
+    expect(snap.output!.exitCode).toBe(1);
+    expect(snap.output!.continueToRun).toBe(false);
     expect(snap.output!.config).toBeNull();
   });
 
