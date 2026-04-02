@@ -211,14 +211,13 @@ export interface DisplayAIErrorInput {
   error: unknown;
   adapter?: ProviderAdapter;
   model: string;
-  modelName: string;
 }
 
 export function createDisplayAIErrorActor(
   resolver?: (input: DisplayAIErrorInput) => Promise<void>,
 ) {
   const defaultResolver = async (input: DisplayAIErrorInput) => {
-    const categorized = categorizeError(input.error, input.adapter, input.modelName);
+    const categorized = categorizeError(input.error, input.adapter, input.model);
     displayAIError(categorized);
   };
   return fromPromise(async ({ input }: { input: DisplayAIErrorInput }) =>

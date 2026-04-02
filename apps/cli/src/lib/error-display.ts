@@ -17,7 +17,10 @@ export interface CategorizedError {
 
 function getStatusCode(error: unknown): number | undefined {
   if (typeof error === "object" && error !== null) {
-    if ("statusCode" in error && typeof (error as { statusCode: unknown }).statusCode === "number") {
+    if (
+      "statusCode" in error &&
+      typeof (error as { statusCode: unknown }).statusCode === "number"
+    ) {
       return (error as { statusCode: number }).statusCode;
     }
     if ("status" in error && typeof (error as { status: unknown }).status === "number") {
@@ -41,7 +44,7 @@ export function categorizeError(
   const providerName = getProviderDisplayName(adapter);
   const statusCode = getStatusCode(error);
 
-  if (statusCode === 404 || /model.not.found/i.test(message)) {
+  if (statusCode === 404 || /model\s+not\s+found/i.test(message)) {
     return { category: "model-not-found", message, providerName, model };
   }
 

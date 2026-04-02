@@ -414,7 +414,6 @@ export const generationMachine = setup({
               error: context._lastRawError,
               adapter: context.adapter,
               model: context.model,
-              modelName: context.modelName,
             }),
             onDone: "fatalError",
             onError: "fatalError", // display failure is non-fatal

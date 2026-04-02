@@ -696,7 +696,6 @@ describe("generationMachine", () => {
     expect(snap.output!.aborted).toBe(true);
     expect(capturedInput).not.toBeNull();
     expect(capturedInput!.model).toBe("test-model");
-    expect(capturedInput!.modelName).toBe("Test Model");
   });
 
   // ── AC-2: API auth error invokes displayAIErrorActor ─────────────
