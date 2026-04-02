@@ -345,10 +345,10 @@ export const generationMachine = setup({
               ],
             },
             promptBranchName: {
-              // @ts-expect-error — XState v5 invoke type inference
               invoke: {
                 src: "textActor",
                 input: {
+                  // @ts-expect-error — XState v5 invoke type inference
                   message: "No commits found. Set initial branch name?",
                   initialValue: "main",
                 },
