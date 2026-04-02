@@ -1,7 +1,12 @@
 import { generateText } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import type { APIProviderAdapter, APIModelDefinition, InvokeOptions } from "../types.ts";
-import { getApiKey, createTimeoutController, COMMON_HEADERS } from "./utils.ts";
+import {
+  getApiKey,
+  createTimeoutController,
+  COMMON_HEADERS,
+  formatProviderError,
+} from "./utils.ts";
 import { dedupeProviderModels, getModelCatalog, rankProviderModels } from "./models/index.ts";
 
 // ==============================================================================
@@ -95,7 +100,8 @@ export const anthropicAdapter: APIProviderAdapter = {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Anthropic API error (${response.status}): ${errorText}`);
+        const err = formatProviderError("Anthropic", response.status, errorText);
+        throw new Error(`${err.userMessage}: ${err.suggestion}`);
       }
 
       const data = (await response.json()) as AnthropicModelsResponse;
