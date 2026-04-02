@@ -1,4 +1,10 @@
-import { describe, test, expect, mock, beforeEach } from "bun:test";
+import { describe, test, expect, mock, beforeEach, afterAll } from "bun:test";
+
+// ── Save real modules before mocking ────────────────────────────────
+
+const realClack = await import("@clack/prompts");
+const realOnboarding = await import("./onboarding/index.ts");
+const realInitMachine = await import("../machines/init.machine.ts");
 
 // ── Mocks ──────────────────────────────────────────────────────────
 
@@ -22,7 +28,6 @@ const mockRunOnboarding = mock(() =>
   }),
 );
 
-const realOnboarding = await import("./onboarding/index.ts");
 mock.module("./onboarding/index.ts", () => ({
   ...realOnboarding,
   runOnboarding: mockRunOnboarding,
@@ -54,6 +59,14 @@ mock.module("../machines/init.machine.ts", () => ({
 // ── Import after mocks ─────────────────────────────────────────────
 
 const { runConfigureFlow } = await import("./configure.ts");
+
+// ── Restore mocks after all tests ──────────────────────────────────
+
+afterAll(() => {
+  mock.module("@clack/prompts", () => realClack);
+  mock.module("./onboarding/index.ts", () => realOnboarding);
+  mock.module("../machines/init.machine.ts", () => realInitMachine);
+});
 
 // ── Tests ──────────────────────────────────────────────────────────
 
