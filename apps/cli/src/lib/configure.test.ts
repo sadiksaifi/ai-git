@@ -1,10 +1,5 @@
-import { describe, test, expect, mock, beforeEach, afterAll } from "bun:test";
-
-// ── Save real modules before mocking ────────────────────────────────
-
-const realClack = await import("@clack/prompts");
-const realOnboarding = await import("./onboarding/index.ts");
-const realInitMachine = await import("../machines/init.machine.ts");
+import { describe, test, expect, mock, beforeEach } from "bun:test";
+import { setup } from "xstate";
 
 // ── Mocks ──────────────────────────────────────────────────────────
 
@@ -28,13 +23,13 @@ const mockRunOnboarding = mock(() =>
   }),
 );
 
+const realOnboarding = await import("./onboarding/index.ts");
 mock.module("./onboarding/index.ts", () => ({
   ...realOnboarding,
   runOnboarding: mockRunOnboarding,
 }));
 
-// Mock initMachine with a trivial XState machine
-import { setup } from "xstate";
+// ── Mock init machine (passed via parameter, not module mock) ──────
 
 const mockInitMachine = setup({
   types: {
@@ -45,28 +40,14 @@ const mockInitMachine = setup({
   id: "mockInit",
   initial: "done",
   states: {
-    done: {
-      type: "final",
-    },
+    done: { type: "final" },
   },
   output: () => ({ continueToRun: true, exitCode: 0 as const }),
 });
 
-mock.module("../machines/init.machine.ts", () => ({
-  initMachine: mockInitMachine,
-}));
-
 // ── Import after mocks ─────────────────────────────────────────────
 
 const { runConfigureFlow } = await import("./configure.ts");
-
-// ── Restore mocks after all tests ──────────────────────────────────
-
-afterAll(() => {
-  mock.module("@clack/prompts", () => realClack);
-  mock.module("./onboarding/index.ts", () => realOnboarding);
-  mock.module("../machines/init.machine.ts", () => realInitMachine);
-});
 
 // ── Tests ──────────────────────────────────────────────────────────
 
@@ -94,7 +75,8 @@ describe("runConfigureFlow", () => {
   test("project path success", async () => {
     mockSelect.mockResolvedValueOnce("project");
 
-    const result = await runConfigureFlow();
+    // Pass mock machine via parameter to avoid module-level mock leaking
+    const result = await runConfigureFlow(mockInitMachine as any);
     expect(result.exitCode).toBe(0);
     expect(result.continueToRun).toBe(true);
   });

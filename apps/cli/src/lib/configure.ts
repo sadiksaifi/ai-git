@@ -25,7 +25,9 @@ export interface ConfigureResult {
  * Prompts user to choose Global or Project configuration,
  * then delegates to the appropriate setup flow.
  */
-export async function runConfigureFlow(): Promise<ConfigureResult> {
+export async function runConfigureFlow(
+  _initMachine: typeof initMachine = initMachine,
+): Promise<ConfigureResult> {
   try {
     const choice = await select({
       message: "Where do you want to configure?",
@@ -57,7 +59,7 @@ export async function runConfigureFlow(): Promise<ConfigureResult> {
     }
 
     // Project: run the init machine
-    const actor = createActor(initMachine, {
+    const actor = createActor(_initMachine, {
       input: {},
     });
     actor.start();
