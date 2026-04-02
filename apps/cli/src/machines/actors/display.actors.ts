@@ -9,6 +9,8 @@ import {
 import { displayFileList, displayCommitMessage } from "../../lib/display.ts";
 import type { ValidationResult } from "../../lib/validation.ts";
 import { wrapText } from "../../lib/utils.ts";
+import { categorizeError, displayAIError } from "../../lib/error-display.ts";
+import type { ProviderAdapter } from "../../providers/types.ts";
 
 // ── Display staged result (after staging resolves) ────────────────────
 
@@ -202,3 +204,26 @@ export function createDisplayDryRunActor(resolver?: (input: DisplayDryRunInput) 
 }
 
 export const displayDryRunActor = createDisplayDryRunActor();
+
+// ── Display AI error (before fatal error) ──────────────────────────
+
+export interface DisplayAIErrorInput {
+  error: unknown;
+  adapter?: ProviderAdapter;
+  model: string;
+  modelName: string;
+}
+
+export function createDisplayAIErrorActor(
+  resolver?: (input: DisplayAIErrorInput) => Promise<void>,
+) {
+  const defaultResolver = async (input: DisplayAIErrorInput) => {
+    const categorized = categorizeError(input.error, input.adapter, input.modelName);
+    displayAIError(categorized);
+  };
+  return fromPromise(async ({ input }: { input: DisplayAIErrorInput }) =>
+    (resolver ?? defaultResolver)(input),
+  );
+}
+
+export const displayAIErrorActor = createDisplayAIErrorActor();

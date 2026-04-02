@@ -14,6 +14,7 @@ import {
   displayValidationWarningsActor as defaultDisplayValidationWarningsActor,
   displayCommitMessageActor as defaultDisplayCommitMessageActor,
   displayDryRunActor as defaultDisplayDryRunActor,
+  displayAIErrorActor as defaultDisplayAIErrorActor,
 } from "./actors/display.actors.ts";
 import { editorActor as defaultEditorActor } from "./actors/editor.actors.ts";
 import {
@@ -77,6 +78,7 @@ export interface GenerationContext {
   committed: boolean;
   aborted: boolean;
   _routeTarget: "retry" | "edit";
+  _lastRawError: unknown;
 }
 
 export interface GenerationOutput {
@@ -127,6 +129,9 @@ export const generationMachine = setup({
     >,
     displayDryRunActor: defaultDisplayDryRunActor as ActorLogicFrom<
       typeof defaultDisplayDryRunActor
+    >,
+    displayAIErrorActor: defaultDisplayAIErrorActor as ActorLogicFrom<
+      typeof defaultDisplayAIErrorActor
     >,
     editorActor: defaultEditorActor as ActorLogicFrom<typeof defaultEditorActor>,
   },
@@ -215,6 +220,7 @@ export const generationMachine = setup({
         const error = (event as { error?: unknown }).error;
         return [...context.generationErrors, extractErrorMessage(error)];
       },
+      _lastRawError: ({ event }) => (event as { error?: unknown }).error,
     }),
     logContextError: assign({
       generationErrors: ({ context, event }) => {
@@ -284,6 +290,7 @@ export const generationMachine = setup({
     committed: false,
     aborted: false,
     _routeTarget: "retry" as const,
+    _lastRawError: undefined as unknown,
   }),
   output: ({ context }) => ({
     message: context.currentMessage,
@@ -378,8 +385,8 @@ export const generationMachine = setup({
               actions: "assignAIResponse",
             },
             onError: {
-              // GN8-GN10: AI provider error → fatal
-              target: "fatalError",
+              // GN8-GN10: AI provider error → display error → fatal
+              target: "displayError",
               actions: "storeErrorMessage",
             },
           },
@@ -396,6 +403,22 @@ export const generationMachine = setup({
               target: "toValidate",
             },
           ],
+        },
+
+        // ── Display AI error before fatal ──────────────────────────
+        displayError: {
+          // @ts-expect-error — XState v5 invoke type inference
+          invoke: {
+            src: "displayAIErrorActor",
+            input: ({ context }) => ({
+              error: context._lastRawError,
+              adapter: context.adapter,
+              model: context.model,
+              modelName: context.modelName,
+            }),
+            onDone: "fatalError",
+            onError: "fatalError", // display failure is non-fatal
+          },
         },
 
         // ── Fatal error → done(aborted) — BUG #3 FIX ──────────────
