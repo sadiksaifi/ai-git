@@ -919,4 +919,31 @@ describe("generationMachine", () => {
     expect(setBranchInput).toBe("main");
     expect(snap.output!.committed).toBe(true);
   });
+
+  // IB-4 (AC-4): cancel at branch prompt → abort
+  test("IB-4: cancel at branch prompt → aborted", async () => {
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => null),
+        // @ts-expect-error — XState v5 test mock type inference
+        textActor: fromPromise(async () => {
+          throw new Error("User cancelled");
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({
+          diff: "diff",
+          commits: "commits",
+          fileList: "M file.ts",
+        })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => "feat: add login"),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(snap.output!.aborted).toBe(true);
+    expect(snap.output!.committed).toBe(false);
+  });
 });
