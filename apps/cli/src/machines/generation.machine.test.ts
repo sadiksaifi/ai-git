@@ -430,6 +430,170 @@ describe("generationMachine", () => {
     expect(warningsCalled).toBe(true);
   });
 
+  // Edit happy path: select edit → editor returns edited message → commit
+  test("edit flow: editor returns edited message, then commit", async () => {
+    let menuCount = 0;
+    let committedMessage = "";
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({ diff: "", commits: "", fileList: "" })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => "feat: original message"),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => {
+          menuCount++;
+          return menuCount === 1 ? "edit" : "commit";
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        editorActor: fromPromise(async () => "feat: edited message"),
+        // @ts-expect-error — XState v5 test mock type inference
+        commitActor: fromPromise(async ({ input }: { input: { message: string } }) => {
+          committedMessage = input.message;
+          return {
+            hash: "abc",
+            branch: "main",
+            subject: input.message,
+            filesChanged: 1,
+            insertions: 1,
+            deletions: 0,
+            files: [],
+            isRoot: false,
+          };
+        }),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 10000 });
+    expect(snap.output!.committed).toBe(true);
+    expect(snap.context.editedManually).toBe(true);
+    expect(snap.context.autoRetries).toBe(3);
+    expect(committedMessage).toBe("feat: edited message");
+  });
+
+  // Empty edit returns to prompt menu (user can pick another option)
+  test("edit flow: empty edit returns to prompt, then cancel aborts", async () => {
+    let menuCount = 0;
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({ diff: "", commits: "", fileList: "" })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => "feat: original"),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => {
+          menuCount++;
+          return menuCount === 1 ? "edit" : "cancel";
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        editorActor: fromPromise(async () => {
+          const { EmptyEditError } = await import("../lib/errors.ts");
+          throw new EmptyEditError();
+        }),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 10000 });
+    expect(snap.output!.aborted).toBe(true);
+    expect(menuCount).toBe(2); // Menu shown twice: first "edit", then "cancel"
+  });
+
+  // No editor found → validate with original message (AC-6)
+  test("edit flow: no editor falls back to validate with original message", async () => {
+    let menuCount = 0;
+    let committedMessage = "";
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({ diff: "", commits: "", fileList: "" })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => "feat: original"),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => {
+          menuCount++;
+          return menuCount === 1 ? "edit" : "commit";
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        editorActor: fromPromise(async () => {
+          const { NoEditorError } = await import("../lib/errors.ts");
+          throw new NoEditorError();
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        commitActor: fromPromise(async ({ input }: { input: { message: string } }) => {
+          committedMessage = input.message;
+          return {
+            hash: "abc",
+            branch: "main",
+            subject: "feat: original",
+            filesChanged: 1,
+            insertions: 1,
+            deletions: 0,
+            files: [],
+            isRoot: false,
+          };
+        }),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 10000 });
+    expect(snap.output!.committed).toBe(true);
+    expect(snap.context.editedManually).toBe(false); // edit never completed
+    expect(committedMessage).toBe("feat: original"); // original message preserved
+  });
+
+  // editedManually prevents auto-retry (autoRetries set to 3)
+  test("edit flow: edited invalid message skips auto-retry, goes to prompt", async () => {
+    let menuCount = 0;
+    let aiCallCount = 0;
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({ diff: "", commits: "", fileList: "" })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => {
+          aiCallCount++;
+          return "feat: add login";
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => {
+          menuCount++;
+          return menuCount === 1 ? "edit" : "commit";
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        editorActor: fromPromise(async () => "not a valid conventional commit"),
+        // @ts-expect-error — XState v5 test mock type inference
+        commitActor: fromPromise(async () => ({
+          hash: "abc",
+          branch: "main",
+          subject: "not valid",
+          filesChanged: 1,
+          insertions: 1,
+          deletions: 0,
+          files: [],
+          isRoot: false,
+        })),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 10000 });
+    // Should have gone to prompt (not auto-retry) because autoRetries = 3
+    expect(snap.output!.committed).toBe(true);
+    expect(menuCount).toBe(2); // Menu shown after original + after edit
+    expect(aiCallCount).toBe(1); // AI called once (no hidden retries after edit)
+  });
+
   // Bug: user retry after exhausted auto-retries should get fresh auto-retry budget
   test("user retry resets auto-retry budget for next generation cycle", async () => {
     let genCount = 0;

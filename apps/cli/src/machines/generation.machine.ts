@@ -15,13 +15,14 @@ import {
   displayCommitMessageActor as defaultDisplayCommitMessageActor,
   displayDryRunActor as defaultDisplayDryRunActor,
 } from "./actors/display.actors.ts";
+import { editorActor as defaultEditorActor } from "./actors/editor.actors.ts";
 import {
   validateCommitMessage,
   buildRetryContext,
   type ValidationResult,
 } from "../lib/validation.ts";
 import { buildSystemPrompt, buildUserPrompt } from "../prompt.ts";
-import { extractErrorMessage } from "../lib/errors.ts";
+import { extractErrorMessage, NoEditorError, EmptyEditError } from "../lib/errors.ts";
 import type { CommitResult } from "../lib/git.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
 import type { PromptCustomization } from "../config.ts";
@@ -125,6 +126,7 @@ export const generationMachine = setup({
     displayDryRunActor: defaultDisplayDryRunActor as ActorLogicFrom<
       typeof defaultDisplayDryRunActor
     >,
+    editorActor: defaultEditorActor as ActorLogicFrom<typeof defaultEditorActor>,
   },
   guards: {
     isDryRun: ({ context }) => context.options.dryRun,
@@ -142,6 +144,8 @@ export const generationMachine = setup({
       const text = (event as { output?: string }).output ?? "";
       return text.trim().length > 0;
     },
+    isNoEditorError: ({ event }) => (event as { error?: unknown }).error instanceof NoEditorError,
+    isEmptyEditError: ({ event }) => (event as { error?: unknown }).error instanceof EmptyEditError,
   },
   actions: {
     assignBranchName: assign({
@@ -218,6 +222,11 @@ export const generationMachine = setup({
           `Context gathering failed: ${extractErrorMessage(error)}`,
         ];
       },
+    }),
+    assignEditedMessage: assign({
+      currentMessage: ({ event }) => (event as { output?: string }).output ?? "",
+      editedManually: true,
+      autoRetries: 3,
     }),
   },
 }).createMachine({
@@ -437,6 +446,11 @@ export const generationMachine = setup({
         {
           // GN7: Critical errors + retries exhausted → prompt anyway
           guard: "hasCriticalErrors",
+          target: "prompt",
+        },
+        {
+          // Edited message → prompt (preserve editedManually + autoRetries)
+          guard: ({ context }) => context.editedManually,
           target: "prompt",
         },
         {
@@ -687,9 +701,31 @@ export const generationMachine = setup({
     // ── EDIT ──────────────────────────────────────────────────────────
     // ══════════════════════════════════════════════════════════════════
     edit: {
-      // Simplified: for now redirect to validate with current message
-      always: {
-        target: "validate",
+      // @ts-expect-error — XState v5 invoke type inference
+      invoke: {
+        src: "editorActor",
+        input: ({ context }) => ({
+          message: context.currentMessage,
+          editor: context.editor,
+        }),
+        onDone: {
+          target: "validate",
+          actions: "assignEditedMessage",
+        },
+        onError: [
+          {
+            guard: "isNoEditorError",
+            target: "validate",
+          },
+          {
+            guard: "isEmptyEditError",
+            target: "prompt",
+          },
+          {
+            target: "prompt",
+            actions: "storeErrorMessage",
+          },
+        ],
       },
     },
 

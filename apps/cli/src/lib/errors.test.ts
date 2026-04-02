@@ -1,5 +1,11 @@
 import { describe, test, expect } from "bun:test";
-import { UserCancelledError, CLIError, extractErrorMessage } from "./errors.ts";
+import {
+  UserCancelledError,
+  CLIError,
+  NoEditorError,
+  EmptyEditError,
+  extractErrorMessage,
+} from "./errors.ts";
 
 describe("UserCancelledError", () => {
   test("is an instance of Error", () => {
@@ -26,6 +32,24 @@ describe("CLIError", () => {
   test("accepts optional suggestion", () => {
     const err = new CLIError("not found", 1, "Run ai-git --setup");
     expect(err.suggestion).toBe("Run ai-git --setup");
+  });
+});
+
+describe("NoEditorError", () => {
+  test("is an instance of Error with correct name", () => {
+    const err = new NoEditorError();
+    expect(err).toBeInstanceOf(Error);
+    expect(err.name).toBe("NoEditorError");
+    expect(err.message).toBe("No editor found");
+  });
+});
+
+describe("EmptyEditError", () => {
+  test("is an instance of Error with correct name", () => {
+    const err = new EmptyEditError();
+    expect(err).toBeInstanceOf(Error);
+    expect(err.name).toBe("EmptyEditError");
+    expect(err.message).toBe("Empty edit");
   });
 });
 

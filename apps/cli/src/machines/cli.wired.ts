@@ -48,6 +48,7 @@ import {
   displayCommitMessageActor,
   displayDryRunActor,
 } from "./actors/display.actors.ts";
+import { editorActor } from "./actors/editor.actors.ts";
 import { showWelcomeScreen, type WelcomeOptions } from "../lib/ui/welcome.ts";
 import { startUpdateCheck, showUpdateNotification } from "../lib/update-check.ts";
 import { assertConfiguredModelAllowed } from "../providers/api/models/index.ts";
@@ -314,6 +315,7 @@ export const wiredCliMachine = cliMachine.provide({
         displayValidationWarningsActor,
         displayCommitMessageActor,
         displayDryRunActor,
+        editorActor,
       } as any,
     }),
 

@@ -10,6 +10,26 @@ export class UserCancelledError extends Error {
 }
 
 /**
+ * Thrown when no editor binary can be resolved from config, environment, or platform fallbacks.
+ */
+export class NoEditorError extends Error {
+  override name = "NoEditorError" as const;
+  constructor() {
+    super("No editor found");
+  }
+}
+
+/**
+ * Thrown when the user saves an empty file or the editor exits with non-zero code.
+ */
+export class EmptyEditError extends Error {
+  override name = "EmptyEditError" as const;
+  constructor() {
+    super("Empty edit");
+  }
+}
+
+/**
  * Typed CLI error with exit code and optional user-facing suggestion.
  * Replaces scattered process.exit() calls throughout the codebase.
  *
