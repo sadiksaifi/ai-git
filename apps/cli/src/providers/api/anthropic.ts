@@ -1,7 +1,12 @@
 import { generateText } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import type { APIProviderAdapter, APIModelDefinition, InvokeOptions } from "../types.ts";
-import { getApiKey, createTimeoutController, COMMON_HEADERS, formatProviderError } from "./utils.ts";
+import {
+  getApiKey,
+  createTimeoutController,
+  COMMON_HEADERS,
+  formatProviderError,
+} from "./utils.ts";
 import { dedupeProviderModels, getModelCatalog, rankProviderModels } from "./models/index.ts";
 
 // ==============================================================================
