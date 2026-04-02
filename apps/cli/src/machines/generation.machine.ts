@@ -22,7 +22,7 @@ import {
   type ValidationResult,
 } from "../lib/validation.ts";
 import { buildSystemPrompt, buildUserPrompt } from "../prompt.ts";
-import { extractErrorMessage, NoEditorError } from "../lib/errors.ts";
+import { extractErrorMessage, NoEditorError, EmptyEditError } from "../lib/errors.ts";
 import type { CommitResult } from "../lib/git.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
 import type { PromptCustomization } from "../config.ts";
@@ -145,6 +145,7 @@ export const generationMachine = setup({
       return text.trim().length > 0;
     },
     isNoEditorError: ({ event }) => (event as { error?: unknown }).error instanceof NoEditorError,
+    isEmptyEditError: ({ event }) => (event as { error?: unknown }).error instanceof EmptyEditError,
   },
   actions: {
     assignBranchName: assign({
@@ -717,7 +718,12 @@ export const generationMachine = setup({
             target: "validate",
           },
           {
+            guard: "isEmptyEditError",
             target: "prompt",
+          },
+          {
+            target: "prompt",
+            actions: "storeErrorMessage",
           },
         ],
       },

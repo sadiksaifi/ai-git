@@ -1,7 +1,9 @@
 import { fromPromise } from "xstate";
 import { unlink } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { NoEditorError, EmptyEditError } from "../../lib/errors.ts";
-import { TEMP_MSG_FILE } from "../../lib/paths.ts";
 
 // ── Types ───────────────────────────────────────────────────────────
 
@@ -44,11 +46,12 @@ export function createEditorActor(
   resolver: (input: EditorInput) => Promise<string> = async (input) => {
     const editor = await resolveEditor(input.editor);
     const args = editor.split(" ");
-    args.push(TEMP_MSG_FILE);
-
-    await Bun.write(TEMP_MSG_FILE, input.message);
+    const tempFile = join(tmpdir(), `ai-git-msg-${randomUUID()}.txt`);
+    args.push(tempFile);
 
     try {
+      await Bun.write(tempFile, input.message);
+
       const proc = Bun.spawn(args, {
         stdin: "inherit",
         stdout: "inherit",
@@ -58,12 +61,12 @@ export function createEditorActor(
       const exitCode = await proc.exited;
       if (exitCode !== 0) throw new EmptyEditError();
 
-      const content = (await Bun.file(TEMP_MSG_FILE).text()).trim();
+      const content = (await Bun.file(tempFile).text()).trim();
       if (!content) throw new EmptyEditError();
 
       return content;
     } finally {
-      await unlink(TEMP_MSG_FILE).catch(() => {});
+      await unlink(tempFile).catch(() => {});
     }
   },
 ) {
