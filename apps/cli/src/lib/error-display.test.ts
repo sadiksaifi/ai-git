@@ -23,4 +23,12 @@ describe("categorizeError", () => {
     expect(result.category).toBe("model-not-found");
     expect(result.providerName).toBe("OpenAI");
   });
+
+  test("API adapter with 401 → api-error", () => {
+    const error = Object.assign(new Error("Unauthorized"), { statusCode: 401 });
+    const result = categorizeError(error, apiAdapter);
+    expect(result.category).toBe("api-error");
+    expect(result.providerName).toBe("OpenAI");
+    expect(result.message).toBe("Unauthorized");
+  });
 });
