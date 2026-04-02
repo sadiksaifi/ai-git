@@ -1,7 +1,7 @@
 import { generateText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { APIProviderAdapter, APIModelDefinition, InvokeOptions } from "../types.ts";
-import { getApiKey, createTimeoutController, COMMON_HEADERS } from "./utils.ts";
+import { getApiKey, createTimeoutController, COMMON_HEADERS, formatProviderError } from "./utils.ts";
 import { dedupeProviderModels, getModelCatalog, rankProviderModels } from "./models/index.ts";
 
 // ==============================================================================
@@ -94,7 +94,8 @@ export const googleAiStudioAdapter: APIProviderAdapter = {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Gemini API error (${response.status}): ${errorText}`);
+        const err = formatProviderError("Gemini", response.status, errorText);
+        throw new Error(`${err.userMessage}: ${err.suggestion}`);
       }
 
       const data = (await response.json()) as GeminiModelsResponse;

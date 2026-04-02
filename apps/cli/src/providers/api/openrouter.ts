@@ -1,7 +1,7 @@
 import { generateText } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { APIProviderAdapter, APIModelDefinition, InvokeOptions } from "../types.ts";
-import { getApiKey, createTimeoutController, COMMON_HEADERS } from "./utils.ts";
+import { getApiKey, createTimeoutController, COMMON_HEADERS, formatProviderError } from "./utils.ts";
 import { dedupeProviderModels, getModelCatalog, rankProviderModels } from "./models/index.ts";
 
 // ==============================================================================
@@ -86,7 +86,8 @@ export const openRouterAdapter: APIProviderAdapter = {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`OpenRouter API error (${response.status}): ${errorText}`);
+        const err = formatProviderError("OpenRouter", response.status, errorText);
+        throw new Error(`${err.userMessage}: ${err.suggestion}`);
       }
 
       const data = (await response.json()) as OpenRouterModelsResponse;
