@@ -430,6 +430,45 @@ describe("generationMachine", () => {
     expect(warningsCalled).toBe(true);
   });
 
+  // Edit happy path: select edit → editor returns edited message → commit
+  test("edit flow: editor returns edited message, then commit", async () => {
+    let menuCount = 0;
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({ diff: "", commits: "", fileList: "" })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => "feat: original message"),
+        // @ts-expect-error — XState v5 test mock type inference
+        selectActor: fromPromise(async () => {
+          menuCount++;
+          return menuCount === 1 ? "edit" : "commit";
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        editorActor: fromPromise(async () => "feat: edited message"),
+        // @ts-expect-error — XState v5 test mock type inference
+        commitActor: fromPromise(async ({ input }: { input: { message: string } }) => ({
+          hash: "abc",
+          branch: "main",
+          subject: input.message,
+          filesChanged: 1,
+          insertions: 1,
+          deletions: 0,
+          files: [],
+          isRoot: false,
+        })),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done", { timeout: 10000 });
+    expect(snap.output!.committed).toBe(true);
+    expect(snap.context.editedManually).toBe(true);
+    expect(snap.context.autoRetries).toBe(3);
+  });
+
   // Bug: user retry after exhausted auto-retries should get fresh auto-retry budget
   test("user retry resets auto-retry budget for next generation cycle", async () => {
     let genCount = 0;
