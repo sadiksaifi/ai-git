@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { categorizeError, displayAIError, type CategorizedError } from "./error-display.ts";
+import { categorizeError, displayAIError } from "./error-display.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
 
 const apiAdapter: ProviderAdapter = {
@@ -54,39 +54,39 @@ describe("categorizeError", () => {
 });
 
 describe("displayAIError", () => {
-  test("model-not-found includes model name and configure suggestion", () => {
+  function captureStderr(fn: () => void): string {
     const lines: string[] = [];
-    const origError = console.error;
+    const orig = console.error;
     console.error = (...args: unknown[]) => lines.push(args.join(" "));
     try {
+      fn();
+    } finally {
+      console.error = orig;
+    }
+    return lines.join("\n");
+  }
+
+  test("model-not-found includes model name and configure suggestion", () => {
+    const output = captureStderr(() =>
       displayAIError({
         category: "model-not-found",
         message: "Not Found",
         providerName: "OpenAI",
         model: "gpt-99-turbo",
-      });
-    } finally {
-      console.error = origError;
-    }
-    const output = lines.join("\n");
+      }),
+    );
     expect(output).toContain("gpt-99-turbo");
     expect(output).toContain("ai-git configure");
   });
 
   test("api-error includes provider name and 'not ai-git' guidance", () => {
-    const lines: string[] = [];
-    const origError = console.error;
-    console.error = (...args: unknown[]) => lines.push(args.join(" "));
-    try {
+    const output = captureStderr(() =>
       displayAIError({
         category: "api-error",
         message: "authentication failed",
         providerName: "OpenAI",
-      });
-    } finally {
-      console.error = origError;
-    }
-    const output = lines.join("\n");
+      }),
+    );
     expect(output).toContain("OpenAI");
     expect(output).toContain("authentication failed");
     expect(output).toContain("not ai-git");
@@ -95,19 +95,13 @@ describe("displayAIError", () => {
   });
 
   test("cli-error shows raw error message", () => {
-    const lines: string[] = [];
-    const origError = console.error;
-    console.error = (...args: unknown[]) => lines.push(args.join(" "));
-    try {
+    const output = captureStderr(() =>
       displayAIError({
         category: "cli-error",
         message: "Gemini CLI error (exit code 1):\ncommand not found",
         providerName: "Gemini CLI",
-      });
-    } finally {
-      console.error = origError;
-    }
-    const output = lines.join("\n");
+      }),
+    );
     expect(output).toContain("Gemini CLI error (exit code 1):");
     expect(output).toContain("command not found");
   });
