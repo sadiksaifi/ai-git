@@ -66,13 +66,13 @@ export function validateCommitMessage(msg: string): ValidationResult {
 
   // Critical: Valid scope format
   const scopeMatch = header.match(/^\w+\(([^)]*)\)/);
-  if (scopeMatch && !/^\w[\w.-]*$/.test(scopeMatch[1]!)) {
+  if (scopeMatch && !/^\w[\w./-]*$/.test(scopeMatch[1]!)) {
     errors.push({
       rule: "valid-scope",
       severity: "critical",
       message: `Scope "${scopeMatch[1]}" contains invalid characters`,
       suggestion:
-        "Scope must be alphanumeric, underscores, dots, or hyphens (e.g. auth, api-v2, auth_core)",
+        "Scope must be alphanumeric, underscores, dots, hyphens, or slashes (e.g. auth, api-v2, apps/cli)",
     });
   }
 

@@ -145,6 +145,11 @@ describe("validateCommitMessage", () => {
     expect(result.errors.some((e) => e.rule === "valid-scope")).toBe(false);
   });
 
+  test("accepts slash-delimited monorepo scope", () => {
+    const result = validateCommitMessage("fix(apps/cli): correct import");
+    expect(result.errors.some((e) => e.rule === "valid-scope")).toBe(false);
+  });
+
   // No false positive on ! in subject
   test("does not flag ! in subject as breaking change", () => {
     const result = validateCommitMessage("fix: handle !important flag");
