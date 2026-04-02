@@ -11,12 +11,14 @@ import { spinner } from "@clack/prompts";
 import { upgradeMachine } from "./upgrade.machine.ts";
 import {
   fetchAndCheckVersion,
+  detectPlatform,
   downloadRelease,
   verifyChecksum,
   extractBinary,
   installBinary,
 } from "../lib/upgrade.ts";
 import type { PlatformInfo } from "../lib/upgrade.ts";
+import { CLIError } from "../lib/errors.ts";
 import { extractErrorMessage } from "../lib/errors.ts";
 
 // ── Wired machine ────────────────────────────────────────────────────
@@ -34,6 +36,24 @@ export const wiredUpgradeMachine = upgradeMachine.provide({
           s.stop(`Found ${result.tag}`);
         }
         return result;
+      } catch (error) {
+        s.stop(extractErrorMessage(error), 1);
+        throw error;
+      }
+    }),
+
+    detectPlatformActor: fromPromise(async () => {
+      const s = spinner();
+      s.start("Detecting platform...");
+      try {
+        const platform = detectPlatform();
+        if (!platform) {
+          throw new CLIError(
+            `Unsupported platform: ${process.platform}-${process.arch}. Download manually from GitHub Releases.`,
+          );
+        }
+        s.stop("Platform detected");
+        return platform;
       } catch (error) {
         s.stop(extractErrorMessage(error), 1);
         throw error;
