@@ -93,4 +93,22 @@ describe("displayAIError", () => {
     expect(output).toContain("API key");
     expect(output).toContain("status page");
   });
+
+  test("cli-error shows raw error message", () => {
+    const lines: string[] = [];
+    const origError = console.error;
+    console.error = (...args: unknown[]) => lines.push(args.join(" "));
+    try {
+      displayAIError({
+        category: "cli-error",
+        message: "Gemini CLI error (exit code 1):\ncommand not found",
+        providerName: "Gemini CLI",
+      });
+    } finally {
+      console.error = origError;
+    }
+    const output = lines.join("\n");
+    expect(output).toContain("Gemini CLI error (exit code 1):");
+    expect(output).toContain("command not found");
+  });
 });
