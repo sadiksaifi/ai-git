@@ -31,4 +31,17 @@ describe("categorizeError", () => {
     expect(result.providerName).toBe("OpenAI");
     expect(result.message).toBe("Unauthorized");
   });
+
+  test("CLI adapter → cli-error", () => {
+    const cliAdapter: ProviderAdapter = {
+      providerId: "gemini-cli",
+      mode: "cli",
+      invoke: async () => "",
+      checkAvailable: async () => true,
+    };
+    const error = new Error("Gemini CLI error (exit code 1):\ncommand not found");
+    const result = categorizeError(error, cliAdapter);
+    expect(result.category).toBe("cli-error");
+    expect(result.providerName).toBe("Gemini CLI");
+  });
 });
