@@ -71,7 +71,8 @@ export function validateCommitMessage(msg: string): ValidationResult {
       rule: "valid-scope",
       severity: "critical",
       message: `Scope "${scopeMatch[1]}" contains invalid characters`,
-      suggestion: "Scope must be alphanumeric, underscores, dots, or hyphens (e.g. auth, api-v2, auth_core)",
+      suggestion:
+        "Scope must be alphanumeric, underscores, dots, or hyphens (e.g. auth, api-v2, auth_core)",
     });
   }
 
