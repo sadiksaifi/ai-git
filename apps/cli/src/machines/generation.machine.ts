@@ -1,6 +1,7 @@
-import { setup, assign, type ActorLogicFrom } from "xstate";
+import { setup, assign, not, type ActorLogicFrom } from "xstate";
 import {
   getBranchNameActor as defaultGetBranchNameActor,
+  setBranchNameActor as defaultSetBranchNameActor,
   gatherContextActor as defaultGatherContextActor,
   commitActor as defaultCommitActor,
 } from "./actors/git.actors.ts";
@@ -111,6 +112,9 @@ export const generationMachine = setup({
     getBranchNameActor: defaultGetBranchNameActor as ActorLogicFrom<
       typeof defaultGetBranchNameActor
     >,
+    setBranchNameActor: defaultSetBranchNameActor as ActorLogicFrom<
+      typeof defaultSetBranchNameActor
+    >,
     gatherContextActor: defaultGatherContextActor as ActorLogicFrom<
       typeof defaultGatherContextActor
     >,
@@ -136,6 +140,8 @@ export const generationMachine = setup({
     editorActor: defaultEditorActor as ActorLogicFrom<typeof defaultEditorActor>,
   },
   guards: {
+    isBranchNameNull: ({ context }) => context.branchName === null,
+    isDangerouslyAutoApprove: ({ context }) => context.options.dangerouslyAutoApprove,
     isDryRun: ({ context }) => context.options.dryRun,
     isAutoCommit: ({ context }) => context.options.commit || context.options.dangerouslyAutoApprove,
     isEmptyMessage: ({ context }) => !context.currentMessage,
@@ -157,6 +163,10 @@ export const generationMachine = setup({
   actions: {
     assignBranchName: assign({
       branchName: ({ event }) => (event as { output?: string | null }).output ?? null,
+    }),
+    assignDefaultBranch: assign({ branchName: "main" as string | null }),
+    assignBranchNameFromPrompt: assign({
+      branchName: ({ event }) => (event as { output?: string }).output ?? "main",
     }),
     assignGatheredContext: assign({
       diff: ({ event }) => {
@@ -310,13 +320,66 @@ export const generationMachine = setup({
           invoke: {
             src: "getBranchNameActor",
             onDone: {
-              target: "gatherContext",
+              target: "initBranch",
               actions: "assignBranchName",
             },
             onError: {
-              target: "gatherContext",
+              target: "initBranch",
             },
           },
+        },
+
+        // ── IB: Prompt for initial branch name if new repo ─────────
+        initBranch: {
+          initial: "checkBranch",
+          states: {
+            checkBranch: {
+              always: [
+                { guard: not("isBranchNameNull"), target: "done" },
+                {
+                  guard: "isDangerouslyAutoApprove",
+                  target: "setBranch",
+                  actions: "assignDefaultBranch",
+                },
+                { target: "promptBranchName" },
+              ],
+            },
+            promptBranchName: {
+              // @ts-expect-error — XState v5 invoke type inference
+              invoke: {
+                src: "textActor",
+                input: {
+                  message: "No commits found. Set initial branch name?",
+                  initialValue: "main",
+                },
+                onDone: {
+                  target: "setBranch",
+                  actions: "assignBranchNameFromPrompt",
+                },
+                onError: { target: "aborted" },
+              },
+            },
+            setBranch: {
+              // @ts-expect-error — XState v5 invoke type inference
+              invoke: {
+                src: "setBranchNameActor",
+                input: ({ context }: { context: GenerationContext }) => ({
+                  name: context.branchName!,
+                }),
+                onDone: "done",
+                onError: { target: "aborted" },
+              },
+            },
+            done: { type: "final" as const },
+            aborted: { type: "final" as const, entry: "markAborted" },
+          },
+          onDone: [
+            {
+              guard: ({ context }: { context: GenerationContext }) => context.aborted,
+              target: "fatalError",
+            },
+            { target: "gatherContext" },
+          ],
         },
 
         // ── Gather diff, commits, file list ────────────────────────
