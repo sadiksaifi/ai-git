@@ -48,7 +48,7 @@ export async function runConfigureFlow(): Promise<ConfigureResult> {
   if (choice === "global") {
     const result = await runOnboarding({ target: "global" });
     return {
-      exitCode: result.completed ? 0 : 1,
+      exitCode: result.exitCode,
       continueToRun: result.continueToRun,
     };
   }
