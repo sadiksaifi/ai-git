@@ -16,4 +16,11 @@ describe("categorizeError", () => {
     expect(result.category).toBe("model-not-found");
     expect(result.model).toBe("gpt-99-turbo");
   });
+
+  test("message containing 'model not found' → model-not-found", () => {
+    const error = new Error("OpenAI model not found: Run 'ai-git configure'");
+    const result = categorizeError(error, apiAdapter, "gpt-99-turbo");
+    expect(result.category).toBe("model-not-found");
+    expect(result.providerName).toBe("OpenAI");
+  });
 });
