@@ -72,6 +72,8 @@ export interface GenerationContext {
   userRefinements: string[];
   validationResult: ValidationResult | null;
   commitResult: CommitResult | null;
+  systemPrompt: string;
+  userPrompt: string;
   committed: boolean;
   aborted: boolean;
   _routeTarget: "retry" | "edit";
@@ -228,6 +230,31 @@ export const generationMachine = setup({
       editedManually: true,
       autoRetries: 3,
     }),
+    buildPrompts: assign({
+      systemPrompt: ({ context }) => buildSystemPrompt(context.promptCustomization),
+      userPrompt: ({ context }) => {
+        let errorContext: string | undefined;
+        if (context.generationErrors.length > 0 && context.lastGeneratedMessage) {
+          const lastResult = validateCommitMessage(context.lastGeneratedMessage);
+          errorContext = buildRetryContext(lastResult.errors, context.lastGeneratedMessage);
+        }
+        return buildUserPrompt({
+          branchName: context.branchName ?? "main",
+          hint: context.options.hint,
+          recentCommits: context.commits ? context.commits.split("\n").filter(Boolean) : undefined,
+          stagedFileList: context.fileList || undefined,
+          errors: errorContext,
+          refinements:
+            context.lastGeneratedMessage && context.userRefinements.length > 0
+              ? {
+                  lastMessage: context.lastGeneratedMessage,
+                  instructions: context.userRefinements,
+                }
+              : undefined,
+          diff: context.diff,
+        });
+      },
+    }),
   },
 }).createMachine({
   id: "generation",
@@ -252,6 +279,8 @@ export const generationMachine = setup({
     userRefinements: [],
     validationResult: null,
     commitResult: null,
+    systemPrompt: "",
+    userPrompt: "",
     committed: false,
     aborted: false,
     _routeTarget: "retry" as const,
@@ -299,8 +328,9 @@ export const generationMachine = setup({
           },
         },
 
-        // ── GN14: Check dry-run before invoking AI ─────────────────
+        // ── GN14: Build prompts, then check dry-run ──────────────────
         buildPrompt: {
+          entry: "buildPrompts",
           always: [
             {
               guard: "isDryRun",
@@ -318,16 +348,8 @@ export const generationMachine = setup({
           invoke: {
             src: "displayDryRunActor",
             input: ({ context }) => ({
-              systemPrompt: buildSystemPrompt(context.promptCustomization),
-              userPrompt: buildUserPrompt({
-                branchName: context.branchName ?? "main",
-                hint: context.options.hint,
-                recentCommits: context.commits
-                  ? context.commits.split("\n").filter(Boolean)
-                  : undefined,
-                stagedFileList: context.fileList || undefined,
-                diff: context.diff,
-              }),
+              systemPrompt: context.systemPrompt,
+              userPrompt: context.userPrompt,
             }),
             onDone: "dryRunDone",
             onError: "dryRunDone", // non-fatal
@@ -343,41 +365,14 @@ export const generationMachine = setup({
           // @ts-expect-error — XState v5 invoke type inference
           invoke: {
             src: "invokeAIActor",
-            input: ({ context }) => {
-              // Build error context if retrying
-              let errorContext: string | undefined;
-              if (context.generationErrors.length > 0 && context.lastGeneratedMessage) {
-                const lastResult = validateCommitMessage(context.lastGeneratedMessage);
-                errorContext = buildRetryContext(lastResult.errors, context.lastGeneratedMessage);
-              }
-
-              const userPrompt = buildUserPrompt({
-                branchName: context.branchName ?? "main",
-                hint: context.options.hint,
-                recentCommits: context.commits
-                  ? context.commits.split("\n").filter(Boolean)
-                  : undefined,
-                stagedFileList: context.fileList || undefined,
-                errors: errorContext,
-                refinements:
-                  context.lastGeneratedMessage && context.userRefinements.length > 0
-                    ? {
-                        lastMessage: context.lastGeneratedMessage,
-                        instructions: context.userRefinements,
-                      }
-                    : undefined,
-                diff: context.diff,
-              });
-
-              return {
-                model: context.model,
-                system: buildSystemPrompt(context.promptCustomization),
-                prompt: userPrompt,
-                modelName: context.modelName,
-                slowThresholdMs: context.slowWarningThresholdMs,
-                adapter: context.adapter,
-              };
-            },
+            input: ({ context }) => ({
+              model: context.model,
+              system: context.systemPrompt,
+              prompt: context.userPrompt,
+              modelName: context.modelName,
+              slowThresholdMs: context.slowWarningThresholdMs,
+              adapter: context.adapter,
+            }),
             onDone: {
               target: "checkEmpty",
               actions: "assignAIResponse",
