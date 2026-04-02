@@ -666,4 +666,112 @@ describe("generationMachine", () => {
     expect(genCount).toBe(8);
     expect(snap.output!.committed).toBe(true);
   });
+
+  // ── AC-1: model-not-found error invokes displayAIErrorActor ──────
+  test("AC-1: model-not-found (404) invokes displayAIErrorActor with model info", async () => {
+    let capturedInput: Record<string, unknown> | null = null;
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({
+          diff: "diff",
+          commits: "",
+          fileList: "M file.ts",
+        })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => {
+          throw Object.assign(new Error("model not found"), { statusCode: 404 });
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayAIErrorActor: fromPromise(async ({ input }) => {
+          capturedInput = input as Record<string, unknown>;
+        }),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(snap.output!.aborted).toBe(true);
+    expect(capturedInput).not.toBeNull();
+    expect(capturedInput!.model).toBe("test-model");
+  });
+
+  // ── AC-2: API auth error invokes displayAIErrorActor ─────────────
+  test("AC-2: API auth error (401) invokes displayAIErrorActor with adapter", async () => {
+    let capturedInput: Record<string, unknown> | null = null;
+    const apiAdapter = {
+      providerId: "openai",
+      mode: "api" as const,
+      invoke: async () => "",
+      checkAvailable: async () => true,
+    };
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({
+          diff: "diff",
+          commits: "",
+          fileList: "M file.ts",
+        })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => {
+          throw Object.assign(new Error("authentication failed"), { statusCode: 401 });
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayAIErrorActor: fromPromise(async ({ input }) => {
+          capturedInput = input as Record<string, unknown>;
+        }),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput({ adapter: apiAdapter }) });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(snap.output!.aborted).toBe(true);
+    expect(capturedInput).not.toBeNull();
+    expect((capturedInput!.adapter as typeof apiAdapter).providerId).toBe("openai");
+    expect((capturedInput!.adapter as typeof apiAdapter).mode).toBe("api");
+  });
+
+  // ── AC-3: CLI error invokes displayAIErrorActor ──────────────────
+  test("AC-3: CLI error invokes displayAIErrorActor with CLI adapter", async () => {
+    let capturedInput: Record<string, unknown> | null = null;
+    const cliAdapter = {
+      providerId: "gemini-cli",
+      mode: "cli" as const,
+      binary: "gemini",
+      invoke: async () => "",
+      checkAvailable: async () => true,
+    };
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({
+          diff: "diff",
+          commits: "",
+          fileList: "M file.ts",
+        })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => {
+          throw new Error("Gemini CLI error (exit code 1):\ncommand not found");
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayAIErrorActor: fromPromise(async ({ input }) => {
+          capturedInput = input as Record<string, unknown>;
+        }),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput({ adapter: cliAdapter }) });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(snap.output!.aborted).toBe(true);
+    expect(capturedInput).not.toBeNull();
+    expect((capturedInput!.adapter as typeof cliAdapter).providerId).toBe("gemini-cli");
+    expect((capturedInput!.adapter as typeof cliAdapter).mode).toBe("cli");
+  });
 });
