@@ -122,6 +122,29 @@ describe("validateCommitMessage", () => {
     expect(result.valid).toBe(true);
   });
 
+  // Critical: scope format
+  test("rejects scope with spaces", () => {
+    const result = validateCommitMessage("feat(bad scope): add login");
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.rule === "valid-scope")).toBe(true);
+  });
+
+  test("rejects scope with special characters", () => {
+    const result = validateCommitMessage("feat(foo@bar): add login");
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.rule === "valid-scope")).toBe(true);
+  });
+
+  test("accepts scope with dots and hyphens", () => {
+    const result = validateCommitMessage("feat(valid-scope.v2): add login");
+    expect(result.errors.some((e) => e.rule === "valid-scope")).toBe(false);
+  });
+
+  test("accepts simple alphanumeric scope", () => {
+    const result = validateCommitMessage("feat(auth): add login");
+    expect(result.errors.some((e) => e.rule === "valid-scope")).toBe(false);
+  });
+
   // No false positive on ! in subject
   test("does not flag ! in subject as breaking change", () => {
     const result = validateCommitMessage("fix: handle !important flag");
