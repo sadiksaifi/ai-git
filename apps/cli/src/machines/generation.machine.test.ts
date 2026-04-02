@@ -146,24 +146,31 @@ describe("generationMachine", () => {
     expect(snap.output!.aborted).toBe(true);
   });
 
-  // GN14: dry-run
-  test("GN14: dry-run skips AI call and returns done", async () => {
+  // GN14: dry-run builds prompts and passes them to displayDryRunActor
+  test("GN14: dry-run builds prompts in context and displays them", async () => {
     let aiCalled = false;
+    let capturedDryRunInput: { systemPrompt: string; userPrompt: string } | null = null;
     const machine = generationMachine.provide({
       actors: {
         // @ts-expect-error — XState v5 test mock type inference
-        getBranchNameActor: fromPromise(async () => "main"),
+        getBranchNameActor: fromPromise(async () => "feat/login"),
         // @ts-expect-error — XState v5 test mock type inference
         gatherContextActor: fromPromise(async () => ({
-          diff: "diff",
-          commits: "",
-          fileList: "",
+          diff: "diff --git a/src/app.ts",
+          commits: "abc1234 feat: previous change",
+          fileList: "M src/app.ts",
         })),
         // @ts-expect-error — XState v5 test mock type inference
         invokeAIActor: fromPromise(async () => {
           aiCalled = true;
           return "";
         }),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayDryRunActor: fromPromise(
+          async ({ input }: { input: { systemPrompt: string; userPrompt: string } }) => {
+            capturedDryRunInput = input;
+          },
+        ),
       },
     });
     const actor = createActor(machine, {
@@ -174,6 +181,16 @@ describe("generationMachine", () => {
     expect(aiCalled).toBe(false);
     expect(snap.output!.aborted).toBe(false);
     expect(snap.output!.committed).toBe(false);
+    // Verify prompts were built and passed to display actor
+    expect(capturedDryRunInput).not.toBeNull();
+    expect(capturedDryRunInput!.systemPrompt).toBeTypeOf("string");
+    expect(capturedDryRunInput!.systemPrompt.length).toBeGreaterThan(0);
+    expect(capturedDryRunInput!.systemPrompt).toContain("Conventional Commits");
+    expect(capturedDryRunInput!.userPrompt).toBeTypeOf("string");
+    expect(capturedDryRunInput!.userPrompt.length).toBeGreaterThan(0);
+    expect(capturedDryRunInput!.userPrompt).toContain("diff --git a/src/app.ts");
+    expect(capturedDryRunInput!.userPrompt).toContain("M src/app.ts");
+    expect(capturedDryRunInput!.userPrompt).toContain("feat/login");
   });
 
   // GN22: cancel at menu → abort
