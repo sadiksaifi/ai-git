@@ -63,6 +63,6 @@ export async function runConfigureFlow(): Promise<ConfigureResult> {
   });
   return {
     exitCode: snapshot.output!.exitCode,
-    continueToRun: snapshot.output!.continue ?? false,
+    continueToRun: snapshot.output!.continueToRun ?? false,
   };
 }
