@@ -666,4 +666,36 @@ describe("generationMachine", () => {
     expect(genCount).toBe(8);
     expect(snap.output!.committed).toBe(true);
   });
+
+  // ── AC-1: model-not-found error invokes displayAIErrorActor ──────
+  test("AC-1: model-not-found (404) invokes displayAIErrorActor with model info", async () => {
+    let capturedInput: Record<string, unknown> | null = null;
+    const machine = generationMachine.provide({
+      actors: {
+        // @ts-expect-error — XState v5 test mock type inference
+        getBranchNameActor: fromPromise(async () => "main"),
+        // @ts-expect-error — XState v5 test mock type inference
+        gatherContextActor: fromPromise(async () => ({
+          diff: "diff",
+          commits: "",
+          fileList: "M file.ts",
+        })),
+        // @ts-expect-error — XState v5 test mock type inference
+        invokeAIActor: fromPromise(async () => {
+          throw Object.assign(new Error("model not found"), { statusCode: 404 });
+        }),
+        // @ts-expect-error — XState v5 test mock type inference
+        displayAIErrorActor: fromPromise(async ({ input }) => {
+          capturedInput = input as Record<string, unknown>;
+        }),
+      },
+    });
+    const actor = createActor(machine, { input: mockInput() });
+    actor.start();
+    const snap = await waitFor(actor, (s) => s.status === "done");
+    expect(snap.output!.aborted).toBe(true);
+    expect(capturedInput).not.toBeNull();
+    expect(capturedInput!.model).toBe("test-model");
+    expect(capturedInput!.modelName).toBe("Test Model");
+  });
 });
