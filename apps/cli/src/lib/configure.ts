@@ -68,7 +68,7 @@ export async function runConfigureFlow(
     });
     return {
       exitCode: snapshot.output!.exitCode,
-      continueToRun: snapshot.output!.continueToRun ?? false,
+      continueToRun: snapshot.output!.continueToRun,
     };
   } catch (error) {
     if (error instanceof UserCancelledError) {

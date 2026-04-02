@@ -8,7 +8,9 @@ const cancelSym = Symbol("cancel");
 const mockSelect = mock(() => Promise.resolve("global" as "global" | "project" | symbol));
 const mockCancel = mock(() => {});
 
+const realClack = await import("@clack/prompts");
 mock.module("@clack/prompts", () => ({
+  ...realClack,
   select: mockSelect,
   isCancel: (val: unknown) => val === cancelSym,
   cancel: mockCancel,
