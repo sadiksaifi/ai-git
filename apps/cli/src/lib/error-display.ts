@@ -51,3 +51,31 @@ export function categorizeError(
 
   return { category: "cli-error", message, providerName, model };
 }
+
+// ── Display ──────────────────────────────────────────────────────────
+
+export function displayAIError(categorized: CategorizedError): void {
+  const { category, message, providerName, model } = categorized;
+
+  switch (category) {
+    case "model-not-found": {
+      console.error(`\nModel not found: ${model ?? "unknown"}`);
+      console.error("The requested model does not exist or is not available on your account.");
+      console.error(`Run 'ai-git configure' to select a different model.\n`);
+      break;
+    }
+    case "api-error": {
+      console.error(`\n${providerName} error: ${message}`);
+      console.error("This error is from the API provider, not ai-git.");
+      console.error("Suggestions:");
+      console.error("  - Check your API key — run 'ai-git configure'");
+      console.error("  - Try a different model");
+      console.error(`  - Check the ${providerName} status page\n`);
+      break;
+    }
+    case "cli-error": {
+      console.error(`\n${message}\n`);
+      break;
+    }
+  }
+}

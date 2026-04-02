@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { categorizeError } from "./error-display.ts";
+import { categorizeError, displayAIError, type CategorizedError } from "./error-display.ts";
 import type { ProviderAdapter } from "../providers/types.ts";
 
 const apiAdapter: ProviderAdapter = {
@@ -50,5 +50,26 @@ describe("categorizeError", () => {
     const result = categorizeError(error, undefined);
     expect(result.category).toBe("cli-error");
     expect(result.providerName).toBe("AI provider");
+  });
+});
+
+describe("displayAIError", () => {
+  test("model-not-found includes model name and configure suggestion", () => {
+    const lines: string[] = [];
+    const origError = console.error;
+    console.error = (...args: unknown[]) => lines.push(args.join(" "));
+    try {
+      displayAIError({
+        category: "model-not-found",
+        message: "Not Found",
+        providerName: "OpenAI",
+        model: "gpt-99-turbo",
+      });
+    } finally {
+      console.error = origError;
+    }
+    const output = lines.join("\n");
+    expect(output).toContain("gpt-99-turbo");
+    expect(output).toContain("ai-git configure");
   });
 });
