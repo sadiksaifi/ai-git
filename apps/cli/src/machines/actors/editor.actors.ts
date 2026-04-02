@@ -1,5 +1,4 @@
 import { fromPromise } from "xstate";
-import { unlink } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -75,7 +74,9 @@ export function createEditorActor(
 
       return content;
     } finally {
-      await unlink(tempFile).catch(() => {});
+      await Bun.file(tempFile)
+        .delete()
+        .catch(() => {});
     }
   },
 ) {
