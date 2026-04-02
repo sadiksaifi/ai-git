@@ -3,6 +3,7 @@ import { unlink } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { log } from "@clack/prompts";
 import { NoEditorError, EmptyEditError } from "../../lib/errors.ts";
 
 // ── Types ───────────────────────────────────────────────────────────
@@ -44,7 +45,15 @@ export async function resolveEditor(
 
 export function createEditorActor(
   resolver: (input: EditorInput) => Promise<string> = async (input) => {
-    const editor = await resolveEditor(input.editor);
+    let editor: string;
+    try {
+      editor = await resolveEditor(input.editor);
+    } catch (error) {
+      if (error instanceof NoEditorError) {
+        log.warn("No editor found — using original message.");
+      }
+      throw error;
+    }
     const args = editor.split(" ");
     const tempFile = join(tmpdir(), `ai-git-msg-${randomUUID()}.txt`);
     args.push(tempFile);
