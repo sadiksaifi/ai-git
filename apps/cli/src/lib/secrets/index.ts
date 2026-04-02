@@ -32,9 +32,7 @@ export async function getSecretsManager(): Promise<SecretsManager> {
       }
       if (!warnedFallback) {
         warnedFallback = true;
-        log.warn(
-          "Native keychain unavailable — using encrypted file storage for API keys.",
-        );
+        log.warn("Native keychain unavailable — using encrypted file storage for API keys.");
       }
       return new EncryptedFileSecretsManager();
     })();

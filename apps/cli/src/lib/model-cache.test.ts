@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, afterEach } from "bun:test";
 import { cacheModels, getCachedModels } from "./model-cache.ts";
 import { getModelCacheFile } from "./paths.ts";
 import { unlink } from "node:fs/promises";

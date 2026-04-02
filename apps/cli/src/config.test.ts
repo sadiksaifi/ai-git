@@ -35,7 +35,7 @@ describe("mergePromptConfig", () => {
     };
 
     const merged = mergePromptConfig(global, project);
-    expect(merged.examples).toEqual(["feat: add X", "fix: repair Y"]);
+    expect(merged!.examples).toEqual(["feat: add X", "fix: repair Y"]);
   });
 
   test("project style overrides global style", () => {
@@ -43,7 +43,7 @@ describe("mergePromptConfig", () => {
     const project: PromptCustomization = { style: "concise" };
 
     const merged = mergePromptConfig(global, project);
-    expect(merged.style).toBe("concise");
+    expect(merged!.style).toBe("concise");
   });
 
   test("returns global when project is undefined", () => {
