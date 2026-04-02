@@ -10,7 +10,7 @@ export interface EditorInput {
   editor?: string;
 }
 
-type WhichFn = (cmd: string) => Promise<string | null>;
+type WhichFn = (cmd: string) => string | null | Promise<string | null>;
 
 // ── Editor Detection ────────────────────────────────────────────────
 
@@ -19,7 +19,7 @@ const WIN_FALLBACKS = ["code --wait", "notepad"];
 
 export async function resolveEditor(
   configEditor?: string,
-  which: WhichFn = (cmd) => Bun.which(cmd) as Promise<string | null>,
+  which: WhichFn = (cmd) => Bun.which(cmd),
 ): Promise<string> {
   const candidates: string[] = [];
 
@@ -31,7 +31,7 @@ export async function resolveEditor(
   candidates.push(...fallbacks);
 
   for (const candidate of candidates) {
-    const firstToken = candidate.split(" ")[0];
+    const firstToken = candidate.split(" ")[0]!;
     if (await which(firstToken)) return candidate;
   }
 

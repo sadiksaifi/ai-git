@@ -700,6 +700,7 @@ export const generationMachine = setup({
     // ── EDIT ──────────────────────────────────────────────────────────
     // ══════════════════════════════════════════════════════════════════
     edit: {
+      // @ts-expect-error — XState v5 invoke type inference
       invoke: {
         src: "editorActor",
         input: ({ context }) => ({
