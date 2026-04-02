@@ -95,10 +95,12 @@ export function formatProviderError(provider: string, status: number, body: stri
         userMessage: `${provider} server error`,
         suggestion: `Check ${provider} status page and try again later`,
       };
-    default:
+    default: {
+      const truncated = body.length > 200 ? `${body.slice(0, 200)}...` : body;
       return {
         userMessage: `${provider} API error (${status})`,
-        suggestion: body,
+        suggestion: truncated || "No additional details available",
       };
+    }
   }
 }

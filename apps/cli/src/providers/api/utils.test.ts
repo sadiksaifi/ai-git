@@ -43,4 +43,15 @@ describe("formatProviderError", () => {
     expect(err.userMessage).toBe("Gemini API error (418)");
     expect(err.suggestion).toBe("I'm a teapot");
   });
+
+  test("unknown status truncates long error body to 200 chars", () => {
+    const longBody = "x".repeat(300);
+    const err = formatProviderError("Gemini", 418, longBody);
+    expect(err.suggestion).toBe("x".repeat(200) + "...");
+  });
+
+  test("unknown status with empty body returns fallback message", () => {
+    const err = formatProviderError("Gemini", 418, "");
+    expect(err.suggestion).toBe("No additional details available");
+  });
 });
