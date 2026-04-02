@@ -1,5 +1,5 @@
 import { setup, assign } from "xstate";
-import { log, spinner } from "@clack/prompts";
+import { log } from "@clack/prompts";
 import pc from "picocolors";
 import type { PlatformInfo } from "../lib/upgrade.ts";
 import type { InstallMethod } from "../lib/install-method.ts";
@@ -40,7 +40,6 @@ interface UpgradeContext {
   extractedBinPath?: string;
   message?: string;
   errorMessage?: string;
-  _spinner?: ReturnType<typeof spinner>;
 }
 
 // ── Delegation messages ──────────────────────────────────────────────
@@ -91,24 +90,6 @@ export const upgradeMachine = setup({
     isAlreadyLatest: ({ event }) => {
       const output = (event as { output?: unknown }).output;
       return output === null;
-    },
-  },
-  actions: {
-    startSpinner: assign({
-      _spinner: () => {
-        const s = spinner();
-        s.start("Checking for updates...");
-        return s;
-      },
-    }),
-    updateSpinnerMessage: ({ context }, params: { message: string }) => {
-      context._spinner?.message(params.message);
-    },
-    stopSpinnerSuccess: ({ context }, params: { message: string }) => {
-      context._spinner?.stop(pc.green(params.message));
-    },
-    stopSpinnerError: ({ context }, params: { message: string }) => {
-      context._spinner?.stop(pc.red(params.message));
     },
   },
 }).createMachine({
@@ -163,7 +144,6 @@ export const upgradeMachine = setup({
 
     // ── Fetch latest release ─────────────────────────────────────────
     fetchRelease: {
-      entry: "startSpinner",
       invoke: {
         src: "fetchReleaseActor",
         input: ({ context }) => ({ version: context.version }),
@@ -191,15 +171,10 @@ export const upgradeMachine = setup({
 
     // ── Already on latest ────────────────────────────────────────────
     alreadyLatest: {
-      entry: [
-        ({ context }) => {
-          context._spinner?.stop(pc.green(`Already on the latest version (${context.version}).`));
-        },
-        assign({
-          exitCode: 0,
-          message: ({ context }) => `Already on the latest version (${context.version}).`,
-        }),
-      ],
+      entry: assign({
+        exitCode: 0,
+        message: ({ context }) => `Already on the latest version (${context.version}).`,
+      }),
       always: "done",
     },
 
@@ -224,12 +199,6 @@ export const upgradeMachine = setup({
 
     // ── Download release ─────────────────────────────────────────────
     download: {
-      entry: {
-        type: "updateSpinnerMessage",
-        params: ({ context }) => ({
-          message: `Downloading ${context.tag}...`,
-        }),
-      },
       invoke: {
         src: "downloadReleaseActor",
         input: ({ context }) => ({
@@ -255,10 +224,6 @@ export const upgradeMachine = setup({
 
     // ── Verify checksum ──────────────────────────────────────────────
     verifyChecksum: {
-      entry: {
-        type: "updateSpinnerMessage",
-        params: { message: "Verifying checksum..." },
-      },
       invoke: {
         src: "verifyChecksumActor",
         input: ({ context }) => ({
@@ -280,10 +245,6 @@ export const upgradeMachine = setup({
 
     // ── Extract binary ───────────────────────────────────────────────
     extract: {
-      entry: {
-        type: "updateSpinnerMessage",
-        params: { message: "Extracting..." },
-      },
       invoke: {
         src: "extractBinaryActor",
         input: ({ context }) => ({
@@ -307,30 +268,20 @@ export const upgradeMachine = setup({
 
     // ── Install binary ───────────────────────────────────────────────
     install: {
-      entry: {
-        type: "updateSpinnerMessage",
-        params: { message: "Installing..." },
-      },
       invoke: {
         src: "installBinaryActor",
         input: ({ context }) => ({
           extractedBinPath: context.extractedBinPath!,
+          version: context.version,
+          latestVersion: context.latestVersion!,
         }),
         onDone: {
           target: "cleanup",
-          actions: [
-            assign({
-              exitCode: 0,
-              message: ({ context }) =>
-                `Upgraded ai-git: ${context.version} -> ${context.latestVersion}`,
-            }),
-            {
-              type: "stopSpinnerSuccess",
-              params: ({ context }) => ({
-                message: `Upgraded ai-git: ${context.version} -> ${context.latestVersion}`,
-              }),
-            },
-          ],
+          actions: assign({
+            exitCode: 0,
+            message: ({ context }) =>
+              `Upgraded ai-git: ${context.version} -> ${context.latestVersion}`,
+          }),
         },
         onError: {
           target: "error",
@@ -353,12 +304,7 @@ export const upgradeMachine = setup({
 
     // ── Error ────────────────────────────────────────────────────────
     error: {
-      entry: [
-        assign({ exitCode: 1 }),
-        ({ context }) => {
-          context._spinner?.stop(pc.red(context.errorMessage ?? "Upgrade failed."));
-        },
-      ],
+      entry: assign({ exitCode: 1 }),
       always: "errorCleanup",
     },
 
