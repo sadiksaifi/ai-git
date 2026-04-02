@@ -60,3 +60,45 @@ export const COMMON_HEADERS = {
   "Content-Type": "application/json",
   "User-Agent": "ai-git-cli",
 };
+
+// ==============================================================================
+// ERROR FORMATTING
+// ==============================================================================
+
+export interface ProviderError {
+  userMessage: string;
+  suggestion: string;
+}
+
+/**
+ * Format an API error into a user-facing message with actionable suggestion.
+ */
+export function formatProviderError(provider: string, status: number, body: string): ProviderError {
+  switch (true) {
+    case status === 401 || status === 403:
+      return {
+        userMessage: `${provider} authentication failed`,
+        suggestion: "Check your API key — run 'ai-git configure'",
+      };
+    case status === 404:
+      return {
+        userMessage: `${provider} model not found`,
+        suggestion: "Run 'ai-git configure' to select a valid model",
+      };
+    case status === 429:
+      return {
+        userMessage: `${provider} rate limit exceeded`,
+        suggestion: "Wait a moment or try a different model",
+      };
+    case status >= 500 && status < 600:
+      return {
+        userMessage: `${provider} server error`,
+        suggestion: `Check ${provider} status page and try again later`,
+      };
+    default:
+      return {
+        userMessage: `${provider} API error (${status})`,
+        suggestion: body,
+      };
+  }
+}
