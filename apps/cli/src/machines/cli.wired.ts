@@ -327,7 +327,7 @@ export const wiredCliMachine = cliMachine.provide({
             await push();
             s.stop("Pushed successfully");
           } catch (error) {
-            s.stop("Push failed", 1);
+            s.stop("Push failed");
             throw error;
           }
         }),
@@ -338,7 +338,7 @@ export const wiredCliMachine = cliMachine.provide({
             await addRemoteAndPush(input.url);
             s.stop("Remote added and pushed successfully");
           } catch (error) {
-            s.stop("Failed to push to new remote", 1);
+            s.stop("Failed to push to new remote");
             throw error;
           }
         }),
@@ -349,7 +349,7 @@ export const wiredCliMachine = cliMachine.provide({
             await fetchRemote();
             s.stop("Checked remote");
           } catch (error) {
-            s.stop("Could not reach remote", 1);
+            s.stop("Could not reach remote");
             throw error;
           }
         }),
@@ -363,7 +363,7 @@ export const wiredCliMachine = cliMachine.provide({
             await pullRebase();
             s.stop("Rebased successfully");
           } catch (error) {
-            s.stop("Rebase failed", 1);
+            s.stop("Rebase failed");
             throw error;
           }
         }),
