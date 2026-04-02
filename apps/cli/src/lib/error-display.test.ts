@@ -44,4 +44,11 @@ describe("categorizeError", () => {
     expect(result.category).toBe("cli-error");
     expect(result.providerName).toBe("Gemini CLI");
   });
+
+  test("no adapter → cli-error with fallback provider name", () => {
+    const error = new Error("No adapter provided");
+    const result = categorizeError(error, undefined);
+    expect(result.category).toBe("cli-error");
+    expect(result.providerName).toBe("AI provider");
+  });
 });
