@@ -68,6 +68,7 @@ jobs:
       - name: Build for Windows ARM64
         working-directory: apps/cli
         run: |
+          rm -f dist/ai-git.exe
           bun run build --target bun-windows-arm64
           test -f dist/ai-git.exe || { echo "ERROR: dist/ai-git.exe not found after build"; exit 1; }
           cd dist
