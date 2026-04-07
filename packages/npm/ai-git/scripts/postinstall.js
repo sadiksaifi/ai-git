@@ -5,7 +5,7 @@ const path = require("path");
 const PLATFORMS = {
   darwin: { arm64: "@ai-git/darwin-arm64", x64: "@ai-git/darwin-x64" },
   linux: { arm64: "@ai-git/linux-arm64", x64: "@ai-git/linux-x64" },
-  win32: { x64: "@ai-git/win32-x64" },
+  win32: { arm64: "@ai-git/win32-arm64", x64: "@ai-git/win32-x64" },
 };
 
 // Write install method marker

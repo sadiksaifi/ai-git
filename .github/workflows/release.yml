@@ -36,6 +36,7 @@ jobs:
       - name: Build for macOS x64
         working-directory: apps/cli
         run: |
+          rm -f dist/ai-git
           bun run build --target bun-darwin-x64
           test -f dist/ai-git || { echo "ERROR: dist/ai-git not found after build"; exit 1; }
           cd dist
@@ -44,6 +45,7 @@ jobs:
       - name: Build for Linux x64
         working-directory: apps/cli
         run: |
+          rm -f dist/ai-git
           bun run build --target bun-linux-x64
           test -f dist/ai-git || { echo "ERROR: dist/ai-git not found after build"; exit 1; }
           cd dist
@@ -52,6 +54,7 @@ jobs:
       - name: Build for Linux ARM64
         working-directory: apps/cli
         run: |
+          rm -f dist/ai-git
           bun run build --target bun-linux-arm64
           test -f dist/ai-git || { echo "ERROR: dist/ai-git not found after build"; exit 1; }
           cd dist
@@ -60,10 +63,20 @@ jobs:
       - name: Build for Windows x64
         working-directory: apps/cli
         run: |
+          rm -f dist/ai-git.exe
           bun run build --target bun-windows-x64
           test -f dist/ai-git.exe || { echo "ERROR: dist/ai-git.exe not found after build"; exit 1; }
           cd dist
           zip ai-git-windows-x64.zip ai-git.exe
+
+      - name: Build for Windows ARM64
+        working-directory: apps/cli
+        run: |
+          rm -f dist/ai-git.exe
+          bun run build --target bun-windows-arm64
+          test -f dist/ai-git.exe || { echo "ERROR: dist/ai-git.exe not found after build"; exit 1; }
+          cd dist
+          zip ai-git-windows-arm64.zip ai-git.exe
 
       - name: Generate checksums
         working-directory: apps/cli/dist
@@ -89,6 +102,7 @@ jobs:
             apps/cli/dist/ai-git-linux-x64.tar.gz
             apps/cli/dist/ai-git-linux-arm64.tar.gz
             apps/cli/dist/ai-git-windows-x64.zip
+            apps/cli/dist/ai-git-windows-arm64.zip
             apps/cli/dist/checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -169,7 +183,8 @@ jobs:
             -p "ai-git-darwin-x64.tar.gz" \
             -p "ai-git-linux-arm64.tar.gz" \
             -p "ai-git-linux-x64.tar.gz" \
-            -p "ai-git-windows-x64.zip"
+            -p "ai-git-windows-x64.zip" \
+            -p "ai-git-windows-arm64.zip"
 
       - name: Place binaries in platform packages
         run: |
@@ -188,6 +203,11 @@ jobs:
           unzip -o /tmp/artifacts/ai-git-windows-x64.zip -d packages/npm/win32-x64/bin
           test -f packages/npm/win32-x64/bin/ai-git.exe || { echo "ERROR: ai-git.exe not found after extraction"; exit 1; }
 
+          # Windows ARM64
+          mkdir -p packages/npm/win32-arm64/bin
+          unzip -o /tmp/artifacts/ai-git-windows-arm64.zip -d packages/npm/win32-arm64/bin
+          test -f packages/npm/win32-arm64/bin/ai-git.exe || { echo "ERROR: ai-git.exe not found after extraction"; exit 1; }
+
           # Update all 0.0.0 versions (package version + optionalDependencies)
           for pkg in packages/npm/*/package.json; do
             sed -i "s/\"0.0.0\"/\"${VERSION}\"/g" "$pkg"
@@ -204,7 +224,7 @@ jobs:
 
       - name: Validate all packages (dry-run)
         run: |
-          for pkg in darwin-arm64 darwin-x64 linux-arm64 linux-x64 win32-x64; do
+          for pkg in darwin-arm64 darwin-x64 linux-arm64 linux-x64 win32-arm64 win32-x64; do
             echo "Validating @ai-git/${pkg}..."
             cd "packages/npm/${pkg}"
             npm publish --provenance --access public --dry-run
@@ -216,7 +236,7 @@ jobs:
 
       - name: Publish platform packages
         run: |
-          for pkg in darwin-arm64 darwin-x64 linux-arm64 linux-x64 win32-x64; do
+          for pkg in darwin-arm64 darwin-x64 linux-arm64 linux-x64 win32-arm64 win32-x64; do
             echo "Publishing @ai-git/${pkg}..."
             cd "packages/npm/${pkg}"
             npm publish --provenance --access public

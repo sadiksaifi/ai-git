@@ -31,6 +31,7 @@
     "@ai-git/darwin-x64": "0.0.0",
     "@ai-git/linux-arm64": "0.0.0",
     "@ai-git/linux-x64": "0.0.0",
+    "@ai-git/win32-arm64": "0.0.0",
     "@ai-git/win32-x64": "0.0.0"
   }
 }
