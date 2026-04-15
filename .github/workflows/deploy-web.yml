@@ -51,6 +51,11 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
           DOMAIN: ${{ secrets.DOMAIN }}
+          # Local state is fine here: every resource sets `adopt: true`, so
+          # CI re-adopts on each run rather than tracking drift via state.
+          # Revisit with CloudflareStateStore if we start renaming/removing
+          # resources and need drift-based cleanup.
+          ALCHEMY_CI_STATE_STORE_CHECK: "false"
 
       - name: Ensure www → apex redirect rule
         working-directory: apps/web
