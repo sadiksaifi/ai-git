@@ -67,9 +67,7 @@ jobs:
           # resources and need drift-based cleanup.
           ALCHEMY_CI_STATE_STORE_CHECK: "false"
 
-      - name: Ensure www → apex redirect rule
-        working-directory: apps/web
-        run: bun scripts/setup-www-redirect.ts
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          DOMAIN: ${{ secrets.DOMAIN }}
+      # The www -> apex redirect rule is a one-time manual setup via
+      # apps/web/scripts/setup-www-redirect.ts (needs a broader CF token
+      # than the minimal-scope one used here). It doesn't change per-deploy.
+      # If it ever goes missing, re-run the script locally.

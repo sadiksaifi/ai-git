@@ -48,10 +48,11 @@ export const site = await Website("site", {
   ...workerDomainConfig(env),
 });
 
-// Note: www → apex redirect rule is set up via scripts/setup-www-redirect.ts.
-// Alchemy 0.91.2's RedirectRule generates invalid wirefilter ("and ssl") and
-// doesn't expose target_url.expression for path capture, so we run it as a
-// post-deploy step against CF's REST API directly.
+// Note: www → apex redirect rule is a one-time setup via
+// scripts/setup-www-redirect.ts (run locally with a CF token that has
+// Rulesets read/write). Alchemy 0.91.2's RedirectRule generates invalid
+// wirefilter ("and ssl") and doesn't expose target_url.expression for
+// path capture, so we configure it against CF's REST API directly.
 
 console.info(`Web -> ${displayUrl(env, site.url ?? "http://localhost:4321")}`);
 
