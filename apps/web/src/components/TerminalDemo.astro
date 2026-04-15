@@ -1,0 +1,144 @@
+---
+// Hand-built terminal demo. Lines render in their final state; a stagger
+// animation reveals them on load. Reduced-motion shows everything immediately.
+const lines: readonly string[] = [
+  '<span class="prompt">$</span> <span class="cmd">ai-git -A</span>',
+  "&nbsp;",
+  '<span class="spinner">◐</span> Analyzing changes with <span class="accent">sonnet</span>…',
+  "&nbsp;",
+  '<span class="subject">feat(auth): add biometric login</span>',
+  "&nbsp;",
+  "- implement Touch ID / Face ID authentication",
+  "- add biometric prompt flow to settings",
+  "- fall back to password on biometric failure",
+  "&nbsp;",
+  '<span class="diamond">◆</span>  Action',
+  '<span class="bar">│</span>  <span class="selected">● Commit</span>',
+  '<span class="bar">│</span>  <span class="option">○ Retry</span>',
+  '<span class="bar">│</span>  <span class="option">○ Edit</span>',
+  '<span class="bar">│</span>  <span class="option">○ Quit</span>',
+  '<span class="bar">└</span>',
+  "&nbsp;",
+  '[<span class="branch">main</span> <span class="hash">1a2b3c4</span>] feat(auth): add biometric login',
+  ' 2 files changed, <span class="added">45 insertions(+)</span>, <span class="deleted">12 deletions(-)</span>',
+]
+
+const body = lines
+  .map((line, i) => `<span class="line" style="--i: ${i}">${line}</span>`)
+  .join("\n")
+---
+
+<section class="demo-section" aria-label="ai-git demo">
+  <div class="terminal" role="img" aria-label="ai-git generating a conventional commit and committing it">
+    <div class="chrome" aria-hidden="true">
+      <span class="dots">
+        <span></span><span></span><span></span>
+      </span>
+      <span class="title">~/projects/app — bash</span>
+    </div>
+    <pre class="body"><code set:html={body} /></pre>
+  </div>
+</section>
+
+<style>
+  .demo-section {
+    padding: 0 var(--container-pad) var(--space-24);
+  }
+  .terminal {
+    max-width: calc(var(--container-max) - 4rem);
+    margin-inline: auto;
+    background: var(--color-terminal-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 30px 60px -25px rgba(0, 0, 0, 0.6);
+  }
+  .chrome {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-terminal-chrome);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+  .dots {
+    display: inline-flex;
+    gap: 6px;
+  }
+  .dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #262626;
+  }
+  .title {
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+    font-family: var(--font-mono);
+  }
+  .body {
+    margin: 0;
+    padding: var(--space-6);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.75;
+    overflow-x: auto;
+    color: var(--color-fg);
+  }
+  .line {
+    opacity: 0;
+    animation: reveal 0.28s ease-out forwards;
+    animation-delay: calc(var(--i) * 0.09s + 0.15s);
+  }
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      transform: translateY(2px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .line {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .prompt,
+  .bar,
+  .option {
+    color: var(--color-muted);
+  }
+  .cmd {
+    color: var(--color-fg);
+  }
+  .spinner {
+    color: var(--color-terminal-spinner);
+  }
+  .diamond {
+    color: var(--color-terminal-added);
+  }
+  .selected {
+    color: var(--color-fg);
+    font-weight: 500;
+  }
+  .accent {
+    color: var(--color-fg);
+  }
+  .subject {
+    color: var(--color-fg);
+    font-weight: 500;
+  }
+  .branch,
+  .added,
+  .hash {
+    color: var(--color-terminal-added);
+  }
+  .deleted {
+    color: var(--color-terminal-deletion);
+  }
+</style>

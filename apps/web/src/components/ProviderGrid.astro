@@ -1,0 +1,114 @@
+---
+import { PROVIDERS } from "@ai-git/meta"
+
+const providers = Object.values(PROVIDERS).sort((a, b) => a.name.localeCompare(b.name))
+---
+
+<section class="providers" aria-labelledby="providers-heading">
+  <div class="inner">
+    <h2 id="providers-heading">Works with your AI.</h2>
+    <p class="lede">Eight providers. No vendor lock-in.</p>
+    <ul class="grid">
+      {
+        providers.map((p) => (
+          <li>
+            <a href={p.requirementsUrl} rel="noopener noreferrer" target="_blank">
+              <span class="row-top">
+                <span class="name">{p.name}</span>
+                <span class={`badge badge-${p.type}`}>{p.type.toUpperCase()}</span>
+              </span>
+              <span class="req">
+                {p.requirementsLabel} <span aria-hidden="true">→</span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .providers {
+    padding: var(--space-16) var(--container-pad);
+  }
+  .inner {
+    max-width: var(--container-max);
+    margin-inline: auto;
+    display: grid;
+    gap: var(--space-2);
+    justify-items: center;
+    text-align: center;
+  }
+  h2 {
+    font-size: var(--text-2xl);
+  }
+  .lede {
+    color: var(--color-fg-dim);
+    font-size: var(--text-base);
+    margin-bottom: var(--space-6);
+  }
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-3);
+    width: 100%;
+  }
+  @media (max-width: 900px) {
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 480px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  li a {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-terminal-bg);
+    text-align: left;
+    height: 100%;
+    transition:
+      border-color 0.15s,
+      background 0.15s;
+  }
+  li a:where(:hover, :focus-visible) {
+    border-color: var(--color-border);
+    background: #101010;
+  }
+  .row-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .name {
+    font-size: var(--text-sm);
+    color: var(--color-fg);
+    font-weight: 500;
+  }
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+    color: var(--color-muted);
+    border: 1px solid var(--color-border-subtle);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  .req {
+    font-size: var(--text-sm);
+    color: var(--color-fg-dim);
+  }
+  li a:where(:hover, :focus-visible) .req {
+    color: var(--color-fg);
+  }
+</style>

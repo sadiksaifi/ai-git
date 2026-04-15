@@ -35,3 +35,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # plans (scratch/draft documents, never commit)
 **/plans/
+
+# alchemy.run state (contains plaintext secrets in .alchemy/local/wrangler.json)
+.alchemy/

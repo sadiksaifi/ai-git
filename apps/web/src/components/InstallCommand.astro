@@ -1,0 +1,131 @@
+---
+import { installTabs } from "@ai-git/content/web"
+
+const primary = installTabs.find((t) => t.id === "npm") ?? installTabs[0]
+---
+
+<div class="install-command" data-install-command>
+  <pre class="line"><code><span class="prompt" aria-hidden="true">$</span> <span class="cmd">{primary.command}</span></code></pre>
+  <button class="copy" data-command={primary.command} aria-label="Copy install command">
+    <svg
+      aria-hidden="true"
+      class="icon-copy"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+    <svg
+      aria-hidden="true"
+      class="icon-check"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+    <span class="label">Copy</span>
+  </button>
+</div>
+
+<style>
+  .install-command {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+    background: var(--color-terminal-bg);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    max-width: 100%;
+  }
+  .line {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    overflow-x: auto;
+  }
+  .line code {
+    font-family: inherit;
+    white-space: pre;
+  }
+  .prompt {
+    color: var(--color-muted);
+    user-select: none;
+  }
+  .cmd {
+    color: var(--color-fg);
+  }
+  .copy {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+    font-family: var(--font-sans);
+    border-radius: var(--radius-sm);
+    transition:
+      color 0.15s,
+      background 0.15s;
+  }
+  .copy:hover,
+  .copy:focus-visible {
+    color: var(--color-fg);
+    background: var(--color-border-subtle);
+  }
+  .copy.copied {
+    color: var(--color-terminal-added);
+  }
+  .copy .icon-check {
+    display: none;
+  }
+  .copy.copied .icon-copy {
+    display: none;
+  }
+  .copy.copied .icon-check {
+    display: inline;
+  }
+  .copy .label {
+    line-height: 1;
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>("[data-install-command]").forEach((root) => {
+    const btn = root.querySelector<HTMLButtonElement>(".copy")
+    const label = root.querySelector<HTMLElement>(".label")
+    if (!btn || !label) return
+    const defaultLabel = label.textContent ?? "Copy"
+
+    btn.addEventListener("click", async () => {
+      const cmd = btn.dataset.command
+      if (!cmd) return
+      try {
+        await navigator.clipboard.writeText(cmd)
+        btn.classList.add("copied")
+        label.textContent = "Copied"
+        setTimeout(() => {
+          btn.classList.remove("copied")
+          label.textContent = defaultLabel
+        }, 1400)
+      } catch {
+        // ignore
+      }
+    })
+  })
+</script>

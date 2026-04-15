@@ -1,0 +1,44 @@
+---
+import { hero } from "@ai-git/content/web"
+import InstallCommand from "./InstallCommand.astro"
+---
+
+<section class="hero">
+  <div class="inner">
+    <h1>{hero.headline}</h1>
+    <p class="subhead">{hero.subheadline}</p>
+    <div class="cta">
+      <InstallCommand />
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    padding: var(--space-24) var(--container-pad) var(--space-16);
+  }
+  .inner {
+    max-width: var(--container-max);
+    margin-inline: auto;
+    display: grid;
+    gap: var(--space-6);
+    justify-items: center;
+    text-align: center;
+  }
+  h1 {
+    font-size: var(--text-hero);
+    max-width: 22ch;
+    line-height: 1.05;
+  }
+  .subhead {
+    font-size: var(--text-lg);
+    color: var(--color-fg-dim);
+    line-height: 1.55;
+    max-width: 44ch;
+    text-wrap: balance;
+  }
+  .cta {
+    margin-top: var(--space-4);
+    max-width: 100%;
+  }
+</style>

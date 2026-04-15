@@ -1,0 +1,60 @@
+---
+import { faq } from "@ai-git/content/web"
+---
+
+<section class="faq" aria-labelledby="faq-heading">
+  <div class="inner">
+    <h2 id="faq-heading">Questions.</h2>
+    <dl>
+      {
+        faq.map((q) => (
+          <div class="item">
+            <dt>{q.question}</dt>
+            <dd>{q.answer}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+</section>
+
+<style>
+  .faq {
+    padding: var(--space-16) var(--container-pad);
+  }
+  .inner {
+    max-width: var(--container-max);
+    margin-inline: auto;
+    display: grid;
+    gap: var(--space-6);
+    justify-items: center;
+    text-align: center;
+  }
+  h2 {
+    font-size: var(--text-2xl);
+  }
+  dl {
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-5);
+    max-width: 44rem;
+    width: 100%;
+    text-align: left;
+  }
+  .item {
+    display: grid;
+    gap: var(--space-2);
+  }
+  dt {
+    font-size: var(--text-base);
+    color: var(--color-fg);
+    font-weight: 500;
+  }
+  dd {
+    margin: 0;
+    color: var(--color-fg-dim);
+    font-size: var(--text-base);
+    line-height: 1.55;
+  }
+</style>
