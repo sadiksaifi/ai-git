@@ -27,7 +27,7 @@ export const PROVIDERS: Record<string, ProviderDoc | CLIProviderDoc> = {
     binary: "gemini",
     installCommand: "npm install -g @google/gemini-cli",
     docsUrl: "https://geminicli.com/docs/get-started/installation",
-    requirementsUrl: "https://ai.google.dev/gemini-api/docs/cli",
+    requirementsUrl: "https://geminicli.com/docs/get-started/installation",
     requirementsLabel: "Install CLI",
   },
   codex: {
@@ -36,8 +36,8 @@ export const PROVIDERS: Record<string, ProviderDoc | CLIProviderDoc> = {
     type: "cli",
     binary: "codex",
     installCommand: "npm install -g @openai/codex",
-    docsUrl: "https://developers.openai.com/codex/cli",
-    requirementsUrl: "https://openai.com/codex",
+    docsUrl: "https://developers.openai.com/codex/cli#cli-setup",
+    requirementsUrl: "https://developers.openai.com/codex/cli#cli-setup",
     requirementsLabel: "Install CLI",
   },
   openrouter: {
