@@ -34,9 +34,13 @@ const app = await alchemy(APP_NAME, {
 
 // --- Resources ---
 
+// `build` is intentionally omitted — Alchemy's Website resource spawns the
+// build command as a Node subprocess during deploy, which breaks on runners
+// where Node is < 22.12 (Astro's minimum). Instead, the caller (local user
+// or CI) runs `bun run build` beforehand and Alchemy just uploads `./dist`.
+// This matches Alchemy's own pr-preview workflow.
 export const site = await Website("site", {
   name: `ai-git-${APP_NAME}`,
-  build: "bun run build",
   assets: "./dist",
   spa: false,
   url: true,
