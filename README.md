@@ -9,7 +9,6 @@ A CLI tool that leverages AI to automatically generate semantically correct, con
 - 🤖 **AI-Powered** - Analyzes diffs and understands the _intent_ of your changes
 - 📝 **Conventional Commits** - Strictly adheres to [v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification
 - 🎨 **Interactive TUI** - Beautiful prompts for staging, editing, and confirming
-- 🪙 **Token Efficient** - Uses [TOON](https://toonformat.dev/) to minimize prompt size and cost
 - 🔌 **Multiple Providers** - Claude Code, Gemini CLI, Codex, OpenRouter, OpenAI, Anthropic, Google AI Studio, Cerebras
 - 🔐 **Secure** - API keys stored in keychain, never in config files
 
