@@ -1,0 +1,38 @@
+---
+import { footer } from "@ai-git/content/web"
+---
+
+<footer class="footer">
+  <div class="inner">
+    <span class="copy">{footer.copyright}</span>
+    <span class="sep" aria-hidden="true">·</span>
+    <a href={footer.license.href} rel="noopener noreferrer" target="_blank">{footer.license.label}</a>
+    <span class="sep" aria-hidden="true">·</span>
+    <a href={footer.author.href} rel="noopener noreferrer" target="_blank">{footer.author.label}</a>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    padding: var(--space-8) var(--container-pad);
+    border-top: 1px solid var(--color-border-subtle);
+    margin-top: var(--space-8);
+  }
+  .inner {
+    max-width: var(--container-max);
+    margin-inline: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+  }
+  .sep {
+    color: var(--color-border);
+  }
+  a:where(:hover, :focus-visible) {
+    color: var(--color-fg);
+  }
+</style>

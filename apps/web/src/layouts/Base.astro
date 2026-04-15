@@ -1,0 +1,58 @@
+---
+import { Font } from "astro:assets"
+import { seo } from "@ai-git/content/web"
+import "../styles/global.css"
+
+interface Props {
+  title?: string
+  description?: string
+}
+
+const { title = seo.home.title, description = seo.home.description } = Astro.props
+const pathname = Astro.url.pathname.replace(/\/index\.html$/, "/").replace(/\/$/, "") || "/"
+const canonical = new URL(pathname, seo.site.url).toString()
+const ogImage = new URL(seo.openGraph.images[0].url, seo.site.url).toString()
+const twitterImage = new URL(seo.twitter.image.url, seo.site.url).toString()
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content={seo.site.themeColor} />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <Font cssVariable="--font-sans" preload />
+    <Font cssVariable="--font-mono" preload />
+
+    <link rel="icon" type="image/svg+xml" href={seo.icons.faviconSvg} />
+    <link rel="apple-touch-icon" sizes="180x180" href={seo.icons.appleTouchIcon} />
+
+    <meta property="og:type" content={seo.openGraph.type} />
+    <meta property="og:site_name" content={seo.openGraph.siteName} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content={String(seo.openGraph.images[0].width)} />
+    <meta property="og:image:height" content={String(seo.openGraph.images[0].height)} />
+    <meta property="og:image:alt" content={seo.openGraph.images[0].alt} />
+
+    <meta name="twitter:card" content={seo.twitter.card} />
+    <meta name="twitter:site" content={seo.twitter.site} />
+    <meta name="twitter:creator" content={seo.twitter.creator} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={twitterImage} />
+    <meta name="twitter:image:alt" content={seo.twitter.image.alt} />
+
+    <slot name="head" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

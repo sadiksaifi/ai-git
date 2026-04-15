@@ -1,0 +1,38 @@
+{
+  "name": "web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "deploy": "alchemy deploy",
+    "destroy": "alchemy destroy",
+    "typecheck": "astro check",
+    "check": "oxlint && oxfmt --check",
+    "check:fix": "oxlint --fix && oxfmt --write",
+    "sync:icons": "bun scripts/generate-icons.ts"
+  },
+  "dependencies": {
+    "@ai-git/content": "workspace:*",
+    "@ai-git/meta": "workspace:*",
+    "@astrojs/sitemap": "^3.7.2",
+    "astro": "^6.1.6",
+    "dotenv": "^17.4.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.8",
+    "alchemy": "^0.91.2",
+    "lightningcss": "^1.32.0",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "sharp": "^0.34.5",
+    "typescript": "^6.0.2"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

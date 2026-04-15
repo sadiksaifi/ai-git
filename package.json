@@ -16,8 +16,8 @@
     ],
     "catalog": {
       "@types/bun": "latest",
-      "oxfmt": "^0.26.0",
-      "oxlint": "^1.41.0",
+      "oxfmt": "^0.45.0",
+      "oxlint": "^1.60.0",
       "turbo": "^2.6.3",
       "typescript": "^5"
     }
