@@ -30,6 +30,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      # Astro 6 requires Node >=22.12; the runner default is older. Bun runs
+      # alchemy/CLI itself, but the Astro build shells out to Node.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
       - uses: oven-sh/setup-bun@v2
 
       - name: Cache Bun install
@@ -42,6 +48,10 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Build site
+        working-directory: apps/web
+        run: bun run build
 
       - name: Deploy via Alchemy
         working-directory: apps/web
