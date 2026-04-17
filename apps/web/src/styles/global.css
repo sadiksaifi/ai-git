@@ -37,6 +37,10 @@
   --container-max: 68rem;
   --container-pad: clamp(1rem, 3vw, 2rem);
 
+  --section-y: clamp(4rem, 7vw, 6rem);
+  --section-header-gap: clamp(2rem, 3.5vw, 2.75rem);
+  --section-title-gap: var(--space-3);
+
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;

@@ -6,8 +6,10 @@ const providers = Object.values(PROVIDERS).sort((a, b) => a.name.localeCompare(b
 
 <section class="providers" aria-labelledby="providers-heading">
   <div class="inner">
-    <h2 id="providers-heading">Works with your AI.</h2>
-    <p class="lede">Eight providers. No vendor lock-in.</p>
+    <header class="section-head">
+      <h2 id="providers-heading">Works with your AI.</h2>
+      <p class="lede">Eight providers. No vendor lock-in.</p>
+    </header>
     <ul class="grid">
       {
         providers.map((p) => (
@@ -28,17 +30,24 @@ const providers = Object.values(PROVIDERS).sort((a, b) => a.name.localeCompare(b
   </div>
 </section>
 
+
 <style>
   .providers {
-    padding: var(--space-16) var(--container-pad);
+    padding: var(--section-y) var(--container-pad);
+    border-top: 1px solid var(--color-border);
   }
   .inner {
     max-width: var(--container-max);
     margin-inline: auto;
     display: grid;
-    gap: var(--space-2);
+    gap: var(--section-header-gap);
     justify-items: center;
     text-align: center;
+  }
+  .section-head {
+    display: grid;
+    gap: var(--section-title-gap);
+    justify-items: center;
   }
   h2 {
     font-size: var(--text-2xl);
@@ -46,7 +55,6 @@ const providers = Object.values(PROVIDERS).sort((a, b) => a.name.localeCompare(b
   .lede {
     color: var(--color-fg-dim);
     font-size: var(--text-base);
-    margin-bottom: var(--space-6);
   }
   .grid {
     list-style: none;
