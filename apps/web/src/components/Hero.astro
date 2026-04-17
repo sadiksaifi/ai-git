@@ -15,13 +15,13 @@ import InstallCommand from "./InstallCommand.astro"
 
 <style>
   .hero {
-    padding: var(--space-24) var(--container-pad) var(--space-16);
+    padding: clamp(4rem, 7vw, 6rem) var(--container-pad) clamp(2.5rem, 5vw, 3.5rem);
   }
   .inner {
     max-width: var(--container-max);
     margin-inline: auto;
     display: grid;
-    gap: var(--space-6);
+    gap: var(--space-5);
     justify-items: center;
     text-align: center;
   }
@@ -38,7 +38,7 @@ import InstallCommand from "./InstallCommand.astro"
     text-wrap: balance;
   }
   .cta {
-    margin-top: var(--space-4);
+    margin-top: var(--space-3);
     max-width: 100%;
   }
 </style>
