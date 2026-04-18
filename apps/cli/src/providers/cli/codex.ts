@@ -1,6 +1,22 @@
+import { homedir } from "node:os";
+import { join } from "node:path";
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
 
 type ReasoningEffort = "xhigh" | "high" | "medium" | "low";
+
+const CODEX_DISABLED_FEATURES = ["shell_tool", "shell_snapshot", "codex_hooks"] as const;
+
+const CODEX_FIXED_CONFIG_OVERRIDES = [
+  "check_for_update_on_startup=false",
+  "analytics.enabled=false",
+  "history.persistence=none",
+  "memories.generate_memories=false",
+  "memories.use_memories=false",
+  "project_doc_max_bytes=0",
+  "include_permissions_instructions=false",
+  "include_apps_instructions=false",
+  "include_environment_context=false",
+] as const;
 
 /**
  * Parse a virtual model ID into its base model and reasoning effort.
@@ -16,6 +32,52 @@ function parseModelId(virtualId: string): {
     return { model: match[1], effort: match[2] as ReasoningEffort };
   }
   return { model: virtualId, effort: "medium" };
+}
+
+function getCodexConfigPath(env: NodeJS.ProcessEnv = process.env): string {
+  const codexHome = env.CODEX_HOME?.trim();
+  return join(codexHome && codexHome.length > 0 ? codexHome : join(homedir(), ".codex"), "config.toml");
+}
+
+async function readOptionalTextFile(path: string): Promise<string | undefined> {
+  try {
+    const file = Bun.file(path);
+    if (!(await file.exists())) return undefined;
+    return await file.text();
+  } catch {
+    return undefined;
+  }
+}
+
+function extractMcpServerIds(configText: string): string[] {
+  const ids = new Set<string>();
+  const headerPattern = /^\s*\[mcp_servers\.((?:"(?:[^"\\]|\\.)+")|(?:[^.\]\s]+))/gm;
+
+  for (const match of configText.matchAll(headerPattern)) {
+    const rawId = match[1];
+    if (!rawId) continue;
+    ids.add(rawId.startsWith('"') ? rawId.slice(1, -1) : rawId);
+  }
+
+  return Array.from(ids).sort();
+}
+
+function formatMcpDisableOverride(serverId: string): string | undefined {
+  // Codex CLI override paths are split on '.', so dotted server ids cannot be
+  // safely targeted with `-c mcp_servers.<id>.enabled=false`.
+  if (!serverId || serverId.includes(".")) return undefined;
+  return `mcp_servers.${serverId}.enabled=false`;
+}
+
+export async function loadCodexMcpDisableOverrides(
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<string[]> {
+  const configText = await readOptionalTextFile(getCodexConfigPath(env));
+  if (!configText) return [];
+
+  return extractMcpServerIds(configText)
+    .map(formatMcpDisableOverride)
+    .filter((override): override is string => !!override);
 }
 
 /**
@@ -46,33 +108,30 @@ export const codexAdapter: CLIProviderAdapter = {
 
   async invoke({ model, system, prompt }: InvokeOptions): Promise<string> {
     const { model: baseModel, effort } = parseModelId(model);
+    const mcpDisableOverrides = await loadCodexMcpDisableOverrides();
+    const args = [
+      "codex",
+      "--model",
+      baseModel,
+      "-a",
+      "never",
+      ...CODEX_DISABLED_FEATURES.flatMap((feature) => ["--disable", feature] as const),
+      ...CODEX_FIXED_CONFIG_OVERRIDES.flatMap((override) => ["-c", override] as const),
+      ...mcpDisableOverrides.flatMap((override) => ["-c", override] as const),
+      "-c",
+      `model_reasoning_effort=${effort}`,
+      "-c",
+      `developer_instructions=${system}`,
+      "-c",
+      `web_search="disabled"`,
+      "exec",
+      "--sandbox",
+      "read-only",
+      "--ephemeral",
+      prompt,
+    ];
     const proc = Bun.spawn(
-      [
-        "codex",
-        "--model",
-        baseModel,
-        "-a",
-        "never",
-        "--disable",
-        "shell_tool",
-        "--disable",
-        "shell_snapshot",
-        "-c",
-        "check_for_update_on_startup=false",
-        "-c",
-        "analytics.enabled=false",
-        "-c",
-        `model_reasoning_effort=${effort}`,
-        "-c",
-        `developer_instructions=${system}`,
-        "-c",
-        `web_search="disabled"`,
-        "exec",
-        "--sandbox",
-        "read-only",
-        "--ephemeral",
-        prompt,
-      ],
+      args,
       {
         stdout: "pipe",
         stderr: "pipe",
