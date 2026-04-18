@@ -1,17 +1,19 @@
 import { resolve } from "node:path";
 import {
+  getHostCompileTarget,
   getSmokeTestBinaryPath,
   parseBuildTarget,
   shouldSmokeTestBuiltBinary,
 } from "../src/lib/build-artifact.ts";
 
 const FORWARDED_ARGS = Bun.argv.slice(2);
+const HOST_TARGET = getHostCompileTarget();
 const REQUESTED_TARGET = parseBuildTarget(FORWARDED_ARGS);
 const SMOKE_TEST_BINARY_PATH = resolve(getSmokeTestBinaryPath(FORWARDED_ARGS));
 
 const buildProc = Bun.spawn(
   [
-    "bun",
+    process.execPath,
     "build",
     "--compile",
     "--minify",
@@ -30,7 +32,7 @@ const buildProc = Bun.spawn(
 const buildExitCode = await buildProc.exited;
 if (buildExitCode !== 0) process.exit(buildExitCode);
 
-if (!shouldSmokeTestBuiltBinary(REQUESTED_TARGET)) {
+if (!shouldSmokeTestBuiltBinary(REQUESTED_TARGET, HOST_TARGET)) {
   console.log(`Skipped compiled binary smoke test for cross-target build: ${REQUESTED_TARGET}`);
   process.exit(0);
 }

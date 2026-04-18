@@ -59,7 +59,7 @@ export function getHostCompileTarget(
 
 export function shouldSmokeTestBuiltBinary(
   target: string | undefined,
-  hostTarget: string | undefined = getHostCompileTarget(),
+  hostTarget: string | undefined,
 ): boolean {
   if (!hostTarget) return false;
   return !target || target === hostTarget;
@@ -69,10 +69,12 @@ export function getHostBinaryPath(
   platform: NodeJS.Platform = process.platform,
   outfile: string = DEFAULT_OUTFILE,
 ): string {
-  const defaultOutfile = outfile === DEFAULT_OUTFILE ? `./${DEFAULT_OUTFILE}` : outfile;
+  // Keep the default path explicitly executable from cwd; custom outfiles are
+  // preserved as-is because tests rely on that asymmetry.
+  const normalizedOutfile = outfile === DEFAULT_OUTFILE ? `./${DEFAULT_OUTFILE}` : outfile;
 
-  if (platform !== "win32") return defaultOutfile;
-  return extname(defaultOutfile) ? defaultOutfile : `${defaultOutfile}.exe`;
+  if (platform !== "win32") return normalizedOutfile;
+  return extname(normalizedOutfile) ? normalizedOutfile : `${normalizedOutfile}.exe`;
 }
 
 export function getSmokeTestBinaryPath(
