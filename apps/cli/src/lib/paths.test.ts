@@ -15,6 +15,8 @@ import {
   GEMINI_SETTINGS_FILE,
   resolveConfigDir,
   resolveCacheDir,
+  resolveCodexConfigFile,
+  resolveCodexHome,
   resolveDataDir,
 } from "./paths.ts";
 
@@ -143,6 +145,34 @@ describe("paths", () => {
   describe("config files", () => {
     it("CONFIG_FILE is config.json inside CONFIG_DIR", () => {
       expect(CONFIG_FILE).toBe(path.join(CONFIG_DIR, "config.json"));
+    });
+  });
+
+  describe("Codex config paths", () => {
+    it("resolveCodexHome respects CODEX_HOME", () => {
+      expect(resolveCodexHome({ CODEX_HOME: "/tmp/codex-home" })).toBe("/tmp/codex-home");
+    });
+
+    it("resolveCodexHome trims CODEX_HOME", () => {
+      expect(resolveCodexHome({ CODEX_HOME: "  /tmp/codex-home  " })).toBe("/tmp/codex-home");
+    });
+
+    it("resolveCodexHome ignores whitespace-only CODEX_HOME", () => {
+      expect(resolveCodexHome({ CODEX_HOME: "   " })).toBe(path.join(os.homedir(), ".codex"));
+    });
+
+    it("resolveCodexHome falls back to ~/.codex", () => {
+      expect(resolveCodexHome({})).toBe(path.join(os.homedir(), ".codex"));
+    });
+
+    it("resolveCodexConfigFile uses CODEX_HOME when set", () => {
+      expect(resolveCodexConfigFile({ CODEX_HOME: "/tmp/codex-home" })).toBe(
+        path.join("/tmp/codex-home", "config.toml"),
+      );
+    });
+
+    it("resolveCodexConfigFile falls back to ~/.codex/config.toml", () => {
+      expect(resolveCodexConfigFile({})).toBe(path.join(os.homedir(), ".codex", "config.toml"));
     });
   });
 

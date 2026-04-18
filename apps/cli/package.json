@@ -15,7 +15,7 @@
   "module": "src/index.ts",
   "scripts": {
     "dev": "bun run src/index.ts",
-    "build": "bun build --compile --minify --sourcemap src/index.ts --outfile dist/ai-git",
+    "build": "bun run scripts/build.ts",
     "typecheck": "tsc --noEmit",
     "check": "oxlint && oxfmt --check",
     "check:fix": "oxlint --fix && oxfmt --write",

@@ -73,6 +73,23 @@ export function resolveStateDir(): string {
   return path.join(xdgState, "ai-git");
 }
 
+/**
+ * Compute the Codex home directory at call time.
+ * Codex keeps its global config outside ai-git's XDG directories.
+ */
+export function resolveCodexHome(env: NodeJS.ProcessEnv = process.env): string {
+  const codexHome = env.CODEX_HOME?.trim();
+  if (codexHome) return codexHome;
+  return path.join(os.homedir(), ".codex");
+}
+
+/**
+ * Compute the global Codex config file path at call time.
+ */
+export function resolveCodexConfigFile(env: NodeJS.ProcessEnv = process.env): string {
+  return path.join(resolveCodexHome(env), "config.toml");
+}
+
 export const CONFIG_DIR = resolveConfigDir();
 export const CACHE_DIR = resolveCacheDir();
 export const DATA_DIR = resolveDataDir();
