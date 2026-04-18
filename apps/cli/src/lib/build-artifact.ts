@@ -1,12 +1,43 @@
+import { extname } from "node:path";
+
+const DEFAULT_OUTFILE = "dist/ai-git";
+const OUTFILE_FLAG = "--outfile";
 const TARGET_FLAG = "--target";
 
-export function parseBuildTarget(argv: string[]): string | undefined {
-  const targetIndex = argv.indexOf(TARGET_FLAG);
-  if (targetIndex === -1) return undefined;
+function parseBuildFlagValue(argv: string[], flag: string): string | undefined {
+  const flagWithEquals = `${flag}=`;
+  let value: string | undefined;
+  let sawFlag = false;
 
-  const target = argv[targetIndex + 1];
-  if (!target || target.startsWith("-")) return undefined;
-  return target;
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (!arg) continue;
+
+    if (arg === flag) {
+      sawFlag = true;
+
+      const nextArg = argv[index + 1];
+      value = nextArg && !nextArg.startsWith("-") ? nextArg : undefined;
+      continue;
+    }
+
+    if (arg.startsWith(flagWithEquals)) {
+      sawFlag = true;
+
+      const inlineValue = arg.slice(flagWithEquals.length);
+      value = inlineValue ? inlineValue : undefined;
+    }
+  }
+
+  return sawFlag ? value : undefined;
+}
+
+export function parseBuildTarget(argv: string[]): string | undefined {
+  return parseBuildFlagValue(argv, TARGET_FLAG);
+}
+
+export function parseBuildOutfile(argv: string[]): string | undefined {
+  return parseBuildFlagValue(argv, OUTFILE_FLAG);
 }
 
 export function getHostCompileTarget(
@@ -14,7 +45,11 @@ export function getHostCompileTarget(
   arch: string = process.arch,
 ): string | undefined {
   const normalizedPlatform =
-    platform === "win32" ? "windows" : platform === "darwin" || platform === "linux" ? platform : undefined;
+    platform === "win32"
+      ? "windows"
+      : platform === "darwin" || platform === "linux"
+        ? platform
+        : undefined;
 
   if (!normalizedPlatform) return undefined;
   if (arch !== "x64" && arch !== "arm64") return undefined;
@@ -30,6 +65,19 @@ export function shouldSmokeTestBuiltBinary(
   return !target || target === hostTarget;
 }
 
-export function getHostBinaryPath(platform: NodeJS.Platform = process.platform): string {
-  return platform === "win32" ? "./dist/ai-git.exe" : "./dist/ai-git";
+export function getHostBinaryPath(
+  platform: NodeJS.Platform = process.platform,
+  outfile: string = DEFAULT_OUTFILE,
+): string {
+  const defaultOutfile = outfile === DEFAULT_OUTFILE ? `./${DEFAULT_OUTFILE}` : outfile;
+
+  if (platform !== "win32") return defaultOutfile;
+  return extname(defaultOutfile) ? defaultOutfile : `${defaultOutfile}.exe`;
+}
+
+export function getSmokeTestBinaryPath(
+  argv: string[],
+  platform: NodeJS.Platform = process.platform,
+): string {
+  return getHostBinaryPath(platform, parseBuildOutfile(argv));
 }

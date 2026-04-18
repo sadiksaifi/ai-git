@@ -36,7 +36,10 @@ function parseModelId(virtualId: string): {
 
 function getCodexConfigPath(env: NodeJS.ProcessEnv = process.env): string {
   const codexHome = env.CODEX_HOME?.trim();
-  return join(codexHome && codexHome.length > 0 ? codexHome : join(homedir(), ".codex"), "config.toml");
+  return join(
+    codexHome && codexHome.length > 0 ? codexHome : join(homedir(), ".codex"),
+    "config.toml",
+  );
 }
 
 async function readOptionalTextFile(path: string): Promise<string | undefined> {
@@ -130,13 +133,10 @@ export const codexAdapter: CLIProviderAdapter = {
       "--ephemeral",
       prompt,
     ];
-    const proc = Bun.spawn(
-      args,
-      {
-        stdout: "pipe",
-        stderr: "pipe",
-      },
-    );
+    const proc = Bun.spawn(args, {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
 
     const [stdout, stderr] = await Promise.all([
       new Response(proc.stdout).text(),
