@@ -1,10 +1,13 @@
-import { homedir } from "node:os";
-import { join } from "node:path";
+import { resolveCodexConfigFile } from "../../lib/paths.ts";
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
 
 type ReasoningEffort = "xhigh" | "high" | "medium" | "low";
+type CodexConfig = {
+  mcp_servers?: Record<string, unknown>;
+};
 
 const CODEX_DISABLED_FEATURES = ["shell_tool", "shell_snapshot", "codex_hooks"] as const;
+const MCP_SERVER_BARE_KEY_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 const CODEX_FIXED_CONFIG_OVERRIDES = [
   "check_for_update_on_startup=false",
@@ -34,14 +37,6 @@ function parseModelId(virtualId: string): {
   return { model: virtualId, effort: "medium" };
 }
 
-function getCodexConfigPath(env: NodeJS.ProcessEnv = process.env): string {
-  const codexHome = env.CODEX_HOME?.trim();
-  return join(
-    codexHome && codexHome.length > 0 ? codexHome : join(homedir(), ".codex"),
-    "config.toml",
-  );
-}
-
 async function readOptionalTextFile(path: string): Promise<string | undefined> {
   try {
     const file = Bun.file(path);
@@ -52,35 +47,43 @@ async function readOptionalTextFile(path: string): Promise<string | undefined> {
   }
 }
 
-function extractMcpServerIds(configText: string): string[] {
-  const ids = new Set<string>();
-  const headerPattern = /^\s*\[mcp_servers\.((?:"(?:[^"\\]|\\.)+")|(?:[^.\]\s]+))/gm;
-
-  for (const match of configText.matchAll(headerPattern)) {
-    const rawId = match[1];
-    if (!rawId) continue;
-    ids.add(rawId.startsWith('"') ? rawId.slice(1, -1) : rawId);
-  }
-
-  return Array.from(ids).sort();
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function formatMcpDisableOverride(serverId: string): string | undefined {
-  // Codex CLI override paths are split on '.', so dotted server ids cannot be
-  // safely targeted with `-c mcp_servers.<id>.enabled=false`.
-  if (!serverId || serverId.includes(".")) return undefined;
+function looksLikeMcpServerConfig(value: unknown): value is Record<string, unknown> {
+  if (!isPlainObject(value)) return false;
+  return "command" in value || "url" in value || "transport" in value;
+}
+
+function formatMcpDisableOverride(serverId: string, value: unknown): string | undefined {
+  // Codex CLI override paths use TOML bare keys, so skip ids that would
+  // require quoting or path escaping.
+  if (!MCP_SERVER_BARE_KEY_PATTERN.test(serverId)) return undefined;
+  if (!looksLikeMcpServerConfig(value)) return undefined;
   return `mcp_servers.${serverId}.enabled=false`;
+}
+
+function extractMcpDisableOverrides(configText: string): string[] {
+  try {
+    const parsed = Bun.TOML.parse(configText) as CodexConfig;
+    if (!isPlainObject(parsed.mcp_servers)) return [];
+
+    return Object.entries(parsed.mcp_servers)
+      .map(([serverId, value]) => formatMcpDisableOverride(serverId, value))
+      .filter((override): override is string => !!override)
+      .sort();
+  } catch {
+    return [];
+  }
 }
 
 export async function loadCodexMcpDisableOverrides(
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<string[]> {
-  const configText = await readOptionalTextFile(getCodexConfigPath(env));
+  const configText = await readOptionalTextFile(resolveCodexConfigFile(env));
   if (!configText) return [];
-
-  return extractMcpServerIds(configText)
-    .map(formatMcpDisableOverride)
-    .filter((override): override is string => !!override);
+  return extractMcpDisableOverrides(configText);
 }
 
 /**

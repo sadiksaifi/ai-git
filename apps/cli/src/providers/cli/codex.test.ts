@@ -128,6 +128,12 @@ command = "bunx"
 
 [mcp_servers."server-name"]
 command = "bunx"
+
+[mcp_servers.figma]
+url = "https://mcp.figma.com/mcp"
+
+[mcp_servers.stdio-proxy]
+transport = "stdio"
 `;
 
     const { codexAdapter } = await import("./codex.ts");
@@ -143,6 +149,8 @@ command = "bunx"
     for (const override of [
       "mcp_servers.sentry.enabled=false",
       "mcp_servers.server-name.enabled=false",
+      "mcp_servers.figma.enabled=false",
+      "mcp_servers.stdio-proxy.enabled=false",
     ]) {
       const idx = cmd.indexOf(override);
       expect(idx).toBeGreaterThan(0);
@@ -168,8 +176,62 @@ command = "bunx"
     expect(cmd).not.toContain("mcp_servers.docs.api.enabled=false");
   });
 
+  it("should not synthesize overrides from dotted bare-key MCP headers", async () => {
+    mockCodexConfig = `
+[mcp_servers.docs.api]
+command = "bunx"
+`;
+
+    const { codexAdapter } = await import("./codex.ts");
+    await codexAdapter.invoke({
+      model: "gpt-5.4-medium",
+      system: "test system",
+      prompt: "test prompt",
+    });
+
+    expect(spawnCalls).toHaveLength(1);
+    const cmd = spawnCalls[0]!.cmd;
+    expect(cmd.some((arg) => arg.startsWith("mcp_servers."))).toBe(false);
+  });
+
+  it("should skip quoted MCP server ids that require TOML quoting", async () => {
+    mockCodexConfig = `
+[mcp_servers."my server"]
+command = "bunx"
+`;
+
+    const { codexAdapter } = await import("./codex.ts");
+    await codexAdapter.invoke({
+      model: "gpt-5.4-medium",
+      system: "test system",
+      prompt: "test prompt",
+    });
+
+    expect(spawnCalls).toHaveLength(1);
+    const cmd = spawnCalls[0]!.cmd;
+    expect(cmd.some((arg) => arg.startsWith("mcp_servers."))).toBe(false);
+  });
+
   it("should ignore unreadable Codex config files", async () => {
     mockCodexConfigError = true;
+
+    const { codexAdapter } = await import("./codex.ts");
+    await codexAdapter.invoke({
+      model: "gpt-5.4-medium",
+      system: "test system",
+      prompt: "test prompt",
+    });
+
+    expect(spawnCalls).toHaveLength(1);
+    const cmd = spawnCalls[0]!.cmd;
+    expect(cmd.some((arg) => arg.startsWith("mcp_servers."))).toBe(false);
+  });
+
+  it("should ignore malformed Codex config files", async () => {
+    mockCodexConfig = `
+[mcp_servers.sentry
+command = "bunx"
+`;
 
     const { codexAdapter } = await import("./codex.ts");
     await codexAdapter.invoke({
