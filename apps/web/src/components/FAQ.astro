@@ -2,17 +2,21 @@
 import { faq } from "@ai-git/content/web"
 ---
 
-<section class="faq" aria-labelledby="faq-heading">
-  <div class="inner">
+<section class="section faq" id="faq">
+  <div class="container">
     <header class="section-head">
-      <h2 id="faq-heading">Questions.</h2>
+      <span class="eyebrow">Questions</span>
+      <h2>Things people ask.</h2>
     </header>
-    <dl>
+    <dl class="faq-list">
       {
-        faq.map((q) => (
-          <div class="item">
-            <dt>{q.question}</dt>
-            <dd>{q.answer}</dd>
+        faq.map((q, i) => (
+          <div class="faq-item">
+            <span class="q-idx">{String(i + 1).padStart(2, "0")}</span>
+            <div>
+              <dt>{q.question}</dt>
+              <dd set:html={q.answer} />
+            </div>
           </div>
         ))
       }
@@ -21,38 +25,28 @@ import { faq } from "@ai-git/content/web"
 </section>
 
 <style>
-  .faq {
-    padding: var(--section-y) var(--container-pad);
-    border-top: 1px solid var(--color-border);
+  .section {
+    padding-block: var(--section-y);
+    border-top: 1px solid var(--color-border-subtle);
   }
-  .inner {
-    max-width: var(--container-max);
-    margin-inline: auto;
+  .faq-list {
+    margin-top: var(--space-10);
     display: grid;
-    gap: var(--section-header-gap);
-    justify-items: center;
-    text-align: center;
+    gap: 0;
+    border-top: 1px solid var(--color-border-subtle);
   }
-  .section-head {
+  .faq-item {
+    border-bottom: 1px solid var(--color-border-subtle);
+    padding-block: var(--space-5);
     display: grid;
-    gap: var(--section-title-gap);
-    justify-items: center;
+    grid-template-columns: 32px 1fr;
+    gap: var(--space-4);
   }
-  h2 {
-    font-size: var(--text-2xl);
-  }
-  dl {
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: var(--space-6);
-    max-width: 44rem;
-    width: 100%;
-    text-align: left;
-  }
-  .item {
-    display: grid;
-    gap: var(--space-2);
+  .q-idx {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-muted);
+    padding-top: 2px;
   }
   dt {
     font-size: var(--text-base);
@@ -60,9 +54,13 @@ import { faq } from "@ai-git/content/web"
     font-weight: 500;
   }
   dd {
-    margin: 0;
+    margin: 6px 0 0;
     color: var(--color-fg-dim);
-    font-size: var(--text-base);
-    line-height: 1.55;
+    font-size: var(--text-sm);
+    max-width: 62ch;
+    line-height: 1.6;
+  }
+  dd :global(code) {
+    color: var(--color-fg-dim);
   }
 </style>

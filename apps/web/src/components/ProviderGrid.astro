@@ -1,122 +1,164 @@
 ---
 import { PROVIDERS } from "@ai-git/meta"
 
+const monograms: Record<string, string> = {
+  anthropic: "AN",
+  cerebras: "CB",
+  "claude-code": "CC",
+  codex: "CX",
+  "gemini-cli": "GC",
+  "google-ai-studio": "GS",
+  openai: "OA",
+  openrouter: "OR",
+}
+
 const providers = Object.values(PROVIDERS).sort((a, b) => a.name.localeCompare(b.name))
 ---
 
-<section class="providers" aria-labelledby="providers-heading">
-  <div class="inner">
+<section class="section providers" id="providers">
+  <div class="container">
     <header class="section-head">
-      <h2 id="providers-heading">Works with your AI.</h2>
-      <p class="lede">Eight providers. No vendor lock-in.</p>
+      <span class="eyebrow">Providers</span>
+      <h2>Bring your own AI.</h2>
+      <p>
+        Eight providers, three integration types. Swap with one flag. No vendor lock-in, no opaque
+        proxy. Your diff goes where you point it.
+      </p>
     </header>
-    <ul class="grid">
+
+    <div class="grid">
       {
         providers.map((p) => (
-          <li>
-            <a href={p.requirementsUrl} rel="noopener noreferrer" target="_blank">
-              <span class="row-top">
-                <span class="name">{p.name}</span>
-                <span class={`badge badge-${p.type}`}>{p.type.toUpperCase()}</span>
-              </span>
-              <span class="req">
+          <a
+            class="provider"
+            href={p.requirementsUrl}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <span class="provider-logo" aria-hidden="true">
+              {monograms[p.id] ?? p.name.slice(0, 2).toUpperCase()}
+            </span>
+            <span class="provider-text">
+              <span class="provider-name">{p.name}</span>
+              <span class="provider-req">
                 {p.requirementsLabel} <span aria-hidden="true">→</span>
               </span>
-            </a>
-          </li>
+            </span>
+            <span class="provider-type">{p.type.toUpperCase()}</span>
+          </a>
         ))
       }
-    </ul>
+    </div>
   </div>
 </section>
 
-
 <style>
-  .providers {
-    padding: var(--section-y) var(--container-pad);
-    border-top: 1px solid var(--color-border);
-  }
-  .inner {
-    max-width: var(--container-max);
-    margin-inline: auto;
-    display: grid;
-    gap: var(--section-header-gap);
-    justify-items: center;
-    text-align: center;
-  }
-  .section-head {
-    display: grid;
-    gap: var(--section-title-gap);
-    justify-items: center;
-  }
-  h2 {
-    font-size: var(--text-2xl);
-  }
-  .lede {
-    color: var(--color-fg-dim);
-    font-size: var(--text-base);
+  .section {
+    padding-block: var(--section-y);
+    border-top: 1px solid var(--color-border-subtle);
   }
   .grid {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+    margin-top: var(--space-10);
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--space-3);
-    width: 100%;
+    gap: 0;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--color-bg-elev);
   }
   @media (max-width: 900px) {
     .grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
-  @media (max-width: 480px) {
+  @media (max-width: 520px) {
     .grid {
       grid-template-columns: 1fr;
     }
   }
-  li a {
+  .provider {
     display: grid;
-    gap: var(--space-2);
-    padding: var(--space-4);
-    border: 1px solid var(--color-border-subtle);
-    border-radius: var(--radius-md);
-    background: var(--color-terminal-bg);
-    text-align: left;
-    height: 100%;
-    transition:
-      border-color 0.15s,
-      background 0.15s;
-  }
-  li a:where(:hover, :focus-visible) {
-    border-color: var(--color-border);
-    background: #101010;
-  }
-  .row-top {
-    display: flex;
-    justify-content: space-between;
+    grid-template-columns: 40px 1fr auto;
+    gap: var(--space-3);
     align-items: center;
-    gap: var(--space-2);
+    padding: var(--space-5);
+    border-right: 1px solid var(--color-border-subtle);
+    border-bottom: 1px solid var(--color-border-subtle);
+    transition: background 0.15s;
+    min-height: 92px;
   }
-  .name {
-    font-size: var(--text-sm);
+  .provider:hover,
+  .provider:focus-visible {
+    background: #131313;
+  }
+  .provider:hover .provider-req,
+  .provider:focus-visible .provider-req {
+    color: var(--color-accent);
+  }
+  .provider:nth-child(4n) {
+    border-right: 0;
+  }
+  .provider:nth-last-child(-n + 4) {
+    border-bottom: 0;
+  }
+  @media (max-width: 900px) {
+    .provider {
+      border-right: 0;
+      border-bottom: 1px solid var(--color-border-subtle) !important;
+    }
+    .provider:nth-child(odd) {
+      border-right: 1px solid var(--color-border-subtle);
+    }
+    .provider:nth-last-child(-n + 2) {
+      border-bottom: 0 !important;
+    }
+  }
+  @media (max-width: 520px) {
+    .provider {
+      border-right: 0 !important;
+    }
+    .provider:last-child {
+      border-bottom: 0 !important;
+    }
+  }
+
+  .provider-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--color-bg-panel);
+    border: 1px solid var(--color-border);
+    display: grid;
+    place-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-fg);
+    letter-spacing: -0.02em;
+  }
+  .provider-text {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+  .provider-name {
+    font-size: var(--text-base);
     color: var(--color-fg);
     font-weight: 500;
   }
-  .badge {
-    font-family: var(--font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.08em;
+  .provider-req {
+    font-size: 0.78rem;
     color: var(--color-muted);
-    border: 1px solid var(--color-border-subtle);
-    padding: 2px 6px;
+    transition: color 0.15s;
+  }
+  .provider-type {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    padding: 3px 7px;
+    color: var(--color-muted);
+    border: 1px solid var(--color-border);
     border-radius: 3px;
-  }
-  .req {
-    font-size: var(--text-sm);
-    color: var(--color-fg-dim);
-  }
-  li a:where(:hover, :focus-visible) .req {
-    color: var(--color-fg);
   }
 </style>

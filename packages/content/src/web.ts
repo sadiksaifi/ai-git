@@ -93,12 +93,28 @@ export const installTabs: readonly InstallTab[] = [
 export const faq: readonly FAQItem[] = [
   {
     question: "Does my diff leave my machine?",
-    answer: "It goes to whichever provider you pick. Choose one you trust.",
+    answer:
+      "It goes to whichever provider you pick, and nowhere else. No proxy, no telemetry, no silent fallback. Choose one you trust, or run a local model behind an API shim.",
   },
   {
     question: "Where are API keys stored?",
     answer:
-      "OS keychain via Bun.secrets (macOS Keychain, libsecret, Windows Credential Manager). Encrypted file fallback on headless systems.",
+      "OS keychain via Bun.secrets. macOS Keychain, libsecret on Linux, Windows Credential Manager. Encrypted file fallback on headless systems. Never plaintext in your config.",
+  },
+  {
+    question: "Can my team enforce a commit style?",
+    answer:
+      "Yes. Commit <code>.ai-git.json</code> with <code>prompt.context</code>, <code>prompt.style</code>, and optional <code>prompt.examples</code>. Project config wins over global for every teammate.",
+  },
+  {
+    question: "What if the message is wrong?",
+    answer:
+      "The TUI shows the generated message and asks <code>Commit / Retry / Edit / Quit</code>. Edit opens your <code>$EDITOR</code>. Retry gets a fresh generation with an optional hint.",
+  },
+  {
+    question: "Does it work without a provider CLI installed?",
+    answer:
+      "Yes for the API providers. For CLI providers (Claude Code, Gemini CLI, Codex), the corresponding binary must be on your PATH. <code>--dry-run</code> works without any.",
   },
 ] as const;
 

@@ -7,64 +7,105 @@ const iconPath: Record<string, string> = {
 }
 ---
 
-<nav class="nav" aria-label="Primary">
-  <a href="/" class="wordmark">ai-git</a>
-  <ul>
-    {
-      nav.map((link) => {
-        const icon = iconPath[link.label.toLowerCase()]
-        return (
-          <li>
-            <a
-              href={link.href}
-              rel={link.external ? "noopener noreferrer" : undefined}
-              target={link.external ? "_blank" : undefined}
-            >
-              {icon && (
-                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d={icon} />
-                </svg>
-              )}
-              <span>{link.label}</span>
-            </a>
-          </li>
-        )
-      })
-    }
-  </ul>
-</nav>
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="/">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>ai-git</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#providers">Providers</a></li>
+      <li><a href="#config">Config</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      {
+        nav.map((link) => {
+          const icon = iconPath[link.label.toLowerCase()]
+          return (
+            <li>
+              <a
+                href={link.href}
+                rel={link.external ? "noopener noreferrer" : undefined}
+                target={link.external ? "_blank" : undefined}
+              >
+                {icon && (
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d={icon} />
+                  </svg>
+                )}
+                <span>{link.label}</span>
+              </a>
+            </li>
+          )
+        })
+      }
+    </ul>
+  </div>
+</header>
 
 <style>
   .nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+    background: color-mix(in oklab, var(--color-bg) 78%, transparent);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+  .nav-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-5) var(--container-pad);
-    max-width: var(--container-max);
-    margin-inline: auto;
+    padding-block: var(--space-4);
   }
-  .wordmark {
-    font-family: var(--font-mono);
-    font-size: var(--text-base);
-    font-weight: 500;
-    letter-spacing: -0.02em;
-  }
-  ul {
-    display: flex;
-    gap: var(--space-4);
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  ul a {
+  .brand {
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    color: var(--color-muted);
+    font-family: var(--font-mono);
     font-size: var(--text-sm);
-    transition: color 0.15s;
+    font-weight: 500;
+    letter-spacing: -0.01em;
   }
-  ul a:where(:hover, :focus-visible) {
+  .brand-mark {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    position: relative;
+  }
+  .brand-mark::before,
+  .brand-mark::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--color-accent-line);
+    border-radius: 3px;
+  }
+  .brand-mark::after {
+    transform: translate(3px, 3px);
+    border-color: var(--color-fg);
+  }
+  .nav-links {
+    display: flex;
+    gap: var(--space-5);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+  }
+  .nav-links a {
+    color: var(--color-fg-dim);
+    font-size: var(--text-sm);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .nav-links a:where(:hover, :focus-visible) {
     color: var(--color-fg);
+  }
+  @media (max-width: 640px) {
+    .nav-links li:not(:last-child) {
+      display: none;
+    }
   }
 </style>

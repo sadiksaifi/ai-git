@@ -1,37 +1,170 @@
 ---
 import { footer } from "@ai-git/content/web"
+
+const columns: { heading: string; links: { label: string; href: string; external?: boolean }[] }[] = [
+  {
+    heading: "Product",
+    links: [
+      { label: "How it works", href: "#how" },
+      { label: "Providers", href: "#providers" },
+      { label: "Config", href: "#config" },
+    ],
+  },
+  {
+    heading: "Docs",
+    links: [
+      {
+        label: "README",
+        href: "https://github.com/sadiksaifi/ai-git#readme",
+        external: true,
+      },
+      {
+        label: "Schema",
+        href: "https://ai-git.xyz/schema.json",
+        external: true,
+      },
+      {
+        label: "Contributing",
+        href: "https://github.com/sadiksaifi/ai-git/blob/main/CONTRIBUTING.md",
+        external: true,
+      },
+    ],
+  },
+  {
+    heading: "Source",
+    links: [
+      { label: "GitHub", href: "https://github.com/sadiksaifi/ai-git", external: true },
+      { label: "Issues", href: "https://github.com/sadiksaifi/ai-git/issues", external: true },
+      {
+        label: "Releases",
+        href: "https://github.com/sadiksaifi/ai-git/releases",
+        external: true,
+      },
+    ],
+  },
+]
 ---
 
 <footer class="footer">
-  <div class="inner">
-    <span class="copy">{footer.copyright}</span>
-    <span class="sep" aria-hidden="true">·</span>
-    <a href={footer.license.href} rel="noopener noreferrer" target="_blank">{footer.license.label}</a>
-    <span class="sep" aria-hidden="true">·</span>
-    <a href={footer.author.href} rel="noopener noreferrer" target="_blank">{footer.author.label}</a>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">ai-git</div>
+        <p class="footer-tag">
+          Conventional commits, written by the model of your choice. Local diff, local keychain.
+        </p>
+      </div>
+      <div class="footer-cols">
+        {
+          columns.map((col) => (
+            <div class="footer-col">
+              <h4>{col.heading}</h4>
+              <ul>
+                {col.links.map((l) => (
+                  <li>
+                    <a
+                      href={l.href}
+                      rel={l.external ? "noopener noreferrer" : undefined}
+                      target={l.external ? "_blank" : undefined}
+                    >
+                      {l.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>
+        {footer.copyright} ·{" "}
+        <a href={footer.license.href} rel="noopener noreferrer" target="_blank">{footer.license.label}</a>
+      </span>
+      <a href={footer.author.href} rel="noopener noreferrer" target="_blank">{footer.author.label}</a>
+    </div>
   </div>
 </footer>
 
 <style>
   .footer {
-    padding: var(--space-12) var(--container-pad);
-    border-top: 1px solid var(--color-border);
+    padding-block: var(--space-16) var(--space-12);
+    border-top: 1px solid var(--color-border-subtle);
   }
-  .inner {
-    max-width: var(--container-max);
-    margin-inline: auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: var(--space-3);
-    flex-wrap: wrap;
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-8);
+    align-items: start;
+  }
+  @media (max-width: 640px) {
+    .footer-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .footer-brand {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-fg-dim);
+  }
+  .footer-tag {
     color: var(--color-muted);
+    margin-top: 4px;
+    font-size: var(--text-sm);
+    max-width: 32ch;
+  }
+  .footer-cols {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, auto));
+    gap: var(--space-10);
+  }
+  @media (max-width: 640px) {
+    .footer-cols {
+      grid-template-columns: repeat(2, auto);
+      gap: var(--space-6);
+    }
+  }
+  .footer-col h4 {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--color-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: var(--space-3);
+  }
+  .footer-col ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .footer-col a {
+    color: var(--color-fg-dim);
     font-size: var(--text-sm);
   }
-  .sep {
-    color: var(--color-border);
+  .footer-col a:where(:hover, :focus-visible) {
+    color: var(--color-fg);
   }
-  a:where(:hover, :focus-visible) {
+  .footer-bottom {
+    margin-top: var(--space-12);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--color-border-subtle);
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    color: var(--color-muted);
+    font-size: 0.78rem;
+    font-family: var(--font-mono);
+  }
+  .footer-bottom a {
+    color: var(--color-muted);
+  }
+  .footer-bottom a:hover,
+  .footer-bottom a:focus-visible {
     color: var(--color-fg);
   }
 </style>

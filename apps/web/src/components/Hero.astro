@@ -1,44 +1,211 @@
 ---
-import { hero } from "@ai-git/content/web"
 import InstallCommand from "./InstallCommand.astro"
+
+const heroLines: readonly string[] = [
+  '<span class="prompt">$</span> <span class="cmd">ai-git -A</span>',
+  "",
+  '<span class="spinner">◐</span> <span class="dim">Analyzing changes with</span> <span class="accent">sonnet</span><span class="dim">…</span>',
+  "",
+  '<span class="subject">feat(auth): add biometric login</span>',
+  "",
+  '<span class="dim">- implement Touch ID / Face ID authentication</span>',
+  '<span class="dim">- add biometric prompt flow to settings</span>',
+  '<span class="dim">- fall back to password on biometric failure</span>',
+  "",
+  '<span class="accent">◆</span>  <span class="dim">Action</span>',
+  '<span class="muted">│</span>  <span class="selected">● Commit</span>',
+  '<span class="muted">│</span>  <span class="muted">○ Retry</span>',
+  '<span class="muted">│</span>  <span class="muted">○ Edit</span>',
+  '<span class="muted">│</span>  <span class="muted">○ Quit</span>',
+  '<span class="muted">└</span>',
+  "",
+  '<span class="dim">[<span class="added">main</span> <span class="added">1a2b3c4</span>] feat(auth): add biometric login</span>',
+  '<span class="dim"> 2 files changed, <span class="added">45 insertions(+)</span>, <span class="deleted">12 deletions(-)</span></span>',
+]
+
+const heroBody = heroLines
+  .map((line, i) => `<span class="line" style="--i: ${i}">${line || "&nbsp;"}</span>`)
+  .join("\n")
 ---
 
 <section class="hero">
-  <div class="inner">
-    <h1>{hero.headline}</h1>
-    <p class="subhead">{hero.subheadline}</p>
-    <div class="cta">
-      <InstallCommand />
+  <div class="container">
+    <span class="hero-kicker">
+      <span class="dot" aria-hidden="true"></span>
+      <span>Conventional commits. Spec 1.0.0.</span>
+    </span>
+
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <h1>
+          Stop writing <em>commit</em> <span class="accent">messages.</span>
+        </h1>
+        <p class="hero-sub">
+          ai-git reads your diff and writes a conventional commit. Scope, subject, body, the lot. Pick
+          a provider. Review. Ship.
+        </p>
+
+        <div class="hero-ctas">
+          <InstallCommand />
+          <a class="btn-ghost" href="#how">
+            <span>See it work</span>
+            <svg
+              aria-hidden="true"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
+        </div>
+
+        <ul class="hero-meta" aria-label="At a glance">
+          <li><code>~/.config/ai-git</code></li>
+          <li>MIT</li>
+          <li>macOS · Linux · Windows</li>
+          <li>8 providers</li>
+        </ul>
+      </div>
+
+      <div class="terminal-col">
+        <div class="terminal" role="img" aria-label="ai-git generating a conventional commit">
+          <div class="chrome" aria-hidden="true">
+            <span class="dots"><span></span><span></span><span></span></span>
+            <span class="title">~/projects/app — zsh</span>
+            <span class="tag">sonnet</span>
+          </div>
+          <pre class="tbody"><code set:html={heroBody} /></pre>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
 <style>
   .hero {
-    padding: clamp(4rem, 7vw, 6rem) var(--container-pad) clamp(2.5rem, 5vw, 3.5rem);
+    padding-block: clamp(3.5rem, 8vw, 6.5rem) clamp(2.5rem, 5vw, 4rem);
+    position: relative;
   }
-  .inner {
-    max-width: var(--container-max);
-    margin-inline: auto;
+  .hero .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .hero-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-fg-dim);
+    padding: 5px 10px 5px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-bg-elev);
+  }
+  .hero-kicker .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-added);
+    box-shadow: 0 0 10px var(--color-added);
+  }
+  .hero-grid {
     display: grid;
-    gap: var(--space-5);
+    grid-template-columns: 1fr;
     justify-items: center;
+    gap: clamp(2.5rem, 5vw, 4rem);
+    margin-top: var(--space-8);
+    width: 100%;
+  }
+  .hero-copy {
+    min-width: 0;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   h1 {
     font-size: var(--text-hero);
-    max-width: 22ch;
-    line-height: 1.05;
+    letter-spacing: -0.04em;
+    line-height: 0.98;
+    max-width: 20ch;
   }
-  .subhead {
+  h1 em {
+    font-style: normal;
+    color: var(--color-fg-dim);
+    font-weight: 400;
+  }
+  h1 .accent {
+    color: var(--color-accent);
+    font-style: normal;
+  }
+  .hero-sub {
+    margin-top: var(--space-6);
+    margin-inline: auto;
     font-size: var(--text-lg);
     color: var(--color-fg-dim);
+    max-width: 52ch;
+    text-wrap: pretty;
     line-height: 1.55;
-    max-width: 48rem;
-    text-wrap: balance;
   }
-  .cta {
-    margin-top: var(--space-3);
-    max-width: 100%;
+  .hero-ctas {
+    margin-top: var(--space-8);
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-ghost {
+    padding: 10px 14px;
+    font-size: var(--text-sm);
+    color: var(--color-fg-dim);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+  }
+  .btn-ghost:hover,
+  .btn-ghost:focus-visible {
+    color: var(--color-fg);
+    background: var(--color-border-subtle);
+  }
+
+  .hero-meta {
+    margin: var(--space-10) 0 0;
+    display: flex;
+    gap: var(--space-6);
+    flex-wrap: wrap;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-muted);
+    list-style: none;
+    padding: 0;
+  }
+  .hero-meta li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hero-meta code {
+    color: var(--color-fg-dim);
+    font-family: inherit;
+  }
+
+  .terminal-col {
+    min-width: 0;
+    width: 100%;
+    max-width: 52rem;
+    margin-inline: auto;
   }
 </style>
