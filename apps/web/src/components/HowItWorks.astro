@@ -146,12 +146,13 @@ function render(lines: readonly string[]): string {
     }
     .diff-arrow {
       width: auto;
-      flex-direction: row;
       justify-self: center;
     }
     .diff-arrow .line-seg {
-      width: 40px;
-      height: 1px;
+      display: none;
+    }
+    .diff-arrow .ring svg {
+      transform: rotate(90deg);
     }
   }
 </style>
