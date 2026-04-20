@@ -73,7 +73,6 @@ function render(lines: readonly string[]): string {
       </div>
 
       <div class="diff-arrow" aria-hidden="true">
-        <span class="line-seg"></span>
         <span class="ring">
           <svg
             width="14"
@@ -89,7 +88,6 @@ function render(lines: readonly string[]): string {
             <polyline points="12 5 19 12 12 19"></polyline>
           </svg>
         </span>
-        <span class="line-seg"></span>
       </div>
 
       <div class="terminal">
@@ -120,14 +118,6 @@ function render(lines: readonly string[]): string {
     display: grid;
     place-items: center;
     width: 56px;
-    color: var(--color-muted);
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-  }
-  .diff-arrow .line-seg {
-    width: 1px;
-    height: 40px;
-    background: var(--color-border);
   }
   .diff-arrow .ring {
     width: 32px;
@@ -137,7 +127,6 @@ function render(lines: readonly string[]): string {
     display: grid;
     place-items: center;
     color: var(--color-accent);
-    margin-block: 8px;
     background: var(--color-bg-elev);
   }
   @media (max-width: 860px) {
@@ -147,9 +136,6 @@ function render(lines: readonly string[]): string {
     .diff-arrow {
       width: auto;
       justify-self: center;
-    }
-    .diff-arrow .line-seg {
-      display: none;
     }
     .diff-arrow .ring svg {
       transform: rotate(90deg);

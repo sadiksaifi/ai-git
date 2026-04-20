@@ -1,1 +1,2 @@
 /install https://raw.githubusercontent.com/sadiksaifi/ai-git/main/install.sh 302
+/schema.json https://raw.githubusercontent.com/sadiksaifi/ai-git/refs/heads/main/schema.json 302

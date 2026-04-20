@@ -1,15 +1,15 @@
 ---
 import { PROVIDERS } from "@ai-git/meta"
 
-const monograms: Record<string, string> = {
-  anthropic: "AN",
-  cerebras: "CB",
-  "claude-code": "CC",
-  codex: "CX",
-  "gemini-cli": "GC",
-  "google-ai-studio": "GS",
-  openai: "OA",
-  openrouter: "OR",
+const logos: Record<string, string> = {
+  anthropic: "/logos/anthropic.svg",
+  cerebras: "/logos/cerebras.svg",
+  "claude-code": "/logos/claude.svg",
+  codex: "/logos/codex.svg",
+  "gemini-cli": "/logos/gemini.svg",
+  "google-ai-studio": "/logos/google.svg",
+  openai: "/logos/openai.svg",
+  openrouter: "/logos/openrouter.svg",
 }
 
 const providers = Object.values(PROVIDERS).sort((a, b) => a.name.localeCompare(b.name))
@@ -36,7 +36,11 @@ const providers = Object.values(PROVIDERS).sort((a, b) => a.name.localeCompare(b
             target="_blank"
           >
             <span class="provider-logo" aria-hidden="true">
-              {monograms[p.id] ?? p.name.slice(0, 2).toUpperCase()}
+              {logos[p.id] ? (
+                <img src={logos[p.id]} alt="" width="20" height="20" loading="lazy" />
+              ) : (
+                <span class="monogram">{p.name.slice(0, 2).toUpperCase()}</span>
+              )}
             </span>
             <span class="provider-text">
               <span class="provider-name">{p.name}</span>
@@ -136,6 +140,13 @@ const providers = Object.values(PROVIDERS).sort((a, b) => a.name.localeCompare(b
     font-weight: 600;
     color: var(--color-fg);
     letter-spacing: -0.02em;
+    flex-shrink: 0;
+  }
+  .provider-logo img {
+    display: block;
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
   }
   .provider-text {
     display: grid;

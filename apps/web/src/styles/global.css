@@ -67,6 +67,12 @@ html {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+:target,
+section[id] {
+  scroll-margin-top: 5rem;
 }
 
 body {
