@@ -22,6 +22,7 @@ export interface FAQItem {
 export interface NavLink {
   label: string;
   href: string;
+  internal?: boolean;
   external?: boolean;
 }
 

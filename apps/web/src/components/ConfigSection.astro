@@ -1,0 +1,137 @@
+---
+const points: readonly { idx: string; title: string; bodyHtml: string }[] = [
+  {
+    idx: "01",
+    title: "CLI flags",
+    bodyHtml:
+      "Highest priority. Override provider, model, or workflow for one run without touching any file.",
+  },
+  {
+    idx: "02",
+    title: "Project config",
+    bodyHtml:
+      "<code>.ai-git.json</code> at the repo root. Commit the team's scopes, ticket system, and style preferences.",
+  },
+  {
+    idx: "03",
+    title: "Global config",
+    bodyHtml:
+      "<code>~/.config/ai-git/config.json</code>. Your preferred provider and model, applied everywhere else.",
+  },
+] as const
+
+const jsonLines: readonly string[] = [
+  '<span class="muted">{</span>',
+  '  <span class="accent">"$schema"</span>: <span class="added">"https://ai-git.xyz/schema.json"</span>,',
+  '  <span class="accent">"provider"</span>: <span class="added">"claude-code"</span>,',
+  '  <span class="accent">"model"</span>: <span class="added">"sonnet"</span>,',
+  '  <span class="accent">"prompt"</span>: {',
+  '    <span class="accent">"context"</span>: <span class="added">"Monorepo: web, api, mobile, shared"</span>,',
+  '    <span class="accent">"style"</span>: <span class="added">"Always use a scope. Reference PR in footer."</span>',
+  "  },",
+  '  <span class="accent">"defaults"</span>: {',
+  '    <span class="accent">"stageAll"</span>: <span class="spinner">false</span>,',
+  '    <span class="accent">"commit"</span>: <span class="spinner">false</span>,',
+  '    <span class="accent">"push"</span>: <span class="spinner">false</span>',
+  "  }",
+  '<span class="muted">}</span>',
+]
+
+const jsonBody = jsonLines.join("\n")
+---
+
+<section class="section" id="config">
+  <div class="container">
+    <header class="section-head">
+      <span class="eyebrow">Configuration</span>
+      <h2>Three tiers. One source of truth.</h2>
+      <p>
+        Global defaults, project overrides, per-run flags, resolved in that order. The team standard
+        lives in git. Your experiments stay local.
+      </p>
+    </header>
+
+    <div class="config-wrap">
+      <ol class="config-points">
+        {
+          points.map((p) => (
+            <li class="config-point">
+              <span class="idx">{p.idx}</span>
+              <div>
+                <strong>{p.title}</strong>
+                <p set:html={p.bodyHtml} />
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+
+      <div class="terminal">
+        <div class="chrome" aria-hidden="true">
+          <span class="dots"><span></span><span></span><span></span></span>
+          <span class="title">.ai-git.json</span>
+          <span class="tag">json</span>
+        </div>
+        <pre class="tbody" set:html={jsonBody}></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .section {
+    padding-block: var(--section-y);
+    border-top: 1px solid var(--color-border-subtle);
+  }
+  .config-wrap {
+    margin-top: var(--space-10);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: var(--space-10);
+    align-items: center;
+  }
+  @media (max-width: 900px) {
+    .config-wrap {
+      grid-template-columns: 1fr;
+      align-items: start;
+    }
+  }
+  .config-points {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0;
+    border-top: 1px solid var(--color-border-subtle);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+  .config-point {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: var(--space-4);
+    padding-block: var(--space-5);
+    border-top: 1px solid var(--color-border-subtle);
+    align-items: baseline;
+  }
+  .config-point:first-child {
+    border-top: 0;
+  }
+  .config-point .idx {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--color-accent);
+    padding-top: 3px;
+  }
+  .config-point strong {
+    font-weight: 500;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .config-point p {
+    color: var(--color-fg-dim);
+    font-size: var(--text-sm);
+  }
+  .config-point code {
+    color: var(--color-fg-dim);
+  }
+</style>

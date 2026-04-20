@@ -1,16 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
-  <rect width="1200" height="630" fill="#0a0a0a"/>
-  <rect x="32" y="32" width="1136" height="566" rx="16" stroke="#232323" stroke-width="2" fill="none"/>
+  <defs>
+    <radialGradient id="accentGlow" cx="50%" cy="0%" r="70%">
+      <stop offset="0%" stop-color="#ff9574" stop-opacity="0.10"/>
+      <stop offset="60%" stop-color="#ff9574" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
 
-  <g transform="translate(600, 230)">
-    <rect x="-44" y="-44" width="88" height="88" rx="18" fill="#141414" stroke="#232323" stroke-width="2"/>
-    <path d="M-20 -16 l16 16 l-16 16" stroke="#ededed" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M4 -16 l16 16 l-16 16" stroke="#ededed" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect width="1200" height="630" fill="#0a0a0a"/>
+  <rect width="1200" height="630" fill="url(#accentGlow)"/>
+  <rect x="32" y="32" width="1136" height="566" rx="20" stroke="#1f1f1f" stroke-width="1" fill="none"/>
+
+  <!-- brand cluster (top-left) -->
+  <g transform="translate(72, 80)">
+    <g fill="none" stroke="#ededed" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 2 l14 12 l-14 12"/>
+      <path d="M24 2 l14 12 l-14 12"/>
+    </g>
+    <text x="54" y="24" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22" font-weight="500" fill="#ededed" letter-spacing="-0.3">ai-git</text>
   </g>
 
-  <text x="600" y="380" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="64" fill="#ededed" font-weight="600" letter-spacing="-2">Stop writing commit messages.</text>
+  <!-- eyebrow (top-right) -->
+  <text x="1128" y="97" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#ff9574" letter-spacing="2">CONVENTIONAL COMMITS · SPEC 1.0.0</text>
 
-  <text x="600" y="440" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="26" fill="#999999" font-weight="400">AI-generated Conventional Commits. Bring your own provider.</text>
+  <!-- headline -->
+  <text x="72" y="340" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="92" font-weight="500" fill="#ededed" letter-spacing="-4">Stop writing</text>
+  <text x="72" y="436" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="92" font-weight="500" fill="#a0a0a0" letter-spacing="-4">commit <tspan fill="#ff9574">messages.</tspan></text>
 
-  <text x="600" y="540" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22" fill="#707070">ai-git.xyz</text>
+  <!-- sub -->
+  <text x="72" y="500" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="26" font-weight="400" fill="#a0a0a0" letter-spacing="-0.3">Any provider. Any model. Your diff stays local.</text>
+
+  <!-- footer row -->
+  <text x="72" y="566" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="20" fill="#7a7a7a" letter-spacing="0.2">ai-git.xyz</text>
+  <text x="1128" y="566" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#7a7a7a" letter-spacing="0.2">MIT · macOS · Linux · Windows</text>
 </svg>

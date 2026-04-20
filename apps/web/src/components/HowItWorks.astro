@@ -1,0 +1,140 @@
+---
+import { renderTerminalLines } from "../lib/terminal.ts"
+
+const diffLines: readonly string[] = [
+  '<span class="dim">diff --git a/src/auth.ts b/src/auth.ts</span>',
+  '<span class="dim">index 7e2a1c0..8b94f2d 100644</span>',
+  '<span class="muted">--- a/src/auth.ts</span>',
+  '<span class="muted">+++ b/src/auth.ts</span>',
+  '<span class="muted">@@ -12,7 +12,21 @@</span>',
+  ' <span class="dim">export async function signIn(user: User) {</span>',
+  '<span class="deleted">-  return passwordFlow(user)</span>',
+  '<span class="added">+  if (await biometric.available()) {</span>',
+  '<span class="added">+    const ok = await biometric.prompt({</span>',
+  '<span class="added">+      reason: "Unlock your account",</span>',
+  '<span class="added">+    })</span>',
+  '<span class="added">+    if (ok) return issueToken(user)</span>',
+  '<span class="added">+  }</span>',
+  '<span class="added">+  return passwordFlow(user)</span>',
+  ' <span class="dim">}</span>',
+  "",
+  '<span class="dim">diff --git a/src/settings.tsx b/src/settings.tsx</span>',
+  '<span class="muted">@@ -48,0 +48,8 @@</span>',
+  '<span class="added">+  &lt;Toggle</span>',
+  '<span class="added">+    label="Use Face ID"</span>',
+  '<span class="added">+    value={biometricEnabled}</span>',
+  '<span class="added">+    onChange={setBiometricEnabled}</span>',
+  '<span class="added">+  /&gt;</span>',
+]
+
+const commitLines: readonly string[] = [
+  '<span class="hl"><span class="accent">feat</span>(<span class="accent">auth</span>): add biometric login</span>',
+  "",
+  '<span class="dim">- implement Touch ID / Face ID authentication via</span>',
+  '<span class="dim">  the platform Web Authentication API</span>',
+  '<span class="dim">- add biometric prompt flow to Settings screen</span>',
+  '<span class="dim">- fall back to password on biometric failure or</span>',
+  '<span class="dim">  when unavailable on device</span>',
+  "",
+  '<span class="muted">Refs: #auth-214</span>',
+  "",
+  '<span class="accent">◆</span>  <span class="dim">Action</span>',
+  '<span class="muted">│</span>  <span class="selected">● Commit</span>',
+  '<span class="muted">│</span>  <span class="muted">○ Retry</span>   <span class="muted">│  ○ Edit   │  ○ Quit</span>',
+  '<span class="muted">└</span>',
+  "",
+  '<span class="added">✓</span> <span class="dim">committed 1a2b3c4 · pushed to origin/main</span>',
+]
+---
+
+<section class="section" id="how">
+  <div class="container">
+    <header class="section-head">
+      <span class="eyebrow">How it works</span>
+      <h2>Diff in. Commit out.</h2>
+      <p>
+        No templates to fill, no chat to prompt. ai-git reads your hunks, infers intent, and formats a
+        message that matches conventional commits. You still get the final say.
+      </p>
+    </header>
+
+    <div class="diff-wrap">
+      <div class="terminal">
+        <div class="chrome" aria-hidden="true">
+          <span class="dots"><span></span><span></span><span></span></span>
+          <span class="title">git diff --cached</span>
+          <span class="tag">input</span>
+        </div>
+        <pre class="tbody"><code set:html={renderTerminalLines(diffLines)} /></pre>
+      </div>
+
+      <div class="diff-arrow" aria-hidden="true">
+        <span class="ring">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </span>
+      </div>
+
+      <div class="terminal">
+        <div class="chrome" aria-hidden="true">
+          <span class="dots"><span></span><span></span><span></span></span>
+          <span class="title">ai-git — generated commit</span>
+          <span class="tag">output</span>
+        </div>
+        <pre class="tbody"><code set:html={renderTerminalLines(commitLines)} /></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .section {
+    padding-block: var(--section-y);
+    border-top: 1px solid var(--color-border-subtle);
+  }
+  .diff-wrap {
+    margin-top: var(--space-10);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: var(--space-6);
+    align-items: stretch;
+  }
+  .diff-arrow {
+    display: grid;
+    place-items: center;
+    width: 56px;
+  }
+  .diff-arrow .ring {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--color-accent-line);
+    display: grid;
+    place-items: center;
+    color: var(--color-accent);
+    background: var(--color-bg-elev);
+  }
+  @media (max-width: 860px) {
+    .diff-wrap {
+      grid-template-columns: 1fr;
+    }
+    .diff-arrow {
+      width: auto;
+      justify-self: center;
+    }
+    .diff-arrow .ring svg {
+      transform: rotate(90deg);
+    }
+  }
+</style>
