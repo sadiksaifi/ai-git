@@ -76,6 +76,48 @@ describe("codexAdapter.invoke", () => {
     expect(idx).toBeGreaterThan(0);
     expect(cmd[idx - 1]).toBe("-c");
   });
+
+  it("should run Codex in a stripped-down headless mode", async () => {
+    const { codexAdapter } = await import("./codex.ts");
+    await codexAdapter.invoke({
+      model: "gpt-5.4-medium",
+      system: "test system",
+      prompt: "test prompt",
+    });
+
+    expect(spawnCalls).toHaveLength(1);
+    const cmd = spawnCalls[0]!.cmd;
+
+    for (const feature of [
+      "shell_tool",
+      "shell_snapshot",
+      "apps",
+      "codex_hooks",
+      "multi_agent",
+      "personality",
+      "plugins",
+    ]) {
+      const idx = cmd.indexOf(feature);
+      expect(idx).toBeGreaterThan(0);
+      expect(cmd[idx - 1]).toBe("--disable");
+    }
+
+    for (const config of ['history.persistence="none"', "mcp_servers={}"]) {
+      const idx = cmd.indexOf(config);
+      expect(idx).toBeGreaterThan(0);
+      expect(cmd[idx - 1]).toBe("-c");
+    }
+
+    const execIdx = cmd.indexOf("exec");
+    expect(execIdx).toBeGreaterThan(0);
+    expect(cmd.slice(execIdx)).toEqual([
+      "exec",
+      "--sandbox",
+      "read-only",
+      "--ephemeral",
+      "test prompt",
+    ]);
+  });
 });
 
 describe("codex registry", () => {

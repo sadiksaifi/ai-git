@@ -32,8 +32,10 @@ function parseModelId(virtualId: string): {
  *
  * Top-level options (before exec):
  * - `-a never` prevents interactive approval prompts
- * - `--disable shell_tool` removes shell tool from model's available tools
+ * - `--disable ...` removes optional tools and ambient runtime features
  * - `-c web_search="disabled"` disables web search
+ * - `-c history.persistence="none"` disables history persistence
+ * - `-c mcp_servers={}` disables configured MCP servers
  *
  * Exec subcommand options:
  * - `--sandbox read-only` enforces OS-level read-only filesystem
@@ -57,10 +59,24 @@ export const codexAdapter: CLIProviderAdapter = {
         "shell_tool",
         "--disable",
         "shell_snapshot",
+        "--disable",
+        "apps",
+        "--disable",
+        "codex_hooks",
+        "--disable",
+        "multi_agent",
+        "--disable",
+        "personality",
+        "--disable",
+        "plugins",
         "-c",
         "check_for_update_on_startup=false",
         "-c",
         "analytics.enabled=false",
+        "-c",
+        'history.persistence="none"',
+        "-c",
+        "mcp_servers={}",
         "-c",
         `model_reasoning_effort=${effort}`,
         "-c",
