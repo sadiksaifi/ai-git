@@ -23,7 +23,6 @@ export interface NavLink {
   label: string;
   href: string;
   internal?: boolean;
-  essential?: boolean;
   external?: boolean;
 }
 
