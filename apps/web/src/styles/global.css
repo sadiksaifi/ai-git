@@ -15,10 +15,9 @@
   --color-deletion: #e15a5a;
   --color-spinner: #d4a355;
 
-  --accent-h: 38;
-  --color-accent: oklch(0.78 0.14 var(--accent-h));
-  --color-accent-dim: oklch(0.78 0.14 var(--accent-h) / 0.18);
-  --color-accent-line: oklch(0.78 0.14 var(--accent-h) / 0.55);
+  --color-accent: #ff9574;
+  --color-accent-dim: color-mix(in oklab, #ff9574 18%, transparent);
+  --color-accent-line: color-mix(in oklab, #ff9574 55%, transparent);
 
   --text-sm: 0.8125rem;
   --text-base: 0.9375rem;
@@ -81,7 +80,7 @@ body {
   background:
     radial-gradient(
       1200px 600px at 50% -10%,
-      oklch(0.78 0.14 var(--accent-h) / 0.06),
+      color-mix(in oklab, var(--color-accent) 7%, transparent),
       transparent 60%
     ),
     var(--color-bg);
@@ -274,7 +273,7 @@ button {
   color: var(--color-fg);
 }
 .terminal .tbody .hl {
-  background: oklch(0.78 0.14 var(--accent-h) / 0.12);
+  background: color-mix(in oklab, var(--color-accent) 14%, transparent);
 }
 
 .terminal .line {

@@ -5,7 +5,21 @@ import { nav } from "@ai-git/content/web"
 <header class="nav">
   <div class="container nav-inner">
     <a class="brand" href="/">
-      <span class="brand-mark" aria-hidden="true"></span>
+      <svg
+        class="brand-mark"
+        aria-hidden="true"
+        width="24"
+        height="24"
+        viewBox="0 0 64 64"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="6"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M18 22 l12 10 l-12 10" />
+        <path d="M34 22 l12 10 l-12 10" />
+      </svg>
       <span>ai-git</span>
     </a>
     <ul class="nav-links">
@@ -71,22 +85,8 @@ import { nav } from "@ai-git/content/web"
     letter-spacing: -0.01em;
   }
   .brand-mark {
-    display: inline-block;
-    width: 18px;
-    height: 18px;
-    position: relative;
-  }
-  .brand-mark::before,
-  .brand-mark::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border: 1px solid var(--color-accent-line);
-    border-radius: 3px;
-  }
-  .brand-mark::after {
-    transform: translate(3px, 3px);
-    border-color: var(--color-fg);
+    display: block;
+    flex-shrink: 0;
   }
   .nav-links {
     display: flex;
