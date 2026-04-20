@@ -23,15 +23,11 @@ import { nav } from "@ai-git/content/web"
       <span>ai-git</span>
     </a>
     <ul class="nav-links">
-      <li><a href="#how">How it works</a></li>
-      <li><a href="#providers">Providers</a></li>
-      <li><a href="#config">Config</a></li>
-      <li><a href="#faq">FAQ</a></li>
       {
         nav.map((link) => (
-          <li>
+          <li class:list={{ essential: link.essential }}>
             <a
-              href={link.href}
+              href={link.internal ? `#${link.href}` : link.href}
               rel={link.external ? "noopener noreferrer" : undefined}
               target={link.external ? "_blank" : undefined}
             >
@@ -116,7 +112,10 @@ import { nav } from "@ai-git/content/web"
     color: var(--color-fg);
   }
   @media (max-width: 640px) {
-    .nav-links li:not(:last-child) {
+    .nav-links {
+      gap: var(--space-3);
+    }
+    .nav-links li:not(.essential):not(:last-child) {
       display: none;
     }
   }

@@ -2,7 +2,7 @@
 // Re-run whenever logo.svg, og.svg, or twitter.svg change.
 //
 // Outputs (all programmatic):
-//   - favicon.svg           logo.svg wrapped in a #FF9574 rounded tile with dark chevrons
+//   - favicon.svg           logo.svg wrapped in a #FF9574 rounded tile with white chevrons
 //   - apple-touch-icon.png  180x180 raster of favicon.svg
 //   - og.png                1200x630 raster of og.svg
 //   - twitter.png           1200x628 raster of twitter.svg
@@ -20,15 +20,25 @@ const pub = (name: string) => resolve(here, "..", "public", name);
 const ICON_FG = "#ffffff";
 const TILE_START = "#ff9574"; // brand at top-left
 const TILE_END = "#8f3e22"; // medium warm rust at bottom-right
+const DEFAULT_LOGO_VIEWBOX = "0 0 64 64";
 
 const logo = await readFile(pub("logo.svg"), "utf8");
+const logoViewBox = logo.match(/<svg\b[^>]*\bviewBox=(["'])(.*?)\1/i)?.[2] ?? DEFAULT_LOGO_VIEWBOX;
+
+if (logoViewBox !== DEFAULT_LOGO_VIEWBOX) {
+  throw new Error(
+    `logo.svg must use viewBox="${DEFAULT_LOGO_VIEWBOX}" before generating icons; got "${logoViewBox}"`,
+  );
+}
+
 const logoInner = logo
   .replace(/<\?xml[^>]*\?>/, "")
   .replace(/<svg[^>]*>/, "")
   .replace(/<\/svg>\s*$/, "")
+  .replace(/\s(?:fill|stroke|color)=(["']).*?\1/gi, "")
   .trim();
 
-const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${logoViewBox}" width="64" height="64">
   <defs>
     <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="${TILE_START}"/>

@@ -1,4 +1,5 @@
 ---
+import { renderTerminalLines } from "../lib/terminal.ts"
 import InstallCommand from "./InstallCommand.astro"
 
 const heroLines: readonly string[] = [
@@ -23,9 +24,7 @@ const heroLines: readonly string[] = [
   '<span class="dim"> 2 files changed, <span class="added">45 insertions(+)</span>, <span class="deleted">12 deletions(-)</span></span>',
 ]
 
-const heroBody = heroLines
-  .map((line, i) => `<span class="line" style="--i: ${i}">${line || "&nbsp;"}</span>`)
-  .join("\n")
+const heroBody = renderTerminalLines(heroLines)
 ---
 
 <section class="hero">
@@ -38,7 +37,7 @@ const heroBody = heroLines
     <div class="hero-grid">
       <div class="hero-copy">
         <h1>
-          Stop writing <em>commit</em> <span class="accent">messages.</span>
+          Stop writing <span class="faded">commit</span> <span class="accent">messages.</span>
         </h1>
         <p class="hero-sub">
           ai-git reads your diff and writes a conventional commit. Scope, subject, body, the lot. Pick
@@ -138,8 +137,7 @@ const heroBody = heroLines
     line-height: 0.98;
     max-width: 20ch;
   }
-  h1 em {
-    font-style: normal;
+  h1 .faded {
     color: var(--color-fg-dim);
     font-weight: 400;
   }

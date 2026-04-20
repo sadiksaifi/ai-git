@@ -1,4 +1,6 @@
 ---
+import { renderTerminalLines } from "../lib/terminal.ts"
+
 const diffLines: readonly string[] = [
   '<span class="dim">diff --git a/src/auth.ts b/src/auth.ts</span>',
   '<span class="dim">index 7e2a1c0..8b94f2d 100644</span>',
@@ -43,12 +45,6 @@ const commitLines: readonly string[] = [
   "",
   '<span class="added">✓</span> <span class="dim">committed 1a2b3c4 · pushed to origin/main</span>',
 ]
-
-function render(lines: readonly string[]): string {
-  return lines
-    .map((line, i) => `<span class="line" style="--i: ${i}">${line || "&nbsp;"}</span>`)
-    .join("\n")
-}
 ---
 
 <section class="section" id="how">
@@ -69,7 +65,7 @@ function render(lines: readonly string[]): string {
           <span class="title">git diff --cached</span>
           <span class="tag">input</span>
         </div>
-        <pre class="tbody"><code set:html={render(diffLines)} /></pre>
+        <pre class="tbody"><code set:html={renderTerminalLines(diffLines)} /></pre>
       </div>
 
       <div class="diff-arrow" aria-hidden="true">
@@ -96,7 +92,7 @@ function render(lines: readonly string[]): string {
           <span class="title">ai-git — generated commit</span>
           <span class="tag">output</span>
         </div>
-        <pre class="tbody"><code set:html={render(commitLines)} /></pre>
+        <pre class="tbody"><code set:html={renderTerminalLines(commitLines)} /></pre>
       </div>
     </div>
   </div>

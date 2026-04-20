@@ -87,7 +87,7 @@ export const installTabs: readonly InstallTab[] = [
 ] as const;
 
 // ------------------------------------------------------------------------------
-// FAQ (2 questions)
+// FAQ
 // ------------------------------------------------------------------------------
 
 export const faq: readonly FAQItem[] = [
@@ -123,6 +123,10 @@ export const faq: readonly FAQItem[] = [
 // ------------------------------------------------------------------------------
 
 export const nav: readonly NavLink[] = [
+  { label: "How it works", href: "how", internal: true },
+  { label: "Providers", href: "providers", internal: true },
+  { label: "Config", href: "config", internal: true },
+  { label: "FAQ", href: "faq", internal: true, essential: true },
   { label: "GitHub", href: "https://github.com/sadiksaifi/ai-git", external: true },
 ] as const;
 

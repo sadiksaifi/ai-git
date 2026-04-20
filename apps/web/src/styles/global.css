@@ -63,7 +63,7 @@ html {
   font-size: 16px;
   line-height: 1.5;
   letter-spacing: -0.005em;
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizelegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
