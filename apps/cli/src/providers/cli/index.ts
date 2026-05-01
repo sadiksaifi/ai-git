@@ -2,6 +2,8 @@ import type { CLIProviderAdapter } from "../types.ts";
 import { claudeCodeAdapter } from "./claude-code.ts";
 import { codexAdapter } from "./codex.ts";
 import { geminiCliAdapter } from "./gemini-cli.ts";
+import { opencodeAdapter } from "./opencode.ts";
+import { piAdapter } from "./pi.ts";
 
 // ==============================================================================
 // CLI MODE ADAPTER REGISTRY
@@ -15,6 +17,8 @@ const cliAdapters: Map<string, CLIProviderAdapter> = new Map([
   [claudeCodeAdapter.providerId, claudeCodeAdapter],
   [codexAdapter.providerId, codexAdapter],
   [geminiCliAdapter.providerId, geminiCliAdapter],
+  [opencodeAdapter.providerId, opencodeAdapter],
+  [piAdapter.providerId, piAdapter],
 ]);
 
 /**
@@ -51,3 +55,5 @@ export function getCLIProviderIds(): string[] {
 export { claudeCodeAdapter } from "./claude-code.ts";
 export { codexAdapter } from "./codex.ts";
 export { geminiCliAdapter } from "./gemini-cli.ts";
+export { opencodeAdapter } from "./opencode.ts";
+export { piAdapter } from "./pi.ts";

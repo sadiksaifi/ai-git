@@ -9,7 +9,7 @@ A CLI tool that leverages AI to automatically generate semantically correct, con
 - 🤖 **AI-Powered** - Analyzes diffs and understands the _intent_ of your changes
 - 📝 **Conventional Commits** - Strictly adheres to [v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification
 - 🎨 **Interactive TUI** - Beautiful prompts for staging, editing, and confirming
-- 🔌 **Multiple Providers** - Claude Code, Gemini CLI, Codex, OpenRouter, OpenAI, Anthropic, Google AI Studio, Cerebras
+- 🔌 **Multiple Providers** - Claude Code, Gemini CLI, Codex, OpenCode, Pi, OpenRouter, OpenAI, Anthropic, Google AI Studio, Cerebras
 - 🔐 **Secure** - API keys stored in keychain, never in config files
 
 ## Installation
@@ -103,6 +103,12 @@ ai-git --provider gemini-cli --model gemini-3-flash-preview
 # Use Codex with reasoning effort baked in
 ai-git --provider codex --model gpt-5.3-codex-low
 
+# Use OpenCode with a runtime variant
+ai-git --provider opencode --model opencode/gpt-5-nano#minimal
+
+# Use Pi with a thinking level
+ai-git --provider pi --model openai-codex/gpt-5.4-mini#low
+
 # Use OpenRouter
 ai-git --provider openrouter --model anthropic/claude-sonnet-4-6
 
@@ -123,6 +129,8 @@ ai-git --dry-run -A
 | Claude Code      | `claude-code`      | CLI  | [Install CLI](https://claude.com/claude-code)                                           |
 | Gemini CLI       | `gemini-cli`       | CLI  | [Install CLI](https://ai.google.dev/gemini-api/docs/cli)                                |
 | Codex            | `codex`            | CLI  | [Install CLI](https://developers.openai.com/codex/cli) (`npm install -g @openai/codex`) |
+| OpenCode         | `opencode`         | CLI  | [Install CLI](https://opencode.ai) (`curl -fsSL https://opencode.ai/install \| bash`)    |
+| Pi               | `pi`               | CLI  | [Install CLI](https://pi.dev) (`npm install -g @mariozechner/pi-coding-agent`)           |
 | OpenRouter       | `openrouter`       | API  | [Get API Key](https://openrouter.ai/keys)                                               |
 | OpenAI           | `openai`           | API  | [Get API Key](https://platform.openai.com/api-keys)                                     |
 | Google AI Studio | `google-ai-studio` | API  | [Get API Key](https://aistudio.google.com/app/apikey)                                   |

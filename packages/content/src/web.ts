@@ -22,7 +22,7 @@ export const seo = {
   home: {
     title: "ai-git — stop writing commit messages",
     description:
-      "A CLI that reads your diff and writes a Conventional Commits-compliant message. Bring your own AI — Claude Code, Gemini CLI, Codex, OpenRouter, OpenAI, Google AI Studio, Anthropic, Cerebras.",
+      "A CLI that reads your diff and writes a Conventional Commits-compliant message. Bring your own AI — Claude Code, Gemini CLI, Codex, OpenCode, Pi, OpenRouter, OpenAI, Google AI Studio, Anthropic, Cerebras.",
   } as PageSEO,
   docs: {
     title: "Docs — ai-git",
@@ -114,7 +114,7 @@ export const faq: readonly FAQItem[] = [
   {
     question: "Does it work without a provider CLI installed?",
     answer:
-      "Yes for the API providers. For CLI providers (Claude Code, Gemini CLI, Codex), the corresponding binary must be on your PATH. <code>--dry-run</code> works without any.",
+      "Yes for the API providers. For CLI providers (Claude Code, Gemini CLI, Codex, OpenCode, Pi), the corresponding binary must be on your PATH. <code>--dry-run</code> works without any.",
   },
 ] as const;
 

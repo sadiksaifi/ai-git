@@ -23,6 +23,8 @@
         "claude-code",
         "gemini-cli",
         "codex",
+        "opencode",
+        "pi",
         "openrouter",
         "openai",
         "google-ai-studio",
@@ -34,6 +36,8 @@
         "claude-code",
         "gemini-cli",
         "codex",
+        "opencode",
+        "pi",
         "openrouter",
         "openai",
         "google-ai-studio",
@@ -53,6 +57,8 @@
         "gpt-5.4-mini",
         "gpt-5.3-codex",
         "gpt-5.1-codex-max",
+        "opencode/gpt-5-nano#minimal",
+        "openai-codex/gpt-5.4-mini#low",
         "openai/gpt-5.4",
         "gemini-3.1-pro-preview",
         "claude-sonnet-4-6"
@@ -236,6 +242,40 @@
               "gpt-5.1-codex-max-high"
             ],
             "description": "Codex CLI virtual model ID: '<base-model>-<effort>'. Effort levels: xhigh, high, medium, low. Default: 'gpt-5.4-mini-low'."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": {
+            "const": "opencode"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "OpenCode model ID fetched dynamically from `opencode models --verbose`. Variant selections use '<base-model>#<variant>'."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": {
+            "const": "pi"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "Pi model ID fetched dynamically from `pi --list-models`. Thinking selections use '<provider/model>#<thinking>'."
           }
         }
       }

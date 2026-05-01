@@ -17,8 +17,9 @@ import {
   type UserConfig,
 } from "../../config.ts";
 import { setApiKey, getApiKey } from "../secrets/index.ts";
-import { getCachedModels, cacheModels, type CachedModel } from "../model-cache.ts";
+import { cacheModels, type CachedModel } from "../model-cache.ts";
 import { getInstallInfo, ERROR_MESSAGES } from "./constants.ts";
+import { loadDynamicCLIModelsForSetup } from "./dynamic-cli-models.ts";
 import { findRecommendedModel, getModelCatalog } from "../../providers/api/models/index.ts";
 
 const SPEED_HINT = pc.dim(
@@ -149,7 +150,7 @@ async function setupCLIFlow(
   providerId: string,
   availabilityMap: Map<string, boolean>,
 ): Promise<InternalFlowResult> {
-  const { defaults, target, configFile, configType } = ctx;
+  const { defaults, target } = ctx;
 
   const providerDef = getProviderById(providerId);
   if (!providerDef) {
@@ -198,21 +199,63 @@ async function setupCLIFlow(
     return { config: null, completed: false, restart: true };
   }
 
-  const modelResult = await select({
-    message: "Select model:",
-    options: sortRecommendedFirst(providerDef.models).map((m) => ({
-      value: m.id,
-      label: m.name,
-      hint: m.isRecommended ? "recommended" : undefined,
-    })),
-    initialValue: defaults?.model ?? providerDef.models.find((m) => m.isRecommended)?.id,
-  });
+  let model: string;
+  let models: CachedModel[] | null = null;
 
-  if (isCancel(modelResult)) {
-    return { config: null, completed: false };
+  if (providerDef.dynamicModels) {
+    const s = spinner();
+    s.start(`Fetching ${providerDef.name} models...`);
+
+    try {
+      models = await loadDynamicCLIModelsForSetup(providerId, { providerName: providerDef.name });
+      s.stop(pc.green(`Found ${models.length} models`));
+    } catch (error) {
+      s.stop(pc.red("Error fetching models"));
+      log.error("");
+      log.error(pc.red(error instanceof Error ? error.message : "Model listing failed."));
+      log.error("");
+      log.error(pc.dim("Check your CLI authentication/configuration and try again."));
+
+      const retry = await select({
+        message: "What would you like to do?",
+        options: [
+          { value: "retry", label: "Retry model listing" },
+          { value: "provider", label: "Choose a different provider" },
+          { value: "exit", label: "Exit setup" },
+        ],
+      });
+
+      if (retry === "retry") {
+        return await setupCLIFlow(ctx, providerId, availabilityMap);
+      }
+      if (retry === "provider") {
+        return { config: null, completed: false, restart: true };
+      }
+      return { config: null, completed: false };
+    }
+
+    const selectedModel = await selectModel(models, providerId, defaults?.model);
+    if (!selectedModel) {
+      return { config: null, completed: false };
+    }
+    model = selectedModel;
+  } else {
+    const modelResult = await select({
+      message: "Select model:",
+      options: sortRecommendedFirst(providerDef.models).map((m) => ({
+        value: m.id,
+        label: m.name,
+        hint: m.isRecommended ? "recommended" : undefined,
+      })),
+      initialValue: defaults?.model ?? providerDef.models.find((m) => m.isRecommended)?.id,
+    });
+
+    if (isCancel(modelResult)) {
+      return { config: null, completed: false };
+    }
+
+    model = modelResult as string;
   }
-
-  const model = modelResult as string;
 
   // Save configuration (without mode)
   const config: UserConfig = {
@@ -227,7 +270,10 @@ async function setupCLIFlow(
   }
 
   // Minimal success message
-  const modelName = providerDef.models.find((m) => m.id === model)?.name ?? model;
+  const modelName =
+    models?.find((m) => m.id === model)?.name ??
+    providerDef.models.find((m) => m.id === model)?.name ??
+    model;
   log.success(`${pc.cyan(providerDef.name)} → ${pc.cyan(modelName)}`);
   log.info(SPEED_HINT);
 
@@ -239,7 +285,7 @@ async function setupCLIFlow(
 // ==============================================================================
 
 async function setupAPIFlow(ctx: FlowContext, providerId: string): Promise<WizardResult> {
-  const { defaults, target, configFile, configType } = ctx;
+  const { defaults, target } = ctx;
 
   const providerDef = getProviderById(providerId);
   if (!providerDef) {

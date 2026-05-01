@@ -19,6 +19,22 @@ export const PROVIDERS: ProviderDefinition[] = [
   // CLI PROVIDERS
   // ==============================================================================
   {
+    id: "opencode",
+    name: "OpenCode",
+    mode: "cli",
+    binary: "opencode",
+    dynamicModels: true,
+    models: [],
+  },
+  {
+    id: "pi",
+    name: "Pi",
+    mode: "cli",
+    binary: "pi",
+    dynamicModels: true,
+    models: [],
+  },
+  {
     id: "codex",
     name: "Codex",
     mode: "cli",
