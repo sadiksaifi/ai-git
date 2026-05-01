@@ -95,16 +95,22 @@ async function resolveFullConfig(
   if (providerDef.dynamicModels) {
     model = modelId;
     modelName = modelId;
-    try {
-      await assertConfiguredModelAllowed(providerDef.id as SupportedAPIProviderId, model);
-    } catch (error) {
-      console.error(
-        pc.red(
-          `Error: ${error instanceof Error ? error.message : "Configured model is not allowed."}`,
-        ),
-      );
-      console.error(pc.dim("Run `ai-git configure` to select a supported model."));
-      throw error;
+
+    // API providers validate configured models against models.dev deprecation metadata.
+    // Dynamic CLI providers list models only during configure; generation intentionally
+    // does not re-fetch or revalidate live CLI model lists.
+    if (providerDef.mode === "api") {
+      try {
+        await assertConfiguredModelAllowed(providerDef.id as SupportedAPIProviderId, model);
+      } catch (error) {
+        console.error(
+          pc.red(
+            `Error: ${error instanceof Error ? error.message : "Configured model is not allowed."}`,
+          ),
+        );
+        console.error(pc.dim("Run `ai-git configure` to select a supported model."));
+        throw error;
+      }
     }
   } else {
     const modelDef = getModelById(providerDef, modelId);

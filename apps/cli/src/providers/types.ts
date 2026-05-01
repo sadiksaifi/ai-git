@@ -51,6 +51,12 @@ export interface CLIProviderAdapter extends ProviderAdapter {
   mode: "cli";
   /** CLI binary name (e.g., "gemini", "claude") */
   binary: string;
+
+  /**
+   * Fetch live model options from the installed CLI during configure.
+   * Dynamic CLI providers must not cache this list or fetch it during generation.
+   */
+  fetchModels?(): Promise<APIModelDefinition[]>;
 }
 
 /**
