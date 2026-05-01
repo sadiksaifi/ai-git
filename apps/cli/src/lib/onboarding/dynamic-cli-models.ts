@@ -8,7 +8,32 @@ import { rankDynamicCLIModels } from "./dynamic-cli-ranking.ts";
 interface LoadDynamicCLIModelsOptions {
   providerName: string;
   adapter?: CLIProviderAdapter;
-  loadCatalog?: () => Promise<ModelCatalog>;
+  loadCatalog?: (options?: { signal?: AbortSignal }) => Promise<ModelCatalog>;
+  catalogTimeoutMs?: number;
+}
+
+const DYNAMIC_CLI_CATALOG_TIMEOUT_MS = 1500;
+
+async function loadOptionalCatalog(
+  loadCatalog: (options?: { signal?: AbortSignal }) => Promise<ModelCatalog>,
+  timeoutMs: number,
+): Promise<ModelCatalog | null> {
+  const controller = new AbortController();
+  let timeout: Timer | undefined;
+
+  const catalogPromise = loadCatalog({ signal: controller.signal }).catch(() => null);
+  const timeoutPromise = new Promise<null>((resolve) => {
+    timeout = setTimeout(() => {
+      controller.abort();
+      resolve(null);
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([catalogPromise, timeoutPromise]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
 }
 
 export async function loadDynamicCLIModelsForSetup(
@@ -35,10 +60,9 @@ export async function loadDynamicCLIModelsForSetup(
     provider: model.provider,
   }));
 
-  try {
-    const catalog = await (options.loadCatalog ?? getModelCatalog)();
-    return rankDynamicCLIModels(rows, catalog);
-  } catch {
-    return rankDynamicCLIModels(rows, null);
-  }
+  const catalog = await loadOptionalCatalog(
+    options.loadCatalog ?? getModelCatalog,
+    options.catalogTimeoutMs ?? DYNAMIC_CLI_CATALOG_TIMEOUT_MS,
+  );
+  return rankDynamicCLIModels(rows, catalog);
 }
