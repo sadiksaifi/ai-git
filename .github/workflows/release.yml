@@ -224,13 +224,25 @@ jobs:
 
       - name: Validate all packages (dry-run)
         run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+
           for pkg in darwin-arm64 darwin-x64 linux-arm64 linux-x64 win32-arm64 win32-x64; do
             echo "Validating @ai-git/${pkg}..."
+            if npm view "@ai-git/${pkg}@${VERSION}" version >/dev/null 2>&1; then
+              echo "@ai-git/${pkg}@${VERSION} already published; skipping dry-run validation."
+              continue
+            fi
             cd "packages/npm/${pkg}"
             npm publish --provenance --access public --dry-run
             cd "${{ github.workspace }}"
           done
+
           echo "Validating @ai-git/cli..."
+          if npm view "@ai-git/cli@${VERSION}" version >/dev/null 2>&1; then
+            echo "@ai-git/cli@${VERSION} already published; skipping dry-run validation."
+            exit 0
+          fi
           cd packages/npm/ai-git
           npm publish --provenance --access public --dry-run
 
