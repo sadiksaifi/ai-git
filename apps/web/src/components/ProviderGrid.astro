@@ -45,12 +45,14 @@ const providers = Object.values(PROVIDERS).sort((a, b) => a.name.localeCompare(b
               )}
             </span>
             <span class="provider-text">
-              <span class="provider-name">{p.name}</span>
+              <span class="provider-name" style="display: flex; align-items: center; gap: 6px; min-width: 0;">
+                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">{p.name}</span>
+                <span class="provider-type">{p.type.toUpperCase()}</span>
+              </span>
               <span class="provider-req">
                 {p.requirementsLabel} <span aria-hidden="true">→</span>
               </span>
             </span>
-            <span class="provider-type">{p.type.toUpperCase()}</span>
           </a>
         ))
       }
@@ -66,7 +68,7 @@ const providers = Object.values(PROVIDERS).sort((a, b) => a.name.localeCompare(b
   .grid {
     margin-top: var(--space-10);
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 0;
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-lg);
@@ -85,10 +87,10 @@ const providers = Object.values(PROVIDERS).sort((a, b) => a.name.localeCompare(b
   }
   .provider {
     display: grid;
-    grid-template-columns: 40px 1fr auto;
+    grid-template-columns: 40px 1fr;
     gap: var(--space-3);
     align-items: center;
-    padding: var(--space-5);
+    padding: var(--space-4) var(--space-3);
     border-right: 1px solid var(--color-border-subtle);
     border-bottom: 1px solid var(--color-border-subtle);
     transition: background 0.15s;
@@ -102,10 +104,10 @@ const providers = Object.values(PROVIDERS).sort((a, b) => a.name.localeCompare(b
   .provider:focus-visible .provider-req {
     color: var(--color-accent);
   }
-  .provider:nth-child(4n) {
+  .provider:nth-child(5n) {
     border-right: 0;
   }
-  .provider:nth-last-child(-n + 4) {
+  .provider:nth-last-child(-n + 5) {
     border-bottom: 0;
   }
   @media (max-width: 900px) {
