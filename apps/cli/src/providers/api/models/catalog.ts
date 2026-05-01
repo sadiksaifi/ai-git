@@ -88,7 +88,7 @@ async function loadCatalogFromOverride(): Promise<ModelCatalog | null> {
   }
 }
 
-async function resolveCatalog(forceRefresh: boolean): Promise<ModelCatalog> {
+async function resolveCatalog(forceRefresh: boolean, signal?: AbortSignal): Promise<ModelCatalog> {
   if (!forceRefresh && inMemoryCatalog) {
     return inMemoryCatalog;
   }
@@ -100,7 +100,7 @@ async function resolveCatalog(forceRefresh: boolean): Promise<ModelCatalog> {
   }
 
   try {
-    const networkCatalog = await fetchModelsDevCatalog();
+    const networkCatalog = await fetchModelsDevCatalog(signal);
     const normalized = normalizeCatalog(networkCatalog, "network");
     await saveCatalogCache(normalized);
     inMemoryCatalog = normalized;
@@ -119,11 +119,19 @@ async function resolveCatalog(forceRefresh: boolean): Promise<ModelCatalog> {
   }
 }
 
-export async function getModelCatalog(options?: { forceRefresh?: boolean }): Promise<ModelCatalog> {
+export async function getModelCatalog(options?: {
+  forceRefresh?: boolean;
+  signal?: AbortSignal;
+}): Promise<ModelCatalog> {
   const forceRefresh = options?.forceRefresh ?? false;
+  const signal = options?.signal;
 
   if (!forceRefresh && inMemoryCatalog) {
     return inMemoryCatalog;
+  }
+
+  if (signal) {
+    return await resolveCatalog(forceRefresh, signal);
   }
 
   if (!forceRefresh && inFlightCatalog) {
