@@ -128,9 +128,9 @@ ai-git --dry-run -A
 | :--------------- | :----------------- | :--- | :-------------------------------------------------------------------------------------- |
 | Claude Code      | `claude-code`      | CLI  | [Install CLI](https://claude.com/claude-code)                                           |
 | Gemini CLI       | `gemini-cli`       | CLI  | [Install CLI](https://ai.google.dev/gemini-api/docs/cli)                                |
-| Codex            | `codex`            | CLI  | [Install CLI](https://developers.openai.com/codex/cli) (`npm install -g @openai/codex`) |
-| OpenCode         | `opencode`         | CLI  | [Install CLI](https://opencode.ai) (`curl -fsSL https://opencode.ai/install \| bash`)    |
-| Pi               | `pi`               | CLI  | [Install CLI](https://pi.dev) (`npm install -g @mariozechner/pi-coding-agent`)           |
+| Codex            | `codex`            | CLI  | [Install CLI](https://developers.openai.com/codex/cli)                                  |
+| OpenCode         | `opencode`         | CLI  | [Install CLI](https://opencode.ai)                                                       |
+| Pi               | `pi`               | CLI  | [Install CLI](https://pi.dev)                                                            |
 | OpenRouter       | `openrouter`       | API  | [Get API Key](https://openrouter.ai/keys)                                               |
 | OpenAI           | `openai`           | API  | [Get API Key](https://platform.openai.com/api-keys)                                     |
 | Google AI Studio | `google-ai-studio` | API  | [Get API Key](https://aistudio.google.com/app/apikey)                                   |
