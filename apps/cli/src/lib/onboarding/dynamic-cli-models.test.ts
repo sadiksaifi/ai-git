@@ -6,6 +6,9 @@ describe("loadDynamicCLIModelsForSetup", () => {
 
     const models = await loadDynamicCLIModelsForSetup("test-provider", {
       providerName: "Test Provider",
+      loadCatalog: async () => {
+        throw new Error("skip catalog in unit test");
+      },
       adapter: {
         providerId: "test-provider",
         mode: "cli",

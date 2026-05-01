@@ -234,7 +234,9 @@ async function setupCLIFlow(
       return { config: null, completed: false };
     }
 
-    const selectedModel = await selectModel(models, providerId, defaults?.model);
+    const selectedModel = await selectModel(models, providerId, defaults?.model, {
+      showRecommended: false,
+    });
     if (!selectedModel) {
       return { config: null, completed: false };
     }
@@ -433,6 +435,15 @@ async function promptForApiKey(providerName: string): Promise<string> {
   return apiKeyResult as string;
 }
 
+export function formatModelChoiceTitle(
+  modelName: string,
+  modelId: string,
+  recommendedModel: string | undefined,
+  showRecommended: boolean,
+): string {
+  return showRecommended && modelId === recommendedModel ? `${modelName} (recommended)` : modelName;
+}
+
 /**
  * Select a model with fuzzy search support for large lists.
  */
@@ -440,11 +451,13 @@ async function selectModel(
   models: CachedModel[],
   providerId: string,
   defaultModel?: string,
+  options?: { showRecommended?: boolean },
 ): Promise<string | null> {
   // Find the recommended default model
-  let recommendedModel = defaultModel;
+  const showRecommended = options?.showRecommended ?? true;
+  let recommendedModel = showRecommended ? defaultModel : undefined;
 
-  if (!recommendedModel) {
+  if (showRecommended && !recommendedModel) {
     try {
       const catalog = await getModelCatalog();
       const supportedProviderId =
@@ -464,6 +477,8 @@ async function selectModel(
     }
   }
 
+  const initialModel = defaultModel ?? recommendedModel;
+
   // For small lists (< 20 models), use @clack/prompts select
   if (models.length <= 20) {
     const modelResult = await select({
@@ -471,9 +486,9 @@ async function selectModel(
       options: models.map((m) => ({
         value: m.id,
         label: m.name,
-        hint: m.id === recommendedModel ? "recommended" : undefined,
+        hint: showRecommended && m.id === recommendedModel ? "recommended" : undefined,
       })),
-      initialValue: recommendedModel ?? models[0]?.id,
+      initialValue: initialModel ?? models[0]?.id,
     });
 
     if (isCancel(modelResult)) {
@@ -488,14 +503,14 @@ async function selectModel(
   log.info(pc.dim("Type to search models. Use arrow keys to navigate."));
 
   // Find index of recommended model for initial selection
-  const initialIndex = recommendedModel ? models.findIndex((m) => m.id === recommendedModel) : 0;
+  const initialIndex = initialModel ? models.findIndex((m) => m.id === initialModel) : 0;
 
   const result = await prompts({
     type: "autocomplete",
     name: "model",
     message: "Select model (type to search):",
-    choices: models.map((m, i) => ({
-      title: i === initialIndex ? `${m.name} (recommended)` : m.name,
+    choices: models.map((m) => ({
+      title: formatModelChoiceTitle(m.name, m.id, recommendedModel, showRecommended),
       value: m.id,
       description: m.id,
     })),
