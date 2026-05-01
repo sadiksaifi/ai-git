@@ -101,7 +101,7 @@ export const opencodeAdapter: CLIProviderAdapter = {
 
   async invoke({ model, system, prompt }: InvokeOptions): Promise<string> {
     const { model: baseModel, variant } = parseDynamicVariantModel(model);
-    const args = ["opencode", "run", "--model", baseModel];
+    const args = ["opencode", "run", "--pure", "--model", baseModel];
 
     if (variant) {
       args.push("--variant", variant);

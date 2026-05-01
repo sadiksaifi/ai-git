@@ -89,6 +89,7 @@ describe("opencodeAdapter.invoke", () => {
     expect(spawnCalls[0]!.cmd).toEqual([
       "opencode",
       "run",
+      "--pure",
       "--model",
       "opencode/gpt-5-nano",
       "--variant",
