@@ -1,6 +1,6 @@
 ---
 import { Font } from "astro:assets"
-import { seo } from "@ai-git/content/web"
+import { faq, seo } from "@ai-git/content/web"
 import "../styles/global.css"
 
 interface Props {
@@ -13,6 +13,54 @@ const pathname = Astro.url.pathname.replace(/\/index\.html$/, "/").replace(/\/$/
 const canonical = new URL(pathname, seo.site.url).toString()
 const ogImage = new URL(seo.openGraph.images[0].url, seo.site.url).toString()
 const twitterImage = new URL(seo.twitter.image.url, seo.site.url).toString()
+const logo = new URL(seo.icons.faviconSvg, seo.site.url).toString()
+const stripHtml = (value: string) => value.replace(/<[^>]*>/g, "")
+const structuredData = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: seo.site.name,
+    url: seo.site.url,
+    description,
+    inLanguage: "en",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: seo.site.name,
+    alternateName: "AI Git Commit Message Generator",
+    applicationCategory: "DeveloperApplication",
+    operatingSystem: "macOS, Linux, Windows",
+    url: seo.site.url,
+    downloadUrl: "https://www.npmjs.com/package/@ai-git/cli",
+    codeRepository: "https://github.com/sadiksaifi/ai-git",
+    image: ogImage,
+    logo,
+    description,
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    author: {
+      "@type": "Person",
+      name: "Sadik Saifi",
+      url: "https://sadiksaifi.dev",
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: stripHtml(item.answer),
+      },
+    })),
+  },
+]
 ---
 
 <!doctype html>
@@ -34,6 +82,7 @@ const twitterImage = new URL(seo.twitter.image.url, seo.site.url).toString()
 
     <meta property="og:type" content={seo.openGraph.type} />
     <meta property="og:site_name" content={seo.openGraph.siteName} />
+    <meta property="og:locale" content={seo.site.locale} />
     <meta property="og:url" content={canonical} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -49,6 +98,8 @@ const twitterImage = new URL(seo.twitter.image.url, seo.site.url).toString()
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={twitterImage} />
     <meta name="twitter:image:alt" content={seo.twitter.image.alt} />
+
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)}></script>
 
     <slot name="head" />
   </head>
