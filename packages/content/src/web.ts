@@ -20,9 +20,9 @@ export const seo = {
     themeColor: "#0a0a0a",
   },
   home: {
-    title: "ai-git — stop writing commit messages",
+    title: "AI Git Commit Message Generator CLI | ai-git",
     description:
-      "A CLI that reads your diff and writes a Conventional Commits-compliant message. Bring your own AI — Claude Code, Gemini CLI, Codex, OpenCode, Pi, OpenRouter, OpenAI, Google AI Studio, Anthropic, Cerebras.",
+      "ai-git reads your git diff and writes Conventional Commits-compliant messages with Claude, OpenAI, Gemini, OpenRouter, and local CLI providers.",
   } as PageSEO,
   docs: {
     title: "Docs — ai-git",
