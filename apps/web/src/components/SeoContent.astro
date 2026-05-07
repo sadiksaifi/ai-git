@@ -1,0 +1,91 @@
+<section class="section seo-content" aria-labelledby="seo-content-title">
+  <div class="container">
+    <header class="section-head">
+      <span class="eyebrow">Why ai-git</span>
+      <h2 id="seo-content-title">Generate commit messages from your git diff.</h2>
+      <p>
+        ai-git is an AI git commit message generator built for developers who want clean,
+        reviewable commit history without writing every subject and body by hand.
+      </p>
+    </header>
+
+    <div class="seo-grid">
+      <article>
+        <h3>Conventional Commits by default</h3>
+        <p>
+          The CLI reads staged or unstaged changes, infers the intent of the diff, and formats the
+          result as a Conventional Commits-compliant message. It can generate scopes, subjects,
+          multiline bodies, and footers while still letting you edit or retry before committing.
+        </p>
+      </article>
+
+      <article>
+        <h3>Bring your own AI provider</h3>
+        <p>
+          Use Claude Code, Gemini CLI, Codex, OpenCode, Pi, OpenAI, Anthropic, Google AI Studio,
+          OpenRouter, or Cerebras. Your code diff is sent only to the provider you choose; ai-git
+          does not proxy requests or silently fall back to another service.
+        </p>
+      </article>
+
+      <article>
+        <h3>Team-ready configuration</h3>
+        <p>
+          Commit a project-level <code>.ai-git.json</code> to standardize scopes, ticket references,
+          examples, and commit style across a repo. Developers can still override provider, model,
+          staging, commit, and push behavior per run with CLI flags.
+        </p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<style>
+  .section {
+    padding-block: var(--section-y);
+    border-top: 1px solid var(--color-border-subtle);
+  }
+  .seo-grid {
+    margin-top: var(--space-10);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--color-bg-elev);
+  }
+  article {
+    padding: var(--space-6);
+    border-right: 1px solid var(--color-border-subtle);
+  }
+  article:last-child {
+    border-right: 0;
+  }
+  h3 {
+    font-size: var(--text-base);
+    font-weight: 500;
+    color: var(--color-fg);
+  }
+  article p {
+    margin-top: var(--space-3);
+    color: var(--color-fg-dim);
+    font-size: var(--text-sm);
+    line-height: 1.65;
+  }
+  code {
+    color: var(--color-fg-dim);
+  }
+  @media (max-width: 860px) {
+    .seo-grid {
+      grid-template-columns: 1fr;
+    }
+    article {
+      border-right: 0;
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+    article:last-child {
+      border-bottom: 0;
+    }
+  }
+</style>
