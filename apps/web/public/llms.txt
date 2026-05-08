@@ -1,0 +1,55 @@
+# ai-git
+
+> ai-git is a CLI tool that reads git diffs and generates Conventional Commits-compliant commit messages using the AI provider selected by the user.
+
+ai-git is designed for developers and teams that want clean, reviewable commit history without writing every commit subject and body by hand. It supports interactive review, retry, edit, commit, and push flows. Diffs are sent only to the configured provider; ai-git does not proxy requests, collect telemetry, or silently fall back to another provider.
+
+## Core links
+
+- [Website](https://ai-git.xyz/): Product overview, installation options, provider list, configuration summary, and FAQ.
+- [GitHub repository](https://github.com/sadiksaifi/ai-git): Source code, issues, releases, and contribution workflow.
+- [README](https://github.com/sadiksaifi/ai-git/blob/main/README.md): Installation, quick start, CLI reference, examples, provider setup, and configuration details.
+- [npm package](https://www.npmjs.com/package/@ai-git/cli): Published CLI package for global installation.
+- [Configuration schema](https://ai-git.xyz/schema.json): JSON schema for project-level `.ai-git.json` configuration.
+
+## Installation
+
+- [npm package](https://www.npmjs.com/package/@ai-git/cli): Install with `npm install -g @ai-git/cli`. Also works with Bun, pnpm, and Yarn.
+- Homebrew: Install on macOS with `brew install sadiksaifi/tap/ai-git`.
+- [Shell installer](https://ai-git.xyz/install): Install on macOS or Linux with `curl -fsSL https://ai-git.xyz/install | bash`.
+- [Source repository](https://github.com/sadiksaifi/ai-git): Build from source with Bun via `bun install` and `bun run build`.
+
+## Usage
+
+- Run `ai-git` in any git repository to generate a commit message from the current diff.
+- Use `ai-git configure` to choose an AI provider and model.
+- Use `ai-git upgrade` to update the installed CLI.
+- Important flags include `--provider`, `--model`, `--stage-all`, `--commit`, `--push`, `--hint`, `--exclude`, `--dry-run`, and `--dangerously-auto-approve`.
+
+## Providers
+
+ai-git supports both CLI-based and API-based providers.
+
+- CLI providers: Claude Code, Gemini CLI, Codex, OpenCode, Pi.
+- API providers: OpenRouter, OpenAI, Anthropic, Google AI Studio, Cerebras.
+
+CLI providers require the corresponding provider binary on `PATH`. API providers require an API key stored through the operating system keychain when available.
+
+## Configuration
+
+- Global config lives at `~/.config/ai-git/config.json`.
+- Project config lives at `.ai-git.json` in the repository root and can be committed for team-wide defaults.
+- Per-run CLI flags override project and global configuration.
+- Project config can define provider/model defaults, workflow defaults, prompt context, style rules, and examples.
+
+## Security and privacy
+
+- Diffs are sent only to the provider selected by the user.
+- ai-git does not run a proxy service for provider requests.
+- API keys are stored in the OS keychain when available: macOS Keychain, libsecret on Linux, or Windows Credential Manager.
+- The CLI shows generated commit messages before committing unless automated flags are explicitly used.
+
+## Optional
+
+- [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/): Commit message format followed by ai-git.
+- [Author website](https://sadiksaifi.dev): Project author homepage.
