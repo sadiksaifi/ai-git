@@ -15,6 +15,7 @@ ai-git is designed for developers and teams that want clean, reviewable commit h
 ## Installation
 
 - [npm package](https://www.npmjs.com/package/@ai-git/cli): Install with `npm install -g @ai-git/cli`. Also works with Bun, pnpm, and Yarn.
+- Homebrew: Install on macOS with `brew install sadiksaifi/tap/ai-git`.
 - [Shell installer](https://ai-git.xyz/install): Install on macOS or Linux with `curl -fsSL https://ai-git.xyz/install | bash`.
 - [Source repository](https://github.com/sadiksaifi/ai-git): Build from source with Bun via `bun install` and `bun run build`.
 
