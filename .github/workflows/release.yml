@@ -17,10 +17,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch tags and remote branches
+        run: git fetch --force --tags origin '+refs/heads/*:refs/remotes/origin/*'
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
+
+      - name: Validate release tag
+        id: tagsmith
+        run: bunx tagsmith@latest validate --tag "$GITHUB_REF_NAME" --github-output
 
       - name: Install dependencies
         run: bun install
@@ -80,7 +87,7 @@ jobs:
 
       - name: Generate checksums
         working-directory: apps/cli/dist
-        run: shasum -a 256 *.tar.gz *.zip > checksums.txt
+        run: shasum -a 256 ./*.tar.gz ./*.zip > checksums.txt
 
       - name: Generate Changelog
         uses: orhun/git-cliff-action@v4
@@ -92,7 +99,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           body: ${{ steps.changelog.outputs.content }}
           generate_release_notes: false
@@ -116,7 +123,7 @@ jobs:
 
       - name: Update Homebrew Formula
         run: |
-          VERSION=${{ github.ref_name }}
+          VERSION="${{ github.ref_name }}"
 
           URL_ARM64="https://github.com/${{ github.repository }}/releases/download/${VERSION}/ai-git-darwin-arm64.tar.gz"
           SHA256_ARM64=$(shasum -a 256 apps/cli/dist/ai-git-darwin-arm64.tar.gz | awk '{print $1}')
@@ -132,12 +139,12 @@ jobs:
           sed -i "s|version \".*\"|version \"${VERSION#v}\"|" ai-git.rb
 
           # Update ARM64 (range: if arm? ... else)
-          sed -i '/if Hardware::CPU.arm?/,/else/s|url ".*"|url "'$URL_ARM64'"|' ai-git.rb
-          sed -i '/if Hardware::CPU.arm?/,/else/s|sha256 ".*"|sha256 "'$SHA256_ARM64'"|' ai-git.rb
+          sed -i "/if Hardware::CPU.arm?/,/else/s|url \".*\"|url \"${URL_ARM64}\"|" ai-git.rb
+          sed -i "/if Hardware::CPU.arm?/,/else/s|sha256 \".*\"|sha256 \"${SHA256_ARM64}\"|" ai-git.rb
 
           # Update X64 (range: else ... end)
-          sed -i '/else/,/end/s|url ".*"|url "'$URL_X64'"|' ai-git.rb
-          sed -i '/else/,/end/s|sha256 ".*"|sha256 "'$SHA256_X64'"|' ai-git.rb
+          sed -i "/else/,/end/s|url \".*\"|url \"${URL_X64}\"|" ai-git.rb
+          sed -i "/else/,/end/s|sha256 \".*\"|sha256 \"${SHA256_X64}\"|" ai-git.rb
 
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"

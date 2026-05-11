@@ -239,6 +239,10 @@ bun run build
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
+## Releases
+
+Releases are managed by [Tagsmith](https://tagsmith.sadiksaifi.dev/). Use `bunx tagsmith@latest` to create and validate release tags.
+
 ## License
 
 [MIT](LICENSE)
