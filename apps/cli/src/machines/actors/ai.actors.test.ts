@@ -1,4 +1,4 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect, mock } from "bun:test";
 import { createActor, waitFor } from "xstate";
 import { createInvokeAIActor } from "./ai.actors.ts";
 
@@ -40,5 +40,32 @@ describe("createInvokeAIActor", () => {
     } catch (e) {
       expect((e as Error).message).toBe("API rate limit exceeded");
     }
+  });
+
+  test("does not create an animated spinner for non-interactive output", async () => {
+    const spinnerFactory = mock(() => ({
+      start: mock(() => {}),
+      message: mock(() => {}),
+      stop: mock(() => {}),
+    }));
+    const actor = createInvokeAIActor(async () => "feat: add login", {
+      shouldUseInteractiveSpinner: () => false,
+      spinnerFactory,
+    });
+    const ref = createActor(actor, {
+      input: {
+        model: "test",
+        system: "system prompt",
+        prompt: "user prompt",
+        modelName: "Test Model",
+        slowThresholdMs: 0,
+      },
+    });
+
+    ref.start();
+    const snap = await waitFor(ref, (s) => s.status === "done");
+
+    expect(snap.output).toBe("feat: add login");
+    expect(spinnerFactory).not.toHaveBeenCalled();
   });
 });
