@@ -15,6 +15,28 @@ type InvokeAIInput = {
   adapter?: ProviderAdapter;
 };
 
+type SpinnerController = Pick<ReturnType<typeof spinner>, "start" | "message" | "stop">;
+
+type InvokeAIActorOptions = {
+  shouldUseInteractiveSpinner?: () => boolean;
+  spinnerFactory?: () => SpinnerController;
+};
+
+const noopSpinner: SpinnerController = {
+  start: () => {},
+  message: () => {},
+  stop: () => {},
+};
+
+export function shouldUseInteractiveSpinner(): boolean {
+  return (
+    Boolean(process.stdout.isTTY) &&
+    Boolean(process.stderr.isTTY) &&
+    !process.env.CI &&
+    process.env.TERM !== "dumb"
+  );
+}
+
 // ── Factory ──────────────────────────────────────────────────────────
 
 /**
@@ -26,6 +48,7 @@ type InvokeAIInput = {
  */
 export function createInvokeAIActor(
   resolver?: (input: { model: string; system: string; prompt: string }) => Promise<string>,
+  options: InvokeAIActorOptions = {},
 ) {
   return fromPromise(async ({ input }: { input: InvokeAIInput }) => {
     const invoke =
@@ -35,7 +58,10 @@ export function createInvokeAIActor(
         return input.adapter.invoke(opts);
       });
 
-    const s = spinner();
+    const useInteractiveSpinner =
+      options.shouldUseInteractiveSpinner ?? shouldUseInteractiveSpinner;
+    const createSpinner = options.spinnerFactory ?? spinner;
+    const s = useInteractiveSpinner() ? createSpinner() : noopSpinner;
     s.start(`Analyzing changes with ${input.modelName}...`);
 
     const cancelSlowWarning = createSlowWarningTimer(input.slowThresholdMs, () => {
