@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { existsSync, readFileSync } from "node:fs";
 
 function stream(text: string): ReadableStream<Uint8Array> {
   return new ReadableStream({
@@ -128,5 +129,99 @@ describe("selectAntigravityMigrationModel", () => {
     ]) {
       expect(selectAntigravityMigrationModel(legacyModel, models)).toBe("gemini-3.7-pro-low");
     }
+  });
+});
+
+describe("antigravityAdapter.invoke", () => {
+  let originalSpawn: typeof Bun.spawn;
+
+  beforeEach(() => {
+    originalSpawn = Bun.spawn;
+  });
+
+  afterEach(() => {
+    (Bun as any).spawn = originalSpawn;
+  });
+
+  it("generates inside a sandboxed temporary profile and removes all invocation state", async () => {
+    let generationCommand: string[] = [];
+    let generationOptions: any;
+    let profileRoot = "";
+    let settings: any;
+    let hooks: any;
+    let agent = "";
+
+    (Bun as any).spawn = (command: string[], options: any) => {
+      if (command[1] === "--version") {
+        return { stdout: stream("1.1.13\n"), stderr: stream(""), exited: Promise.resolve(0) };
+      }
+
+      generationCommand = command;
+      generationOptions = options;
+      profileRoot = command.find((argument) => argument.startsWith("--gemini_dir="))!.slice(13);
+      settings = JSON.parse(
+        readFileSync(`${profileRoot}/antigravity-cli/settings.json`, "utf8"),
+      );
+      hooks = JSON.parse(readFileSync(`${profileRoot}/config/hooks.json`, "utf8"));
+      agent = readFileSync(`${profileRoot}/config/agents/ai-git/agent.md`, "utf8");
+
+      return {
+        stdout: stream(
+          JSON.stringify({ status: "SUCCESS", response: "feat: isolated generation\n" }),
+        ),
+        stderr: stream(""),
+        exited: Promise.resolve(0),
+      };
+    };
+
+    const { antigravityAdapter } = await import("./antigravity.ts");
+    await expect(
+      antigravityAdapter.invoke({
+        model: "gemini-3.7-flash-low",
+        system: "Follow AI Git's commit-message contract.",
+        prompt: "Generate a commit message for this diff.",
+      }),
+    ).resolves.toBe("feat: isolated generation");
+
+    expect(generationCommand).toEqual([
+      "agy",
+      expect.stringMatching(/^--gemini_dir=/),
+      "--sandbox",
+      "--agent",
+      "ai-git",
+      "--model",
+      "gemini-3.7-flash-low",
+      "--output-format",
+      "json",
+      "--disable-slash-commands",
+      "--print-timeout",
+      "2m",
+      "-p",
+      "Generate a commit message for this diff.",
+    ]);
+    expect(generationCommand).not.toContain("--dangerously-skip-permissions");
+    expect(generationOptions.cwd).toBe(`${profileRoot}/workspace`);
+    expect(generationOptions.env.AGY_CLI_DISABLE_AUTO_UPDATE).toBe("1");
+    expect(settings).toMatchObject({
+      allowNonWorkspaceAccess: false,
+      disableSlashCommands: true,
+      enableTerminalSandbox: true,
+      toolPermission: "strict",
+      permissions: {
+        deny: [
+          "read_file(*)",
+          "write_file(*)",
+          "read_url(*)",
+          "execute_url(*)",
+          "command(*)",
+          "mcp(*)",
+        ],
+      },
+    });
+    expect(hooks["ai-git-deny-all"].PreToolUse[0].matcher).toBe("*");
+    expect(agent).toContain("tools: []");
+    expect(agent).toContain("subagent: false");
+    expect(agent).toContain("Follow AI Git's commit-message contract.");
+    expect(existsSync(profileRoot)).toBe(false);
   });
 });

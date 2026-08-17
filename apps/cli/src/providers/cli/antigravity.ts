@@ -1,16 +1,27 @@
+import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { CLIProviderAdapter, InvokeOptions, APIModelDefinition } from "../types.ts";
 import { readProcessOutput } from "./dynamic.ts";
 
 const MINIMUM_ANTIGRAVITY_VERSION = [1, 1, 13] as const;
+const ISOLATED_PROFILE_PREFIX = "ai-git-antigravity-";
+const DENY_REASON = "AI Git disables all Antigravity tools.";
 
 interface AntigravityEnvelope {
   status?: string;
   error?: string | null;
+  response?: string;
   command?: {
     data?: {
       models?: Array<{ id?: unknown; label?: unknown }>;
     };
   };
+}
+
+interface IsolatedRuntime {
+  root: string;
+  workspace: string;
 }
 
 interface ModelRank {
@@ -143,6 +154,118 @@ async function assertSupportedVersion(): Promise<void> {
   }
 }
 
+function denyHookCommand(): string {
+  const output = JSON.stringify({ decision: "deny", reason: DENY_REASON });
+  if (process.platform === "win32") {
+    const escaped = output.replace(/'/g, "''");
+    return `powershell -NoProfile -NonInteractive -Command \"$input | Out-Null; [Console]::Out.Write('${escaped}')\"`;
+  }
+  return `printf '%s\\n' '${output.replace(/'/g, `'\\''`)}'`;
+}
+
+async function createIsolatedRuntime(system: string): Promise<IsolatedRuntime> {
+  const root = await mkdtemp(join(tmpdir(), ISOLATED_PROFILE_PREFIX));
+  await chmod(root, 0o700);
+
+  const workspace = join(root, "workspace");
+  const cliConfigDir = join(root, "antigravity-cli");
+  const sharedConfigDir = join(root, "config");
+  const agentDir = join(sharedConfigDir, "agents", "ai-git");
+  await Promise.all([
+    mkdir(workspace, { recursive: true, mode: 0o700 }),
+    mkdir(cliConfigDir, { recursive: true, mode: 0o700 }),
+    mkdir(agentDir, { recursive: true, mode: 0o700 }),
+  ]);
+
+  const settings = {
+    allowNonWorkspaceAccess: false,
+    disableSlashCommands: true,
+    enableTelemetry: false,
+    enableTerminalSandbox: true,
+    notifications: false,
+    toolPermission: "strict",
+    permissions: {
+      deny: [
+        "read_file(*)",
+        "write_file(*)",
+        "read_url(*)",
+        "execute_url(*)",
+        "command(*)",
+        "mcp(*)",
+      ],
+    },
+  };
+  const hooks = {
+    "ai-git-deny-all": {
+      PreToolUse: [
+        {
+          matcher: "*",
+          hooks: [{ type: "command", command: denyHookCommand(), timeout: 5 }],
+        },
+      ],
+    },
+  };
+  const agent = `---
+name: ai-git
+description: Generate an AI Git commit message without tools or delegation.
+tools: []
+mainAgent: true
+subagent: false
+inheritMcp: false
+commandExecutionPolicy: off
+mcpServers: []
+skills: []
+plugins: []
+---
+
+# System Prompt
+
+${system}
+`;
+
+  await Promise.all([
+    writeFile(join(cliConfigDir, "settings.json"), JSON.stringify(settings, null, 2), {
+      mode: 0o600,
+    }),
+    writeFile(join(sharedConfigDir, "hooks.json"), JSON.stringify(hooks, null, 2), {
+      mode: 0o600,
+    }),
+    writeFile(join(agentDir, "agent.md"), agent, { mode: 0o600 }),
+  ]);
+
+  return { root, workspace };
+}
+
+async function removeIsolatedRuntime(runtime: IsolatedRuntime): Promise<void> {
+  const expectedParent = tmpdir();
+  if (
+    !runtime.root.startsWith(`${expectedParent}/`) ||
+    !runtime.root.slice(expectedParent.length + 1).startsWith(ISOLATED_PROFILE_PREFIX)
+  ) {
+    throw new Error("Refusing to remove an unexpected Antigravity profile path.");
+  }
+  await rm(runtime.root, { recursive: true, force: true });
+}
+
+function parseGeneration(stdout: string): string {
+  let envelope: AntigravityEnvelope;
+  try {
+    envelope = JSON.parse(stdout) as AntigravityEnvelope;
+  } catch {
+    throw new Error("Antigravity CLI returned malformed generation JSON.");
+  }
+
+  if (envelope.status !== "SUCCESS") {
+    throw new Error(envelope.error || `Antigravity CLI generation ${envelope.status || "failed"}.`);
+  }
+
+  const response = envelope.response?.trim();
+  if (!response) {
+    throw new Error("Antigravity CLI returned an empty response.");
+  }
+  return response;
+}
+
 function parseModels(stdout: string): APIModelDefinition[] {
   let envelope: AntigravityEnvelope;
   try {
@@ -175,8 +298,44 @@ export const antigravityAdapter: CLIProviderAdapter = {
   mode: "cli",
   binary: "agy",
 
-  async invoke(_options: InvokeOptions): Promise<string> {
-    throw new Error("Antigravity CLI generation is not implemented yet.");
+  async invoke({ model, system, prompt }: InvokeOptions): Promise<string> {
+    await assertSupportedVersion();
+    const runtime = await createIsolatedRuntime(system);
+    try {
+      const proc = Bun.spawn(
+        [
+          "agy",
+          `--gemini_dir=${runtime.root}`,
+          "--sandbox",
+          "--agent",
+          "ai-git",
+          "--model",
+          model,
+          "--output-format",
+          "json",
+          "--disable-slash-commands",
+          "--print-timeout",
+          "2m",
+          "-p",
+          prompt,
+        ],
+        {
+          cwd: runtime.workspace,
+          stdout: "pipe",
+          stderr: "pipe",
+          env: { ...process.env, AGY_CLI_DISABLE_AUTO_UPDATE: "1" },
+        },
+      );
+      const { stdout, stderr, exitCode } = await readProcessOutput(proc);
+      if (exitCode !== 0) {
+        throw new Error(
+          `Antigravity CLI error (exit code ${exitCode}):\n${stderr.trim() || stdout.trim() || "Unknown error"}`,
+        );
+      }
+      return parseGeneration(stdout);
+    } finally {
+      await removeIsolatedRuntime(runtime);
+    }
   },
 
   async checkAvailable(): Promise<boolean> {
