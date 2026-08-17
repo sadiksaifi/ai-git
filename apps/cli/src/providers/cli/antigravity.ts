@@ -108,9 +108,20 @@ function rankModels(models: APIModelDefinition[]): APIModelDefinition[] {
     })
     .map((entry) => entry.model);
 
-  return ranked.map((model, index) => ({
+  const recommendationPatterns = [
+    /^gemini-\d+(?:\.\d+)+-flash-low$/i,
+    /^gemini-\d+(?:\.\d+)+-flash-medium$/i,
+    /^gemini-\d+(?:\.\d+)+-flash-high$/i,
+    /^gemini-\d+(?:\.\d+)+-pro-low$/i,
+  ];
+  const recommendedId =
+    recommendationPatterns
+      .map((pattern) => ranked.find((model) => pattern.test(model.id))?.id)
+      .find(Boolean) ?? ranked[0]?.id;
+
+  return ranked.map((model) => ({
     ...model,
-    isRecommended: index === 0 || undefined,
+    isRecommended: model.id === recommendedId || undefined,
   }));
 }
 
@@ -141,7 +152,7 @@ export function selectAntigravityMigrationModel(
     ranked.find((model) =>
       new RegExp(`^gemini-\\d+(?:\\.\\d+)+-${family}-low$`, "i").test(model.id),
     )?.id ??
-    ranked[0]?.id ??
+    ranked.find((model) => model.isRecommended)?.id ??
     null
   );
 }

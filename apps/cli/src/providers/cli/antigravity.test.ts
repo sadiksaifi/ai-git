@@ -113,6 +113,21 @@ describe("antigravityAdapter.fetchModels", () => {
       "gemini-3.10-flash-low",
     ]);
   });
+
+  it("prefers Flash Medium before High when no Flash Low model is available", async () => {
+    modelRows = [
+      { id: "gemini-3.8-flash-high", label: "Gemini 3.8 Flash (High)" },
+      { id: "gemini-3.7-flash-medium", label: "Gemini 3.7 Flash (Medium)" },
+      { id: "gemini-4.0-pro-low", label: "Gemini 4.0 Pro (Low)" },
+    ];
+    const { antigravityAdapter } = await import("./antigravity.ts");
+
+    const models = await antigravityAdapter.fetchModels!();
+
+    expect(models.find((model) => model.isRecommended)?.id).toBe(
+      "gemini-3.7-flash-medium",
+    );
+  });
 });
 
 describe("selectAntigravityMigrationModel", () => {
