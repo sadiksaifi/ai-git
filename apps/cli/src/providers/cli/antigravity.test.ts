@@ -103,3 +103,30 @@ describe("antigravityAdapter.fetchModels", () => {
     ]);
   });
 });
+
+describe("selectAntigravityMigrationModel", () => {
+  it("maps every former Gemini CLI model to matching live Flash or Pro intent", async () => {
+    const { selectAntigravityMigrationModel } = await import("./antigravity.ts");
+    const models = [
+      { id: "gemini-3.8-flash-low", name: "Gemini 3.8 Flash (Low)" },
+      { id: "gemini-3.7-pro-low", name: "Gemini 3.7 Pro (Low)" },
+    ];
+
+    for (const legacyModel of [
+      "gemini-3-flash-preview",
+      "gemini-2.5-flash",
+      "gemini-2.5-flash-lite",
+    ]) {
+      expect(selectAntigravityMigrationModel(legacyModel, models)).toBe(
+        "gemini-3.8-flash-low",
+      );
+    }
+    for (const legacyModel of [
+      "gemini-3.1-pro-preview",
+      "gemini-3-pro-preview",
+      "gemini-2.5-pro",
+    ]) {
+      expect(selectAntigravityMigrationModel(legacyModel, models)).toBe("gemini-3.7-pro-low");
+    }
+  });
+});

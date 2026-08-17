@@ -99,6 +99,38 @@ function rankModels(models: APIModelDefinition[]): APIModelDefinition[] {
   }));
 }
 
+const LEGACY_FLASH_MODELS = new Set([
+  "gemini-3-flash-preview",
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
+]);
+const LEGACY_PRO_MODELS = new Set([
+  "gemini-3.1-pro-preview",
+  "gemini-3-pro-preview",
+  "gemini-2.5-pro",
+]);
+
+export function selectAntigravityMigrationModel(
+  legacyModel: string,
+  models: APIModelDefinition[],
+): string | null {
+  const family = LEGACY_FLASH_MODELS.has(legacyModel)
+    ? "flash"
+    : LEGACY_PRO_MODELS.has(legacyModel)
+      ? "pro"
+      : null;
+  if (!family) return null;
+
+  const ranked = rankModels(models);
+  return (
+    ranked.find((model) =>
+      new RegExp(`^gemini-\\d+(?:\\.\\d+)+-${family}-low$`, "i").test(model.id),
+    )?.id ??
+    ranked[0]?.id ??
+    null
+  );
+}
+
 async function assertSupportedVersion(): Promise<void> {
   const process = Bun.spawn(["agy", "--version"], { stdout: "pipe", stderr: "pipe" });
   const { stdout, stderr, exitCode } = await readProcessOutput(process);
