@@ -8,8 +8,8 @@ anthropic       claude-haiku-4-5      no
 `;
 
 describe("parsePiModelsTable", () => {
-  function levelsFor(model: string): string[] {
-    return parsePiModelsTable(`provider  model  thinking\ntest  ${model}  yes`)
+  function levelsFor(model: string, provider = "test"): string[] {
+    return parsePiModelsTable(`provider  model  thinking\n${provider}  ${model}  yes`)
       .map((entry) => entry.id.split("#")[1])
       .filter((level): level is string => Boolean(level));
   }
@@ -30,23 +30,65 @@ describe("parsePiModelsTable", () => {
   it.each(["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol"])(
     "%s supports xhigh and max",
     (model) => {
-      expect(levelsFor(model)).toEqual(["off", "minimal", "low", "medium", "high", "xhigh", "max"]);
+      expect(levelsFor(model, "openai-codex")).toEqual([
+        "off",
+        "minimal",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+      ]);
     },
   );
 
   it("GPT-5.5 supports xhigh without max", () => {
-    expect(levelsFor("gpt-5.5")).toEqual(["off", "minimal", "low", "medium", "high", "xhigh"]);
+    expect(levelsFor("gpt-5.5", "openai-codex")).toEqual([
+      "off",
+      "minimal",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+    ]);
+  });
+
+  it.each(["gpt-5.3-codex-spark", "gpt-5.4", "gpt-5.4-mini"])(
+    "%s keeps its supported xhigh level",
+    (model) => {
+      expect(levelsFor(model, "openai-codex")).toEqual([
+        "off",
+        "minimal",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+      ]);
+    },
+  );
+
+  it("respects OpenCode GPT level exclusions", () => {
+    expect(levelsFor("gpt-5.4", "opencode")).toEqual(["low", "medium", "high", "xhigh"]);
+    expect(levelsFor("gpt-5.4-pro", "opencode")).toEqual(["medium", "high", "xhigh"]);
   });
 
   it.each(["claude-opus-5", "claude-sonnet-5", "claude-opus-4-7", "claude-opus-4-8"])(
     "%s supports xhigh and max",
     (model) => {
-      expect(levelsFor(model)).toEqual(["off", "minimal", "low", "medium", "high", "xhigh", "max"]);
+      expect(levelsFor(model, "anthropic")).toEqual([
+        "off",
+        "minimal",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+      ]);
     },
   );
 
   it("Claude Fable 5 supports xhigh and max but cannot disable thinking", () => {
-    expect(levelsFor("claude-fable-5")).toEqual([
+    expect(levelsFor("claude-fable-5", "anthropic")).toEqual([
       "minimal",
       "low",
       "medium",
@@ -57,15 +99,54 @@ describe("parsePiModelsTable", () => {
   });
 
   it.each(["claude-opus-4-6", "claude-sonnet-4-6"])("%s supports max without xhigh", (model) => {
-    expect(levelsFor(model)).toEqual(["off", "minimal", "low", "medium", "high", "max"]);
+    expect(levelsFor(model, "anthropic")).toEqual([
+      "off",
+      "minimal",
+      "low",
+      "medium",
+      "high",
+      "max",
+    ]);
+  });
+
+  it("matches region-qualified Claude families without dropping xhigh or max", () => {
+    expect(levelsFor("us.anthropic.claude-opus-4-7", "amazon-bedrock")).toEqual([
+      "off",
+      "minimal",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max",
+    ]);
+  });
+
+  it("matches nested provider-qualified Claude families", () => {
+    expect(levelsFor("anthropic/claude-opus-5", "openrouter")).toEqual([
+      "off",
+      "minimal",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max",
+    ]);
   });
 
   it("DeepSeek V4 Pro exposes only its effective levels", () => {
-    expect(levelsFor("deepseek-v4-pro")).toEqual(["off", "high", "max"]);
+    expect(levelsFor("deepseek-v4-pro", "deepseek")).toEqual(["off", "high", "max"]);
   });
 
   it("DeepSeek V4 Flash exposes only its effective levels", () => {
-    expect(levelsFor("deepseek-v4-flash")).toEqual(["off", "low", "high", "max"]);
+    expect(levelsFor("deepseek-v4-flash", "deepseek")).toEqual(["off", "low", "high", "max"]);
+  });
+
+  it("preserves provider-specific DeepSeek V4 capabilities", () => {
+    expect(levelsFor("deepseek-v4-flash", "opencode")).toEqual(["high", "max"]);
+    expect(levelsFor("deepseek-v4-pro", "opencode")).toEqual(["high", "max"]);
+    expect(levelsFor("deepseek-v4-flash", "opencode-go")).toEqual(["off", "high", "max"]);
+    expect(levelsFor("deepseek-v4-pro", "opencode-go")).toEqual(["off", "high", "max"]);
+    expect(levelsFor("deepseek/deepseek-v4-pro", "openrouter")).toEqual(["off", "high", "xhigh"]);
   });
 
   it("ordinary thinking models expose the standard levels without xhigh or max", () => {

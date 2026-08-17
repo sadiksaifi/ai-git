@@ -5,37 +5,81 @@ type PiThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" |
 
 const STANDARD_PI_THINKING_LEVELS: PiThinkingLevel[] = ["off", "minimal", "low", "medium", "high"];
 
+const LOW_TO_XHIGH: PiThinkingLevel[] = ["low", "medium", "high", "xhigh"];
+const MEDIUM_TO_XHIGH: PiThinkingLevel[] = ["medium", "high", "xhigh"];
+const LOW_TO_MAX: PiThinkingLevel[] = ["low", "medium", "high", "xhigh", "max"];
+
 const PI_MODEL_THINKING_LEVELS: ReadonlyArray<{
-  modelIds: ReadonlySet<string>;
+  providers?: readonly string[];
+  modelPattern: RegExp;
   levels: readonly PiThinkingLevel[];
 }> = [
   {
-    modelIds: new Set(["gpt-5-6-luna", "gpt-5-6-terra", "gpt-5-6-sol"]),
-    levels: [...STANDARD_PI_THINKING_LEVELS, "xhigh", "max"],
+    providers: ["opencode"],
+    modelPattern: /deepseek-v4-(?:flash|pro)/,
+    levels: ["high", "max"],
   },
   {
-    modelIds: new Set(["gpt-5-5"]),
-    levels: [...STANDARD_PI_THINKING_LEVELS, "xhigh"],
-  },
-  {
-    modelIds: new Set(["claude-fable-5"]),
-    levels: ["minimal", "low", "medium", "high", "xhigh", "max"],
-  },
-  {
-    modelIds: new Set(["claude-opus-5", "claude-sonnet-5", "claude-opus-4-7", "claude-opus-4-8"]),
-    levels: [...STANDARD_PI_THINKING_LEVELS, "xhigh", "max"],
-  },
-  {
-    modelIds: new Set(["claude-opus-4-6", "claude-sonnet-4-6"]),
-    levels: [...STANDARD_PI_THINKING_LEVELS, "max"],
-  },
-  {
-    modelIds: new Set(["deepseek-v4-pro"]),
+    providers: [
+      "opencode-go",
+      "qwen-token-plan",
+      "qwen-token-plan-cn",
+      "qwen-token-plan-individual",
+    ],
+    modelPattern: /deepseek-v4-(?:flash|pro)/,
     levels: ["off", "high", "max"],
   },
   {
-    modelIds: new Set(["deepseek-v4-flash"]),
+    providers: ["deepseek"],
+    modelPattern: /deepseek-v4-flash/,
     levels: ["off", "low", "high", "max"],
+  },
+  {
+    providers: ["deepseek"],
+    modelPattern: /deepseek-v4-pro/,
+    levels: ["off", "high", "max"],
+  },
+  {
+    providers: ["openrouter"],
+    modelPattern: /deepseek-v4-(?:flash|pro)/,
+    levels: ["off", "high", "xhigh"],
+  },
+  {
+    providers: ["openai-codex"],
+    modelPattern: /(?:^|[-/])gpt-5-6-(?:luna|terra|sol)(?:$|[-/:])/,
+    levels: [...STANDARD_PI_THINKING_LEVELS, "xhigh", "max"],
+  },
+  {
+    providers: ["openai-codex"],
+    modelPattern: /(?:^|[-/])gpt-5-(?:3-codex-spark|4|5)(?:$|[-/:])/,
+    levels: [...STANDARD_PI_THINKING_LEVELS, "xhigh"],
+  },
+  {
+    providers: ["opencode"],
+    modelPattern: /(?:^|[-/])gpt-5-(?:4|5)(?:$|[-/:]).*pro(?:$|[-/:])/,
+    levels: MEDIUM_TO_XHIGH,
+  },
+  {
+    providers: ["opencode"],
+    modelPattern: /(?:^|[-/])gpt-5-6-(?:luna|terra|sol)(?:$|[-/:])/,
+    levels: LOW_TO_MAX,
+  },
+  {
+    providers: ["opencode"],
+    modelPattern: /(?:^|[-/])gpt-5-(?:3-codex|4|5)(?:$|[-/:])/,
+    levels: LOW_TO_XHIGH,
+  },
+  {
+    modelPattern: /(?:^|[-/])claude-fable-5(?:$|[-/:])/,
+    levels: ["minimal", "low", "medium", "high", "xhigh", "max"],
+  },
+  {
+    modelPattern: /(?:^|[-/])claude-(?:opus-5|sonnet-5|opus-4-7|opus-4-8)(?:$|[-/:])/,
+    levels: [...STANDARD_PI_THINKING_LEVELS, "xhigh", "max"],
+  },
+  {
+    modelPattern: /(?:^|[-/])claude-(?:opus|sonnet)-4-6(?:$|[-/:])/,
+    levels: [...STANDARD_PI_THINKING_LEVELS, "max"],
   },
 ];
 
@@ -65,11 +109,19 @@ function isSeparatorLine(line: string): boolean {
 }
 
 export function getPiThinkingLevels(baseModelId: string): readonly PiThinkingLevel[] {
-  const modelId = (baseModelId.split("/").pop() ?? baseModelId).toLowerCase().replace(/[._]/g, "-");
+  const parts = baseModelId.toLowerCase().split("/");
+  const provider = parts.length > 1 ? (parts[0] ?? "") : "";
+  const modelId = (parts.length > 1 ? parts.slice(1).join("/") : (parts[0] ?? "")).replace(
+    /[._]/g,
+    "-",
+  );
 
   return (
-    PI_MODEL_THINKING_LEVELS.find((capability) => capability.modelIds.has(modelId))?.levels ??
-    STANDARD_PI_THINKING_LEVELS
+    PI_MODEL_THINKING_LEVELS.find(
+      (capability) =>
+        (!capability.providers || capability.providers.includes(provider)) &&
+        capability.modelPattern.test(modelId),
+    )?.levels ?? STANDARD_PI_THINKING_LEVELS
   );
 }
 
