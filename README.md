@@ -101,13 +101,13 @@ ai-git
 ai-git --provider gemini-cli --model gemini-3-flash-preview
 
 # Use Codex with reasoning effort baked in
-ai-git --provider codex --model gpt-5.3-codex-low
+ai-git --provider codex --model gpt-5.6-luna-low
 
 # Use OpenCode with a runtime variant
 ai-git --provider opencode --model opencode/gpt-5-nano#minimal
 
 # Use Pi with a thinking level
-ai-git --provider pi --model openai-codex/gpt-5.4-mini#low
+ai-git --provider pi --model openai-codex/gpt-5.6-luna#low
 
 # Use OpenRouter
 ai-git --provider openrouter --model anthropic/claude-sonnet-4-6
@@ -138,6 +138,11 @@ ai-git --dry-run -A
 | Cerebras         | `cerebras`         | API  | [Get API Key](https://cloud.cerebras.ai/)                                               |
 
 Configure with `ai-git configure`
+
+Codex defaults to `gpt-5.6-luna-low` and Claude Code defaults to `haiku` for fast,
+repeatable commit-message generation. Pi, OpenCode, and API provider models are discovered at
+runtime. Retired Codex configurations are migrated to the corresponding GPT-5.6 family while
+preserving their supported effort level.
 
 ## Configuration
 
@@ -192,7 +197,7 @@ The default prompt works excellently for most projects. Customize only for proje
 {
   "$schema": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
   "provider": "claude-code",
-  "model": "sonnet",
+  "model": "haiku",
   "prompt": {
     "context": "Monorepo with packages: web, mobile, shared, api, docs, infra.",
     "style": "Always use a scope from the valid list. Reference PR numbers in footer."

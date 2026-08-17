@@ -38,6 +38,14 @@ describe("parseClaudeModelId", () => {
     });
   });
 
+  it.each(["xhigh", "max"] as const)("parses Fable %s effort", (effort) => {
+    expect(parseClaudeModelId(`fable-${effort}`)).toEqual({ model: "fable", effort });
+  });
+
+  it.each(["sonnet", "opus"] as const)("parses %s max effort", (model) => {
+    expect(parseClaudeModelId(`${model}-max`)).toEqual({ model, effort: "max" });
+  });
+
   it("should return plain model without effort for sonnet", () => {
     expect(parseClaudeModelId("sonnet")).toEqual({
       model: "sonnet",
@@ -136,9 +144,50 @@ describe("claudeCodeAdapter.invoke", () => {
     const modelIndex = cmd.indexOf("--model");
     expect(cmd[modelIndex + 1]).toBe("haiku");
   });
+
+  it("passes xhigh and max effort selections to Claude Code", async () => {
+    const { claudeCodeAdapter } = await import("./claude-code.ts");
+
+    await claudeCodeAdapter.invoke({
+      model: "fable-xhigh",
+      system: "test system",
+      prompt: "test prompt",
+    });
+    await claudeCodeAdapter.invoke({
+      model: "opus-max",
+      system: "test system",
+      prompt: "test prompt",
+    });
+
+    expect(spawnCalls[0]!.cmd).toContain("xhigh");
+    expect(spawnCalls[0]!.cmd[spawnCalls[0]!.cmd.indexOf("--model") + 1]).toBe("fable");
+    expect(spawnCalls[1]!.cmd).toContain("max");
+    expect(spawnCalls[1]!.cmd[spawnCalls[1]!.cmd.indexOf("--model") + 1]).toBe("opus");
+  });
 });
 
 describe("claude-code registry", () => {
+  it("offers exactly the documented rolling aliases and effort variants", () => {
+    expect(getModelIds("claude-code")).toEqual([
+      "haiku",
+      "fable-low",
+      "fable-medium",
+      "fable-high",
+      "fable-xhigh",
+      "fable-max",
+      "sonnet-low",
+      "sonnet-medium",
+      "sonnet-high",
+      "sonnet-xhigh",
+      "sonnet-max",
+      "opus-low",
+      "opus-medium",
+      "opus-high",
+      "opus-xhigh",
+      "opus-max",
+    ]);
+  });
+
   it("should include effort variants for sonnet", () => {
     const modelIds = getModelIds("claude-code");
     expect(modelIds).toContain("sonnet-low");

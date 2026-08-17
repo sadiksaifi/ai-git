@@ -127,6 +127,12 @@ describe("models-dev catalog client", () => {
     const catalog = await getModelCatalog({ forceRefresh: true });
 
     expect(catalog.source).toBe("snapshot");
-    expect(Object.keys(catalog.providers.openai.models).length).toBeGreaterThan(0);
+    expect(Object.keys(catalog.providers.anthropic.models)).toHaveLength(13);
+    expect(Object.keys(catalog.providers.openai.models)).toHaveLength(47);
+    expect(Object.keys(catalog.providers.google.models)).toHaveLength(39);
+    expect(catalog.providers.anthropic.models["claude-fable-5"]).toBeDefined();
+    expect(catalog.providers.openai.models["gpt-5.6-luna"]).toBeDefined();
+    expect(catalog.providers.google.models["gemini-3.7-flash"]).toBeDefined();
+    expect(catalog.providers.anthropic.models["claude-3-7-sonnet-latest"]).toBeUndefined();
   });
 });

@@ -86,6 +86,44 @@ export const migrations: ConfigMigration[] = [
       return null;
     },
   },
+  {
+    id: "codex-current-model-families",
+    description: "Migrate retired Codex model IDs to supported model families",
+    migrate(config) {
+      if (config.provider !== "codex" || typeof config.model !== "string") {
+        return null;
+      }
+
+      const FAMILY_MAP = [
+        ["gpt-5.1-codex-max", "gpt-5.6-sol"],
+        ["gpt-5.1-codex-mini", "gpt-5.6-terra"],
+        ["gpt-5.3-codex", "gpt-5.6-sol"],
+        ["gpt-5.2-codex", "gpt-5.6-sol"],
+        ["gpt-5.1-codex", "gpt-5.6-sol"],
+        ["gpt-5.4-mini", "gpt-5.6-luna"],
+        ["gpt-5.4", "gpt-5.6-terra"],
+        ["gpt-5.2", "gpt-5.6-terra"],
+      ] as const;
+      const EFFORTS = new Set(["low", "medium", "high", "xhigh"]);
+
+      for (const [legacyFamily, currentFamily] of FAMILY_MAP) {
+        const effort =
+          config.model === legacyFamily
+            ? "low"
+            : config.model.startsWith(`${legacyFamily}-`)
+              ? config.model.slice(legacyFamily.length + 1)
+              : null;
+
+        if (!effort || !EFFORTS.has(effort)) continue;
+
+        const old = config.model;
+        config.model = `${currentFamily}-${effort}`;
+        return `Migrated retired Codex model '${old}' → '${config.model}'`;
+      }
+
+      return null;
+    },
+  },
 ];
 
 // ─── MIGRATION ENGINE ─────────────────────────────────────────────────

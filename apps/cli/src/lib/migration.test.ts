@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { migrateConfig, migrations, type MigrationResult } from "./migration.ts";
+import { migrateConfig, migrations } from "./migration.ts";
 
 describe("migrations registry", () => {
   it("should have unique IDs", () => {
@@ -62,12 +62,65 @@ describe("migrateConfig", () => {
     expect(result.changes).toHaveLength(0);
   });
 
-  it("should NOT migrate non-claude-code providers", () => {
-    const raw = { provider: "codex", model: "gpt-5.3-codex-low" };
+  it("should NOT apply Codex model migration to another provider", () => {
+    const raw = { provider: "openai", model: "gpt-5.3-codex-low" };
     const result = migrateConfig(raw);
     expect(result.config.model).toBe("gpt-5.3-codex-low");
     expect(result.changed).toBe(false);
     expect(result.changes).toHaveLength(0);
+  });
+
+  const codexFamilyMigrations = [
+    ["gpt-5.4-mini", "gpt-5.6-luna", ["low", "medium", "high", "xhigh"]],
+    ["gpt-5.4", "gpt-5.6-terra", ["low", "medium", "high", "xhigh"]],
+    ["gpt-5.1-codex-mini", "gpt-5.6-terra", ["low", "medium", "high"]],
+    ["gpt-5.1-codex", "gpt-5.6-sol", ["low", "medium", "high"]],
+    ["gpt-5.1-codex-max", "gpt-5.6-sol", ["low", "medium", "high"]],
+    ["gpt-5.2-codex", "gpt-5.6-sol", ["low", "medium", "high", "xhigh"]],
+    ["gpt-5.3-codex", "gpt-5.6-sol", ["low", "medium", "high", "xhigh"]],
+    ["gpt-5.2", "gpt-5.6-terra", ["low", "medium", "high", "xhigh"]],
+  ] as const;
+
+  for (const [legacyFamily, currentFamily, efforts] of codexFamilyMigrations) {
+    for (const effort of efforts) {
+      it(`migrates ${legacyFamily}-${effort} to ${currentFamily}-${effort}`, () => {
+        const result = migrateConfig({ provider: "codex", model: `${legacyFamily}-${effort}` });
+
+        expect(result.config.model).toBe(`${currentFamily}-${effort}`);
+        expect(result.changed).toBe(true);
+        expect(result.changes[0]).toContain(`${legacyFamily}-${effort}`);
+        expect(result.changes[0]).toContain(`${currentFamily}-${effort}`);
+      });
+    }
+  }
+
+  it.each(codexFamilyMigrations.map(([legacy, current]) => [legacy, `${current}-low`] as const))(
+    "migrates bare legacy Codex model %s deterministically",
+    (legacyModel, expectedModel) => {
+      expect(migrateConfig({ provider: "codex", model: legacyModel }).config.model).toBe(
+        expectedModel,
+      );
+    },
+  );
+
+  it("matches the full GPT-5.1 Codex Max family before interpreting effort suffixes", () => {
+    expect(migrateConfig({ provider: "codex", model: "gpt-5.1-codex-max" }).config.model).toBe(
+      "gpt-5.6-sol-low",
+    );
+  });
+
+  it("does not migrate the current GPT-5.3 Codex Spark family", () => {
+    const raw = { provider: "codex", model: "gpt-5.3-codex-spark-low" };
+    expect(migrateConfig(raw)).toEqual({ config: raw, changed: false, changes: [] });
+  });
+
+  it("is idempotent after a retired Codex model is migrated", () => {
+    const first = migrateConfig({ provider: "codex", model: "gpt-5.4-high" });
+    expect(migrateConfig(first.config as Record<string, unknown>)).toEqual({
+      config: first.config,
+      changed: false,
+      changes: [],
+    });
   });
 
   it("should handle both mode removal and model migration together", () => {

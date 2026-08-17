@@ -119,6 +119,7 @@ async function resolveFullConfig(
         pc.red(`Error: Unknown model '${modelId}' for provider '${providerDef.name}'.`),
       );
       console.error(pc.dim(`Available models: ${providerDef.models.map((m) => m.id).join(", ")}`));
+      console.error(pc.dim("Run `ai-git configure` to select a supported model."));
       throw new Error(`Unknown model '${modelId}' for provider '${providerDef.name}'`);
     }
     model = modelDef.id;

@@ -18,17 +18,18 @@ const PROVIDER_PRIORITY: Array<{ rank: number; aliases: RegExp[] }> = [
 ];
 
 const FAST_TIER_PATTERNS = [
-  /(?:^|[-_])(?:mini|flash|haiku|spark|fast|nano|lite|turbo|air)(?:$|[-_])/i,
+  /(?:^|[-_])(?:luna|mini|flash|haiku|spark|fast|nano|lite|turbo|air)(?:$|[-_])/i,
 ];
 const CAPABILITY_TIER_PATTERNS = [/(?:^|[-_])(?:pro|max|opus|large)(?:$|[-_])/i];
 const EFFORT_ORDER = new Map([
-  ["none", 0],
   ["minimal", 0],
   ["low", 1],
   ["medium", 2],
   ["high", 3],
   ["xhigh", 4],
   ["max", 5],
+  ["none", 6],
+  ["off", 6],
 ]);
 
 interface DynamicModelRankKeys {

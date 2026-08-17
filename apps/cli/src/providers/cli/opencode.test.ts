@@ -5,8 +5,12 @@ const verboseModels = `opencode/gpt-5-nano
 {
   "name": "GPT-5 Nano",
   "variants": {
-    "minimal": {},
-    "high": {}
+    "none": {},
+    "low": {},
+    "medium": {},
+    "high": {},
+    "xhigh": {},
+    "max": {}
   }
 }
 anthropic/claude-haiku
@@ -21,8 +25,12 @@ describe("parseOpenCodeModelsVerbose", () => {
     const { parseOpenCodeModelsVerbose } = await import("./opencode.ts");
 
     expect(parseOpenCodeModelsVerbose(verboseModels)).toEqual([
-      { id: "opencode/gpt-5-nano#minimal", name: "GPT-5 Nano (minimal)" },
+      { id: "opencode/gpt-5-nano#none", name: "GPT-5 Nano (none)" },
+      { id: "opencode/gpt-5-nano#low", name: "GPT-5 Nano (low)" },
+      { id: "opencode/gpt-5-nano#medium", name: "GPT-5 Nano (medium)" },
       { id: "opencode/gpt-5-nano#high", name: "GPT-5 Nano (high)" },
+      { id: "opencode/gpt-5-nano#xhigh", name: "GPT-5 Nano (xhigh)" },
+      { id: "opencode/gpt-5-nano#max", name: "GPT-5 Nano (max)" },
       { id: "anthropic/claude-haiku", name: "Claude Haiku" },
     ]);
   });
@@ -79,7 +87,7 @@ describe("opencodeAdapter.invoke", () => {
     const { opencodeAdapter } = await import("./opencode.ts");
 
     const result = await opencodeAdapter.invoke({
-      model: "opencode/gpt-5-nano#minimal",
+      model: "opencode/gpt-5-nano#low",
       system: "system rules",
       prompt: "diff context",
     });
@@ -93,7 +101,7 @@ describe("opencodeAdapter.invoke", () => {
       "--model",
       "opencode/gpt-5-nano",
       "--variant",
-      "minimal",
+      "low",
       "--agent",
       "ai-git",
       "--format",

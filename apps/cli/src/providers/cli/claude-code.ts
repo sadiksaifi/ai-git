@@ -1,22 +1,21 @@
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
 
-export type ClaudeEffortLevel = "low" | "medium" | "high";
+export type ClaudeEffortLevel = "low" | "medium" | "high" | "xhigh" | "max";
 
 /**
  * Parse a virtual Claude model ID into its base model and optional effort level.
  * e.g. "sonnet-high" → { model: "sonnet", effort: "high" }
  * Falls back to using the full ID as model with no effort.
  *
- * Note: This regex will parse "haiku-high" into { model: "haiku", effort: "high" },
- * but Haiku does NOT support effort levels. The registry deliberately excludes
- * haiku-low/medium/high variants, so invalid IDs like "haiku-high" are caught
+ * Note: This parser accepts a valid effort suffix for any base ID, but Haiku does
+ * not support effort. The registry deliberately excludes Haiku variants, so they are caught
  * at config validation time, not here.
  */
 export function parseClaudeModelId(virtualId: string): {
   model: string;
   effort?: ClaudeEffortLevel;
 } {
-  const match = virtualId.match(/^(.+)-(low|medium|high)$/);
+  const match = virtualId.match(/^(.+)-(low|medium|high|xhigh|max)$/);
   if (match?.[1] && match[2]) {
     return { model: match[1], effort: match[2] as ClaudeEffortLevel };
   }

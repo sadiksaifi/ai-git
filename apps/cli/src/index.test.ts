@@ -298,6 +298,65 @@ describe("ai-git CLI", () => {
     expect(backupConfig.model).toBe("sonnet");
   });
 
+  it("migrates a retired Codex config on disk before dry-run", async () => {
+    const homeDir = createTestHome({ provider: "codex", model: "gpt-5.4-mini-xhigh" });
+    const noProviderPath = await createPathWithoutProviderCLI();
+    const repoDir = createGitRepo();
+    fs.writeFileSync(path.join(repoDir, "README.md"), "updated\n");
+
+    const result = await runCLI(["--dry-run", "-A"], {
+      cwd: repoDir,
+      homeDir,
+      pathEnv: noProviderPath,
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("DRY RUN: SYSTEM PROMPT");
+
+    const configPath = path.join(homeDir, ".config", "ai-git", "config.json");
+    expect(JSON.parse(fs.readFileSync(configPath, "utf8")).model).toBe("gpt-5.6-luna-xhigh");
+    const backupFile = fs
+      .readdirSync(path.dirname(configPath))
+      .find((file) => file.startsWith("config.json.") && file.endsWith(".bak"));
+    expect(backupFile).toBeDefined();
+  });
+
+  it.each([
+    ["codex", "gpt-5.6-luna-low"],
+    ["claude-code", "haiku"],
+    ["gemini-cli", "gemini-3-flash-preview"],
+  ])("runs a dry-run with the static %s adapter selection", async (provider, model) => {
+    const homeDir = createTestHome({ provider, model });
+    const noProviderPath = await createPathWithoutProviderCLI();
+    const repoDir = createGitRepo();
+    fs.writeFileSync(path.join(repoDir, "README.md"), "updated\n");
+
+    const result = await runCLI(["--dry-run", "-A"], {
+      cwd: repoDir,
+      homeDir,
+      pathEnv: noProviderPath,
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("DRY RUN: SYSTEM PROMPT");
+  });
+
+  it("rejects a retired Codex CLI override with reconfiguration guidance", async () => {
+    const homeDir = createTestHome({ provider: "codex", model: "gpt-5.6-luna-low" });
+    const noProviderPath = await createPathWithoutProviderCLI();
+    const repoDir = createGitRepo();
+
+    const result = await runCLI(["--provider", "codex", "--model", "gpt-5.4-low"], {
+      cwd: repoDir,
+      homeDir,
+      pathEnv: noProviderPath,
+    });
+
+    expect(result.stderr).toContain("Unknown model 'gpt-5.4-low'");
+    expect(result.stderr).toContain("ai-git configure");
+    expect(result.exitCode).toBe(1);
+  });
+
   it("should work with effort-based model IDs in dry-run", async () => {
     const homeDir = createTestHome({
       provider: "claude-code",

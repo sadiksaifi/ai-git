@@ -103,6 +103,13 @@ async function main(): Promise<void> {
   const targetFile = path.resolve(import.meta.dir, "../src/providers/api/models/snapshot.ts");
 
   await Bun.write(targetFile, renderSnapshotFile(snapshot));
+  const formatProcess = Bun.spawn([process.execPath, "x", "oxfmt", "--write", targetFile], {
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  if ((await formatProcess.exited) !== 0) {
+    throw new Error(`Failed to format ${targetFile}`);
+  }
 
   for (const providerId of PROVIDERS) {
     const count = Object.keys(snapshot[providerId].models).length;
