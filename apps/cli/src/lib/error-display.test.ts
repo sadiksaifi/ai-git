@@ -34,15 +34,15 @@ describe("categorizeError", () => {
 
   test("CLI adapter → cli-error", () => {
     const cliAdapter: ProviderAdapter = {
-      providerId: "gemini-cli",
+      providerId: "antigravity-cli",
       mode: "cli",
       invoke: async () => "",
       checkAvailable: async () => true,
     };
-    const error = new Error("Gemini CLI error (exit code 1):\ncommand not found");
+    const error = new Error("Antigravity CLI error (exit code 1):\ncommand not found");
     const result = categorizeError(error, cliAdapter);
     expect(result.category).toBe("cli-error");
-    expect(result.providerName).toBe("Gemini CLI");
+    expect(result.providerName).toBe("Antigravity CLI");
   });
 
   test("no adapter → cli-error with fallback provider name", () => {
@@ -98,11 +98,11 @@ describe("displayAIError", () => {
     const output = captureStderr(() =>
       displayAIError({
         category: "cli-error",
-        message: "Gemini CLI error (exit code 1):\ncommand not found",
-        providerName: "Gemini CLI",
+        message: "Antigravity CLI error (exit code 1):\ncommand not found",
+        providerName: "Antigravity CLI",
       }),
     );
-    expect(output).toContain("Gemini CLI error (exit code 1):");
+    expect(output).toContain("Antigravity CLI error (exit code 1):");
     expect(output).toContain("command not found");
   });
 });

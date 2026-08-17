@@ -4,7 +4,7 @@
 
 /**
  * Connection mode - how we communicate with the AI provider.
- * - "cli": Uses installed CLI tools (claude-code, gemini-cli, codex)
+ * - "cli": Uses installed CLI tools (claude-code, antigravity-cli, codex)
  * - "api": Uses API calls via Vercel AI SDK (OpenRouter, OpenAI, Anthropic, Gemini)
  */
 export type Mode = "cli" | "api";
@@ -25,7 +25,7 @@ export interface ModelDefinition {
  * Provider definition - represents an AI service.
  */
 export interface ProviderDefinition {
-  /** Unique provider identifier (e.g., "claude-code", "gemini-cli") */
+  /** Unique provider identifier (e.g., "claude-code", "antigravity-cli") */
   id: string;
   /** Human-readable provider name (e.g., "Claude", "Google Gemini") */
   name: string;

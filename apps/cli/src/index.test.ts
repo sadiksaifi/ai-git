@@ -324,8 +324,8 @@ describe("ai-git CLI", () => {
   it.each([
     ["codex", "gpt-5.6-luna-low"],
     ["claude-code", "haiku"],
-    ["gemini-cli", "gemini-3-flash-preview"],
-  ])("runs a dry-run with the static %s adapter selection", async (provider, model) => {
+    ["antigravity-cli", "gemini-3.7-flash-low"],
+  ])("runs a dry-run with the %s adapter selection", async (provider, model) => {
     const homeDir = createTestHome({ provider, model });
     const noProviderPath = await createPathWithoutProviderCLI();
     const repoDir = createGitRepo();

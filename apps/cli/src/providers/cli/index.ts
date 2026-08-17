@@ -23,7 +23,7 @@ const cliAdapters: Map<string, CLIProviderAdapter> = new Map([
 
 /**
  * Get a CLI adapter by provider ID.
- * @param providerId - The provider ID (e.g., "gemini-cli", "claude-code")
+ * @param providerId - The provider ID (e.g., "antigravity-cli", "claude-code")
  * @returns The CLI adapter or undefined if not found
  */
 export function getCLIAdapter(providerId: string): CLIProviderAdapter | undefined {
@@ -32,7 +32,7 @@ export function getCLIAdapter(providerId: string): CLIProviderAdapter | undefine
 
 /**
  * Get a CLI adapter by binary name.
- * @param binary - The binary name (e.g., "gemini", "claude")
+ * @param binary - The binary name (e.g., "agy", "claude")
  * @returns The CLI adapter or undefined if not found
  */
 export function getCLIAdapterByBinary(binary: string): CLIProviderAdapter | undefined {

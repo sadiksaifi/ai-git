@@ -154,14 +154,14 @@ export const PROVIDERS: ProviderDefinition[] = [
 // ==============================================================================
 
 /**
- * Find a provider by its ID (e.g., "gemini-cli", "claude-code").
+ * Find a provider by its ID (e.g., "antigravity-cli", "claude-code").
  */
 export function getProviderById(id: string): ProviderDefinition | undefined {
   return PROVIDERS.find((p) => p.id === id);
 }
 
 /**
- * Find a provider by its binary name (e.g., "gemini", "claude").
+ * Find a provider by its binary name (e.g., "agy", "claude").
  * Only applicable for CLI mode providers.
  */
 export function getProviderByBinary(binary: string): ProviderDefinition | undefined {

@@ -740,9 +740,9 @@ describe("generationMachine", () => {
   test("AC-3: CLI error invokes displayAIErrorActor with CLI adapter", async () => {
     let capturedInput: Record<string, unknown> | null = null;
     const cliAdapter = {
-      providerId: "gemini-cli",
+      providerId: "antigravity-cli",
       mode: "cli" as const,
-      binary: "gemini",
+      binary: "agy",
       invoke: async () => "",
       checkAvailable: async () => true,
     };
@@ -758,7 +758,7 @@ describe("generationMachine", () => {
         })),
         // @ts-expect-error — XState v5 test mock type inference
         invokeAIActor: fromPromise(async () => {
-          throw new Error("Gemini CLI error (exit code 1):\ncommand not found");
+          throw new Error("Antigravity CLI error (exit code 1):\ncommand not found");
         }),
         // @ts-expect-error — XState v5 test mock type inference
         displayAIErrorActor: fromPromise(async ({ input }) => {
@@ -771,7 +771,7 @@ describe("generationMachine", () => {
     const snap = await waitFor(actor, (s) => s.status === "done");
     expect(snap.output!.aborted).toBe(true);
     expect(capturedInput).not.toBeNull();
-    expect((capturedInput!.adapter as typeof cliAdapter).providerId).toBe("gemini-cli");
+    expect((capturedInput!.adapter as typeof cliAdapter).providerId).toBe("antigravity-cli");
     expect((capturedInput!.adapter as typeof cliAdapter).mode).toBe("cli");
   });
 

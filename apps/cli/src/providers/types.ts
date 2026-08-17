@@ -22,7 +22,7 @@ export interface InvokeOptions {
  * to handle their specific invocation patterns.
  */
 export interface ProviderAdapter {
-  /** Unique provider identifier (e.g., "gemini-cli", "claude-code") */
+  /** Unique provider identifier (e.g., "antigravity-cli", "claude-code") */
   providerId: string;
 
   /** Connection mode (cli or api) */
@@ -49,7 +49,7 @@ export interface ProviderAdapter {
  */
 export interface CLIProviderAdapter extends ProviderAdapter {
   mode: "cli";
-  /** CLI binary name (e.g., "gemini", "claude") */
+  /** CLI binary name (e.g., "agy", "claude") */
   binary: string;
 
   /**
