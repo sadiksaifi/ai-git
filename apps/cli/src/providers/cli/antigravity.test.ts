@@ -352,6 +352,48 @@ describe("antigravityAdapter.invoke", () => {
     expect(existsSync(profileRoot)).toBe(false);
   });
 
+  it("rejects a model absent from the account catalog before sending the prompt", async () => {
+    let profileRoot = "";
+    let generationStarted = false;
+    (Bun as any).spawn = (command: string[]) => {
+      if (command[1] === "--version") {
+        return { stdout: stream("1.1.13\n"), stderr: stream(""), exited: Promise.resolve(0) };
+      }
+      profileRoot = command.find((argument) => argument.startsWith("--gemini_dir="))!.slice(13);
+      if (command.at(-1) === "models") {
+        const logDir = join(profileRoot, "antigravity-cli", "log");
+        mkdirSync(logDir, { recursive: true });
+        writeFileSync(
+          join(logDir, "cli-probe.log"),
+          [
+            `CLI app data directory: ${profileRoot}/antigravity-cli`,
+            "CLI settings initialized: permissions=&{Allow:[] Deny:[read_file(*) write_file(*) read_url(*) execute_url(*) command(*) mcp(*)] Ask:[]}, toolPermission=strict",
+            "loaded 1 named hooks from 1 hooks.json file(s)",
+          ].join("\n"),
+        );
+        return {
+          stdout: stream(
+            JSON.stringify({
+              status: "SUCCESS",
+              command: { data: { models: [{ id: "available-model", label: "Available" }] } },
+            }),
+          ),
+          stderr: stream(""),
+          exited: Promise.resolve(0),
+        };
+      }
+      generationStarted = true;
+      throw new Error("generation should not start");
+    };
+    const { antigravityAdapter } = await import("./antigravity.ts");
+
+    await expect(
+      antigravityAdapter.invoke({ model: "missing-model", system: "system", prompt: "diff" }),
+    ).rejects.toThrow("missing-model' is not available for the signed-in Antigravity account");
+    expect(generationStarted).toBe(false);
+    expect(existsSync(profileRoot)).toBe(false);
+  });
+
   it.each([
     [JSON.stringify({ status: "CANCELED", response: "" }), "", 0, "CANCELED"],
     [

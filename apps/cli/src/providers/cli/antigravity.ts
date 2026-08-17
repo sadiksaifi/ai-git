@@ -293,7 +293,7 @@ async function removeIsolatedRuntime(runtime: IsolatedRuntime): Promise<void> {
   await rm(runtime.root, { recursive: true, force: true });
 }
 
-async function assertIsolatedProfile(runtime: IsolatedRuntime): Promise<void> {
+async function assertIsolatedProfile(runtime: IsolatedRuntime, model: string): Promise<void> {
   const proc = Bun.spawn(
     ["agy", `--gemini_dir=${runtime.root}`, "--output-format", "json", "models"],
     {
@@ -342,6 +342,15 @@ async function assertIsolatedProfile(runtime: IsolatedRuntime): Promise<void> {
   ) {
     throw new Error(
       "Antigravity CLI does not support the required isolated profile contract. Update `agy` before using this provider.",
+    );
+  }
+
+  const availableModelIds = (envelope.command?.data?.models ?? []).flatMap((entry) =>
+    typeof entry.id === "string" ? [entry.id] : [],
+  );
+  if (!availableModelIds.includes(model)) {
+    throw new Error(
+      `Antigravity model '${model}' is not available for the signed-in Antigravity account. Run \`ai-git configure\` to select an available model.`,
     );
   }
 }
@@ -401,7 +410,7 @@ export const antigravityAdapter: CLIProviderAdapter = {
     await assertSupportedVersion();
     const runtime = await createIsolatedRuntime(system);
     try {
-      await assertIsolatedProfile(runtime);
+      await assertIsolatedProfile(runtime, model);
       const proc = Bun.spawn(
         [
           "agy",
