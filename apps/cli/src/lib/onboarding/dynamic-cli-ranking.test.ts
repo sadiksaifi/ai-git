@@ -91,6 +91,42 @@ describe("rankDynamicCLIModels", () => {
     ]);
   });
 
+  it("prefers Luna and Spark fast families before broad GPT families", async () => {
+    const { rankDynamicCLIModels } = await import("./dynamic-cli-ranking.ts");
+    const models: CachedModel[] = [
+      { id: "openai-codex/gpt-5.6-sol#minimal", name: "GPT-5.6 Sol (minimal)" },
+      { id: "openai-codex/gpt-5.6-luna#low", name: "GPT-5.6 Luna (low)" },
+      { id: "openai-codex/gpt-5.3-codex#minimal", name: "GPT-5.3 Codex (minimal)" },
+      { id: "openai-codex/gpt-5.3-codex-spark#low", name: "GPT-5.3 Codex Spark (low)" },
+    ];
+
+    expect(rankDynamicCLIModels(models, null).map((model) => model.id)).toEqual([
+      "openai-codex/gpt-5.6-luna#low",
+      "openai-codex/gpt-5.6-sol#minimal",
+      "openai-codex/gpt-5.3-codex-spark#low",
+      "openai-codex/gpt-5.3-codex#minimal",
+    ]);
+  });
+
+  it("uses minimal or low before disabled and higher effort variants", async () => {
+    const { rankDynamicCLIModels } = await import("./dynamic-cli-ranking.ts");
+    const models: CachedModel[] = [
+      { id: "openai-codex/gpt-5.6-luna#none", name: "GPT-5.6 Luna (none)" },
+      { id: "openai-codex/gpt-5.6-luna#off", name: "GPT-5.6 Luna (off)" },
+      { id: "openai-codex/gpt-5.6-luna#high", name: "GPT-5.6 Luna (high)" },
+      { id: "openai-codex/gpt-5.6-luna#low", name: "GPT-5.6 Luna (low)" },
+      { id: "openai-codex/gpt-5.6-luna#minimal", name: "GPT-5.6 Luna (minimal)" },
+    ];
+
+    expect(rankDynamicCLIModels(models, null).map((model) => model.id)).toEqual([
+      "openai-codex/gpt-5.6-luna#minimal",
+      "openai-codex/gpt-5.6-luna#low",
+      "openai-codex/gpt-5.6-luna#high",
+      "openai-codex/gpt-5.6-luna#none",
+      "openai-codex/gpt-5.6-luna#off",
+    ]);
+  });
+
   it("keeps unknown ties in original CLI order", async () => {
     const { rankDynamicCLIModels } = await import("./dynamic-cli-ranking.ts");
     const models: CachedModel[] = [

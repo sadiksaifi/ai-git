@@ -74,13 +74,13 @@ function resolveTierForCatalogProvider(
   const id = modelId.toLowerCase();
 
   if (catalogProvider === "anthropic") {
-    if (/claude-(sonnet|haiku)-4-5|claude-3-7-sonnet|claude-3-5-haiku/.test(id)) {
-      return "default";
-    }
     if (/haiku|mini|flash|lite/.test(id)) {
       return "fast";
     }
-    if (/thinking|opus/.test(id)) {
+    if (/claude-sonnet-(?:5|4-[5-8])|claude-3-7-sonnet/.test(id)) {
+      return "default";
+    }
+    if (/thinking|opus|fable/.test(id)) {
       return "reasoning";
     }
     if (/claude-3-(haiku|sonnet|opus)/.test(id) || isLegacyModel(metadata)) {
@@ -90,15 +90,15 @@ function resolveTierForCatalogProvider(
   }
 
   if (catalogProvider === "openai") {
+    if (/luna|mini|nano|flash|lite|spark/.test(id)) {
+      return "fast";
+    }
     if (
       /^gpt-5(?:$|\.|-chat-latest|-pro)/.test(id) ||
       /^gpt-4\.1$/.test(id) ||
       /^gpt-4o$/.test(id)
     ) {
       return "default";
-    }
-    if (/mini|nano|flash|lite/.test(id)) {
-      return "fast";
     }
     if (/^o\d|reason|deep-research|codex/.test(id)) {
       return "reasoning";
@@ -109,11 +109,11 @@ function resolveTierForCatalogProvider(
     return "other";
   }
 
-  if (/gemini-(3\.1-pro-preview|3-pro-preview|2\.5-pro|flash-latest)/.test(id)) {
-    return "default";
-  }
   if (/flash-lite|flash/.test(id)) {
     return "fast";
+  }
+  if (/gemini-(3\.1-pro-preview|3-pro-preview|2\.5-pro)/.test(id)) {
+    return "default";
   }
   if (/thinking|pro/.test(id)) {
     return "reasoning";

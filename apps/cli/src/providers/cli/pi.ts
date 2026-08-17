@@ -1,21 +1,87 @@
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
 import { parseDynamicVariantModel, readProcessOutput, type DynamicCLIModel } from "./dynamic.ts";
 
-type PiThinkingLevel = "minimal" | "low" | "medium" | "high" | "xhigh";
+type PiThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 
-const PI_THINKING_LEVELS: PiThinkingLevel[] = ["minimal", "low", "medium", "high"];
-const PI_XHIGH_CAPABLE_PATTERNS = [
-  "gpt-5.2",
-  "gpt-5.3",
-  "gpt-5.4",
-  "gpt-5.5",
-  "deepseek-v4-pro",
-  "deepseek-v4-flash",
-  "opus-4-6",
-  "opus-4.6",
-  "opus-4-7",
-  "opus-4.7",
-] as const;
+const STANDARD_PI_THINKING_LEVELS: PiThinkingLevel[] = ["off", "minimal", "low", "medium", "high"];
+
+const LOW_TO_XHIGH: PiThinkingLevel[] = ["low", "medium", "high", "xhigh"];
+const MEDIUM_TO_XHIGH: PiThinkingLevel[] = ["medium", "high", "xhigh"];
+const LOW_TO_MAX: PiThinkingLevel[] = ["low", "medium", "high", "xhigh", "max"];
+
+const PI_MODEL_THINKING_LEVELS: ReadonlyArray<{
+  providers?: readonly string[];
+  modelPattern: RegExp;
+  levels: readonly PiThinkingLevel[];
+}> = [
+  {
+    providers: ["opencode"],
+    modelPattern: /deepseek-v4-(?:flash|pro)/,
+    levels: ["high", "max"],
+  },
+  {
+    providers: [
+      "opencode-go",
+      "qwen-token-plan",
+      "qwen-token-plan-cn",
+      "qwen-token-plan-individual",
+    ],
+    modelPattern: /deepseek-v4-(?:flash|pro)/,
+    levels: ["off", "high", "max"],
+  },
+  {
+    providers: ["deepseek"],
+    modelPattern: /deepseek-v4-flash/,
+    levels: ["off", "low", "high", "max"],
+  },
+  {
+    providers: ["deepseek"],
+    modelPattern: /deepseek-v4-pro/,
+    levels: ["off", "high", "max"],
+  },
+  {
+    providers: ["openrouter"],
+    modelPattern: /deepseek-v4-(?:flash|pro)/,
+    levels: ["off", "high", "xhigh"],
+  },
+  {
+    providers: ["openai-codex"],
+    modelPattern: /(?:^|[-/])gpt-5-6-(?:luna|terra|sol)(?:$|[-/:])/,
+    levels: [...STANDARD_PI_THINKING_LEVELS, "xhigh", "max"],
+  },
+  {
+    providers: ["openai-codex"],
+    modelPattern: /(?:^|[-/])gpt-5-(?:3-codex-spark|4|5)(?:$|[-/:])/,
+    levels: [...STANDARD_PI_THINKING_LEVELS, "xhigh"],
+  },
+  {
+    providers: ["opencode"],
+    modelPattern: /(?:^|[-/])gpt-5-(?:4|5)(?:$|[-/:]).*pro(?:$|[-/:])/,
+    levels: MEDIUM_TO_XHIGH,
+  },
+  {
+    providers: ["opencode"],
+    modelPattern: /(?:^|[-/])gpt-5-6-(?:luna|terra|sol)(?:$|[-/:])/,
+    levels: LOW_TO_MAX,
+  },
+  {
+    providers: ["opencode"],
+    modelPattern: /(?:^|[-/])gpt-5-(?:3-codex|4|5)(?:$|[-/:])/,
+    levels: LOW_TO_XHIGH,
+  },
+  {
+    modelPattern: /(?:^|[-/])claude-fable-5(?:$|[-/:])/,
+    levels: ["minimal", "low", "medium", "high", "xhigh", "max"],
+  },
+  {
+    modelPattern: /(?:^|[-/])claude-(?:opus-5|sonnet-5|opus-4-7|opus-4-8)(?:$|[-/:])/,
+    levels: [...STANDARD_PI_THINKING_LEVELS, "xhigh", "max"],
+  },
+  {
+    modelPattern: /(?:^|[-/])claude-(?:opus|sonnet)-4-6(?:$|[-/:])/,
+    levels: [...STANDARD_PI_THINKING_LEVELS, "max"],
+  },
+];
 
 function splitTableRow(line: string): string[] {
   const trimmed = line.trim();
@@ -42,9 +108,21 @@ function isSeparatorLine(line: string): boolean {
   return /^[\s─━\-+|│┌┐└┘├┤┬┴┼]+$/.test(line);
 }
 
-export function isPiXhighCapableModel(baseModelId: string): boolean {
-  const normalized = baseModelId.toLowerCase();
-  return PI_XHIGH_CAPABLE_PATTERNS.some((pattern) => normalized.includes(pattern));
+export function getPiThinkingLevels(baseModelId: string): readonly PiThinkingLevel[] {
+  const parts = baseModelId.toLowerCase().split("/");
+  const provider = parts.length > 1 ? (parts[0] ?? "") : "";
+  const modelId = (parts.length > 1 ? parts.slice(1).join("/") : (parts[0] ?? "")).replace(
+    /[._]/g,
+    "-",
+  );
+
+  return (
+    PI_MODEL_THINKING_LEVELS.find(
+      (capability) =>
+        (!capability.providers || capability.providers.includes(provider)) &&
+        capability.modelPattern.test(modelId),
+    )?.levels ?? STANDARD_PI_THINKING_LEVELS
+  );
 }
 
 function buildPiModelOptions(provider: string, model: string, thinking: string): DynamicCLIModel[] {
@@ -53,9 +131,7 @@ function buildPiModelOptions(provider: string, model: string, thinking: string):
     return [{ id: baseId, name: baseId }];
   }
 
-  const levels = isPiXhighCapableModel(baseId)
-    ? [...PI_THINKING_LEVELS, "xhigh" as const]
-    : PI_THINKING_LEVELS;
+  const levels = getPiThinkingLevels(baseId);
   return levels.map((level) => ({ id: `${baseId}#${level}`, name: `${baseId} (${level})` }));
 }
 

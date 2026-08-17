@@ -1,17 +1,17 @@
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
 
-type ReasoningEffort = "xhigh" | "high" | "medium" | "low";
+export type ReasoningEffort = "low" | "medium" | "high" | "xhigh" | "max";
 
 /**
  * Parse a virtual model ID into its base model and reasoning effort.
- * e.g. "gpt-5.4-high" → { model: "gpt-5.4", effort: "high" }
+ * e.g. "gpt-5.6-sol-high" → { model: "gpt-5.6-sol", effort: "high" }
  * Falls back to using the full ID as model with "medium" effort.
  */
-function parseModelId(virtualId: string): {
+export function parseModelId(virtualId: string): {
   model: string;
   effort: ReasoningEffort;
 } {
-  const match = virtualId.match(/^(.+)-(xhigh|high|medium|low)$/);
+  const match = virtualId.match(/^(.+)-(low|medium|high|xhigh|max)$/);
   if (match?.[1] && match[2]) {
     return { model: match[1], effort: match[2] as ReasoningEffort };
   }
