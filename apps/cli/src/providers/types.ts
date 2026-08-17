@@ -67,6 +67,8 @@ export interface APIModelDefinition {
   id: string;
   /** Human-readable display name */
   name: string;
+  /** Whether setup should recommend this account-compatible model */
+  isRecommended?: boolean;
   /** For OpenRouter: the original provider (anthropic, openai, google) */
   provider?: string;
 }
