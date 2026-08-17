@@ -13,6 +13,20 @@ interface AntigravityEnvelope {
   };
 }
 
+interface ModelRank {
+  model: APIModelDefinition;
+  originalIndex: number;
+  familyRank: number;
+  version: number[];
+  effortRank: number;
+}
+
+const EFFORT_RANK = new Map([
+  ["low", 0],
+  ["medium", 1],
+  ["high", 2],
+]);
+
 function parseVersion(value: string): number[] | null {
   const match = value.trim().match(/^(\d+)\.(\d+)\.(\d+)/);
   return match ? match.slice(1).map(Number) : null;
@@ -24,6 +38,65 @@ function isSupportedVersion(version: number[]): boolean {
     if (difference !== 0) return difference > 0;
   }
   return true;
+}
+
+function compareVersionDescending(left: number[], right: number[]): number {
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const difference = (right[index] ?? 0) - (left[index] ?? 0);
+    if (difference !== 0) return difference;
+  }
+  return 0;
+}
+
+function modelRank(model: APIModelDefinition, originalIndex: number): ModelRank {
+  const gemini = model.id.match(
+    /^gemini-(\d+(?:\.\d+)+)-(flash|pro)(?:-(low|medium|high))?$/i,
+  );
+  if (gemini?.[1] && gemini[2]) {
+    return {
+      model,
+      originalIndex,
+      familyRank: gemini[2].toLowerCase() === "flash" ? 0 : 1,
+      version: gemini[1].split(".").map(Number),
+      effortRank: EFFORT_RANK.get(gemini[3]?.toLowerCase() ?? "") ?? 99,
+    };
+  }
+
+  const lowerId = model.id.toLowerCase();
+  return {
+    model,
+    originalIndex,
+    familyRank: lowerId.startsWith("claude-sonnet-")
+      ? 2
+      : lowerId.startsWith("claude-opus-")
+        ? 3
+        : 4,
+    version: [],
+    effortRank: 0,
+  };
+}
+
+function rankModels(models: APIModelDefinition[]): APIModelDefinition[] {
+  const ranked = models
+    .map(modelRank)
+    .sort((left, right) => {
+      const family = left.familyRank - right.familyRank;
+      if (family !== 0) return family;
+      if (left.familyRank <= 1) {
+        const version = compareVersionDescending(left.version, right.version);
+        if (version !== 0) return version;
+        const effort = left.effortRank - right.effortRank;
+        if (effort !== 0) return effort;
+      }
+      return left.originalIndex - right.originalIndex;
+    })
+    .map((entry) => entry.model);
+
+  return ranked.map((model, index) => ({
+    ...model,
+    isRecommended: index === 0 || undefined,
+  }));
 }
 
 async function assertSupportedVersion(): Promise<void> {
@@ -62,7 +135,7 @@ function parseModels(stdout: string): APIModelDefinition[] {
     );
   }
 
-  return models.map((model, index) => ({ ...model, isRecommended: index === 0 || undefined }));
+  return rankModels(models);
 }
 
 export const antigravityAdapter: CLIProviderAdapter = {
