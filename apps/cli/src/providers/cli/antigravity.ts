@@ -1,4 +1,14 @@
-import { chmod, lstat, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import type { CLIProviderAdapter, InvokeOptions, APIModelDefinition } from "../types.ts";
@@ -65,9 +75,7 @@ function compareVersionDescending(left: number[], right: number[]): number {
 }
 
 function modelRank(model: APIModelDefinition, originalIndex: number): ModelRank {
-  const gemini = model.id.match(
-    /^gemini-(\d+(?:\.\d+)+)-(flash|pro)(?:-(low|medium|high))?$/i,
-  );
+  const gemini = model.id.match(/^gemini-(\d+(?:\.\d+)+)-(flash|pro)(?:-(low|medium|high))?$/i);
   if (gemini?.[1] && gemini[2]) {
     return {
       model,
@@ -163,9 +171,7 @@ async function assertSupportedVersion(): Promise<void> {
   const version = parseVersion(stdout || stderr);
 
   if (exitCode !== 0 || !version || !isSupportedVersion(version)) {
-    throw new Error(
-      "Antigravity CLI 1.1.13 or newer is required. Run `agy update` and try again.",
-    );
+    throw new Error("Antigravity CLI 1.1.13 or newer is required. Run `agy update` and try again.");
   }
 }
 
@@ -173,7 +179,7 @@ function denyHookCommand(): string {
   const output = JSON.stringify({ decision: "deny", reason: DENY_REASON });
   if (process.platform === "win32") {
     const escaped = output.replace(/'/g, "''");
-    return `powershell -NoProfile -NonInteractive -Command \"$input | Out-Null; [Console]::Out.Write('${escaped}')\"`;
+    return `powershell -NoProfile -NonInteractive -Command "$input | Out-Null; [Console]::Out.Write('${escaped}')"`;
   }
   return `printf '%s\\n' '${output.replace(/'/g, `'\\''`)}'`;
 }
@@ -185,10 +191,7 @@ export async function seedAntigravityAuthentication(
   if (process.platform === "win32") return;
 
   const geminiRoot = join(homeRoot, ".gemini");
-  const candidates = [
-    "antigravity-cli/antigravity-oauth-token",
-    "google_accounts.json",
-  ];
+  const candidates = ["antigravity-cli/antigravity-oauth-token", "google_accounts.json"];
 
   for (const relativePath of candidates) {
     const source = join(geminiRoot, relativePath);
@@ -292,14 +295,7 @@ async function removeIsolatedRuntime(runtime: IsolatedRuntime): Promise<void> {
 
 async function assertIsolatedProfile(runtime: IsolatedRuntime): Promise<void> {
   const proc = Bun.spawn(
-    [
-      "agy",
-      `--gemini_dir=${runtime.root}`,
-      "--output-format",
-      "json",
-      "-p",
-      "/config",
-    ],
+    ["agy", `--gemini_dir=${runtime.root}`, "--output-format", "json", "models"],
     {
       cwd: runtime.workspace,
       stdout: "pipe",
@@ -313,24 +309,36 @@ async function assertIsolatedProfile(runtime: IsolatedRuntime): Promise<void> {
     envelope = JSON.parse(stdout) as AntigravityEnvelope;
   } catch {
     throw new Error(
-      `Antigravity CLI does not support the required isolated profile contract: ${stderr.trim() || "invalid /config response"}`,
+      `Antigravity CLI does not support the required isolated profile contract: ${stderr.trim() || "invalid model-list response"}`,
     );
   }
 
-  const deny = envelope.command?.data?.config?.permissions?.deny ?? [];
-  const requiredDeny = [
-    "read_file(*)",
-    "write_file(*)",
-    "read_url(*)",
-    "execute_url(*)",
-    "command(*)",
-    "mcp(*)",
-  ];
+  let logText = "";
+  try {
+    const logDir = join(runtime.root, "antigravity-cli", "log");
+    const logFiles = (await readdir(logDir)).filter((file) => file.endsWith(".log")).sort();
+    logText = await readFile(join(logDir, logFiles.at(-1) ?? ""), "utf8");
+  } catch {
+    // Missing isolated logs fail the contract check below.
+  }
+
+  let conversationFiles: string[] = [];
+  try {
+    conversationFiles = await readdir(join(runtime.root, "antigravity-cli", "conversations"));
+  } catch {
+    // A missing conversation directory is the expected read-only probe result.
+  }
+
+  const expectedAppData = `CLI app data directory: ${join(runtime.root, "antigravity-cli")}`;
+  const expectedPermissions =
+    "Deny:[read_file(*) write_file(*) read_url(*) execute_url(*) command(*) mcp(*)]";
   if (
     exitCode !== 0 ||
     envelope.status !== "SUCCESS" ||
-    envelope.command?.data?.config?.enableTerminalSandbox !== true ||
-    !requiredDeny.every((rule) => deny.includes(rule))
+    !logText.includes(expectedAppData) ||
+    !logText.includes(expectedPermissions) ||
+    !logText.includes("loaded 1 named hooks from 1 hooks.json file(s)") ||
+    conversationFiles.some((file) => /\.(?:db|db-wal|db-shm)$/.test(file))
   ) {
     throw new Error(
       "Antigravity CLI does not support the required isolated profile contract. Update `agy` before using this provider.",

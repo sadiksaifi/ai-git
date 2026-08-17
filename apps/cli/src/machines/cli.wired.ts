@@ -72,10 +72,13 @@ async function resolveFullConfig(
   _version: string, // kept for future use (e.g. version-specific model validation)
   loaded?: { userConfig?: UserConfig; projectConfig?: UserConfig },
 ): Promise<ConfigResolutionResult> {
-  const resolvedConfig = await resolveConfigAsync({
-    provider: options.provider,
-    model: options.model,
-  }, loaded);
+  const resolvedConfig = await resolveConfigAsync(
+    {
+      provider: options.provider,
+      model: options.model,
+    },
+    loaded,
+  );
 
   // Validate provider (Bug #2 fix: use dynamic PROVIDERS list)
   const providerDef = getProviderById(resolvedConfig.provider);

@@ -135,9 +135,7 @@ describe("antigravityAdapter.fetchModels", () => {
 
     const models = await antigravityAdapter.fetchModels!();
 
-    expect(models.find((model) => model.isRecommended)?.id).toBe(
-      "gemini-3.7-flash-medium",
-    );
+    expect(models.find((model) => model.isRecommended)?.id).toBe("gemini-3.7-flash-medium");
   });
 
   it("rejects an unsupported Antigravity version before model discovery", async () => {
@@ -190,9 +188,7 @@ describe("selectAntigravityMigrationModel", () => {
       "gemini-2.5-flash",
       "gemini-2.5-flash-lite",
     ]) {
-      expect(selectAntigravityMigrationModel(legacyModel, models)).toBe(
-        "gemini-3.8-flash-low",
-      );
+      expect(selectAntigravityMigrationModel(legacyModel, models)).toBe("gemini-3.8-flash-low");
     }
     for (const legacyModel of [
       "gemini-3.1-pro-preview",
@@ -252,27 +248,27 @@ describe("antigravityAdapter.invoke", () => {
         return { stdout: stream("1.1.13\n"), stderr: stream(""), exited: Promise.resolve(0) };
       }
 
-      if (command.at(-1) === "/config") {
+      if (command.at(-1) === "models") {
+        const probeRoot = command
+          .find((argument) => argument.startsWith("--gemini_dir="))!
+          .slice(13);
+        const logDir = join(probeRoot, "antigravity-cli", "log");
+        mkdirSync(logDir, { recursive: true });
+        writeFileSync(
+          join(logDir, "cli-probe.log"),
+          [
+            `CLI app data directory: ${probeRoot}/antigravity-cli`,
+            "CLI settings initialized: permissions=&{Allow:[] Deny:[read_file(*) write_file(*) read_url(*) execute_url(*) command(*) mcp(*)] Ask:[]}, toolPermission=strict",
+            "loaded 1 named hooks from 1 hooks.json file(s)",
+          ].join("\n"),
+        );
         return {
           stdout: stream(
             JSON.stringify({
               status: "SUCCESS",
-              conversation_id: "",
               command: {
                 data: {
-                  config: {
-                    enableTerminalSandbox: true,
-                    permissions: {
-                      deny: [
-                        "read_file(*)",
-                        "write_file(*)",
-                        "read_url(*)",
-                        "execute_url(*)",
-                        "command(*)",
-                        "mcp(*)",
-                      ],
-                    },
-                  },
+                  models: [{ id: "gemini-3.7-flash-low", label: "Gemini 3.7 Flash (Low)" }],
                 },
               },
             }),
@@ -285,9 +281,7 @@ describe("antigravityAdapter.invoke", () => {
       generationCommand = command;
       generationOptions = options;
       profileRoot = command.find((argument) => argument.startsWith("--gemini_dir="))!.slice(13);
-      settings = JSON.parse(
-        readFileSync(`${profileRoot}/antigravity-cli/settings.json`, "utf8"),
-      );
+      settings = JSON.parse(readFileSync(`${profileRoot}/antigravity-cli/settings.json`, "utf8"));
       hooks = JSON.parse(readFileSync(`${profileRoot}/config/hooks.json`, "utf8"));
       agent = readFileSync(`${profileRoot}/config/agents/ai-git/agent.md`, "utf8");
 
@@ -330,8 +324,7 @@ describe("antigravityAdapter.invoke", () => {
       expect.stringMatching(/^--gemini_dir=/),
       "--output-format",
       "json",
-      "-p",
-      "/config",
+      "models",
     ]);
     expect(generationCommand).not.toContain("--dangerously-skip-permissions");
     expect(generationOptions.cwd).toBe(`${profileRoot}/workspace`);
@@ -379,29 +372,22 @@ describe("antigravityAdapter.invoke", () => {
           return { stdout: stream("1.1.13\n"), stderr: stream(""), exited: Promise.resolve(0) };
         }
         profileRoot = command.find((argument) => argument.startsWith("--gemini_dir="))!.slice(13);
-        if (command.at(-1) === "/config") {
+        if (command.at(-1) === "models") {
+          const logDir = join(profileRoot, "antigravity-cli", "log");
+          mkdirSync(logDir, { recursive: true });
+          writeFileSync(
+            join(logDir, "cli-probe.log"),
+            [
+              `CLI app data directory: ${profileRoot}/antigravity-cli`,
+              "CLI settings initialized: permissions=&{Allow:[] Deny:[read_file(*) write_file(*) read_url(*) execute_url(*) command(*) mcp(*)] Ask:[]}, toolPermission=strict",
+              "loaded 1 named hooks from 1 hooks.json file(s)",
+            ].join("\n"),
+          );
           return {
             stdout: stream(
               JSON.stringify({
                 status: "SUCCESS",
-                conversation_id: "",
-                command: {
-                  data: {
-                    config: {
-                      enableTerminalSandbox: true,
-                      permissions: {
-                        deny: [
-                          "read_file(*)",
-                          "write_file(*)",
-                          "read_url(*)",
-                          "execute_url(*)",
-                          "command(*)",
-                          "mcp(*)",
-                        ],
-                      },
-                    },
-                  },
-                },
+                command: { data: { models: [{ id: "model", label: "Model" }] } },
               }),
             ),
             stderr: stream(""),

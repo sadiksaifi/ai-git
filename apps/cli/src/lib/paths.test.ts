@@ -38,7 +38,6 @@ describe("paths", () => {
       it("CACHE_DIR uses ~/.cache/ai-git on Unix", () => {
         expect(CACHE_DIR).toBe(path.join(os.homedir(), ".cache", "ai-git"));
       });
-
     }
   });
 
@@ -115,7 +114,6 @@ describe("paths", () => {
         delete process.env.XDG_CACHE_HOME;
         expect(resolveCacheDir()).toBe(path.join(os.homedir(), ".cache", "ai-git"));
       });
-
     }
   });
 
