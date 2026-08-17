@@ -1,6 +1,6 @@
-import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { chmod, lstat, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import { homedir, tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import type { CLIProviderAdapter, InvokeOptions, APIModelDefinition } from "../types.ts";
 import { readProcessOutput } from "./dynamic.ts";
 
@@ -167,6 +167,33 @@ function denyHookCommand(): string {
   return `printf '%s\\n' '${output.replace(/'/g, `'\\''`)}'`;
 }
 
+export async function seedAntigravityAuthentication(
+  profileRoot: string,
+  homeRoot: string = process.env.HOME || homedir(),
+): Promise<void> {
+  if (process.platform === "win32") return;
+
+  const geminiRoot = join(homeRoot, ".gemini");
+  const candidates = [
+    "antigravity-cli/antigravity-oauth-token",
+    "google_accounts.json",
+  ];
+
+  for (const relativePath of candidates) {
+    const source = join(geminiRoot, relativePath);
+    try {
+      const sourceStat = await lstat(source);
+      if (!sourceStat.isFile() && !sourceStat.isSymbolicLink()) continue;
+    } catch {
+      continue;
+    }
+
+    const destination = join(profileRoot, relativePath);
+    await mkdir(dirname(destination), { recursive: true, mode: 0o700 });
+    await symlink(source, destination);
+  }
+}
+
 async function createIsolatedRuntime(system: string): Promise<IsolatedRuntime> {
   const root = await mkdtemp(join(tmpdir(), ISOLATED_PROFILE_PREFIX));
   await chmod(root, 0o700);
@@ -180,6 +207,7 @@ async function createIsolatedRuntime(system: string): Promise<IsolatedRuntime> {
     mkdir(cliConfigDir, { recursive: true, mode: 0o700 }),
     mkdir(agentDir, { recursive: true, mode: 0o700 }),
   ]);
+  await seedAntigravityAuthentication(root);
 
   const settings = {
     allowNonWorkspaceAccess: false,

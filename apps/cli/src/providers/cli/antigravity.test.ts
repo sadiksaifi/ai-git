@@ -1,5 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readlinkSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 function stream(text: string): ReadableStream<Uint8Array> {
   return new ReadableStream({
@@ -128,6 +138,28 @@ describe("selectAntigravityMigrationModel", () => {
       "gemini-2.5-pro",
     ]) {
       expect(selectAntigravityMigrationModel(legacyModel, models)).toBe("gemini-3.7-pro-low");
+    }
+  });
+});
+
+describe("seedAntigravityAuthentication", () => {
+  it("links file-backed authentication into the isolated profile without copying it", async () => {
+    const home = mkdtempSync(join(tmpdir(), "ai-git-antigravity-auth-home-"));
+    const profile = mkdtempSync(join(tmpdir(), "ai-git-antigravity-auth-profile-"));
+    const source = join(home, ".gemini", "antigravity-cli", "antigravity-oauth-token");
+    mkdirSync(join(home, ".gemini", "antigravity-cli"), { recursive: true });
+    writeFileSync(source, "synthetic-test-token", { mode: 0o600 });
+
+    try {
+      const { seedAntigravityAuthentication } = await import("./antigravity.ts");
+      await seedAntigravityAuthentication(profile, home);
+
+      expect(readlinkSync(join(profile, "antigravity-cli", "antigravity-oauth-token"))).toBe(
+        source,
+      );
+    } finally {
+      rmSync(profile, { recursive: true, force: true });
+      rmSync(home, { recursive: true, force: true });
     }
   });
 });
