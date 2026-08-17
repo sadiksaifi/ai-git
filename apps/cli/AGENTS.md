@@ -73,7 +73,7 @@ Reusable `fromPromise()` actors with factory pattern for test dependency injecti
 
 Two modes with unified adapter interface:
 
-- **CLI Mode** (`cli/`): Spawns installed binaries (`claude`, `gemini`, `codex`)
+- **CLI Mode** (`cli/`): Spawns installed binaries (`claude`, `agy`, `codex`, `opencode`, `pi`)
 - **API Mode** (`api/`): HTTP APIs via Vercel AI SDK (OpenRouter, OpenAI, Anthropic, Google AI Studio)
 
 Provider registry in `registry.ts` defines available providers and models.

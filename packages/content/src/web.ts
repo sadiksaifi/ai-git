@@ -114,7 +114,7 @@ export const faq: readonly FAQItem[] = [
   {
     question: "Does it work without a provider CLI installed?",
     answer:
-      "Yes for the API providers. For CLI providers (Claude Code, Gemini CLI, Codex, OpenCode, Pi), the corresponding binary must be on your PATH. <code>--dry-run</code> works without any.",
+      "Yes for the API providers. For CLI providers (Claude Code, Antigravity CLI, Codex, OpenCode, Pi), the corresponding binary must be on your PATH. <code>--dry-run</code> works without any.",
   },
 ] as const;
 

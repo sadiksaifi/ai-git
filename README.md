@@ -9,7 +9,7 @@ A CLI tool that leverages AI to automatically generate semantically correct, con
 - 🤖 **AI-Powered** - Analyzes diffs and understands the _intent_ of your changes
 - 📝 **Conventional Commits** - Strictly adheres to [v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification
 - 🎨 **Interactive TUI** - Beautiful prompts for staging, editing, and confirming
-- 🔌 **Multiple Providers** - Claude Code, Gemini CLI, Codex, OpenCode, Pi, OpenRouter, OpenAI, Anthropic, Google AI Studio, Cerebras
+- 🔌 **Multiple Providers** - Claude Code, Antigravity CLI, Codex, OpenCode, Pi, OpenRouter, OpenAI, Anthropic, Google AI Studio, Cerebras
 - 🔐 **Secure** - API keys stored in keychain, never in config files
 
 ## Installation
@@ -98,7 +98,7 @@ Info:
 ai-git
 
 # Override provider for this run
-ai-git --provider gemini-cli --model gemini-3-flash-preview
+ai-git --provider antigravity-cli --model gemini-3.7-flash-low
 
 # Use Codex with reasoning effort baked in
 ai-git --provider codex --model gpt-5.6-luna-low
@@ -124,25 +124,32 @@ ai-git --dry-run -A
 
 ## Supported Providers
 
-| Provider         | ID                 | Type | Requirements                                                                            |
-| :--------------- | :----------------- | :--- | :-------------------------------------------------------------------------------------- |
-| Claude Code      | `claude-code`      | CLI  | [Install CLI](https://claude.com/claude-code)                                           |
-| Gemini CLI       | `gemini-cli`       | CLI  | [Install CLI](https://ai.google.dev/gemini-api/docs/cli)                                |
-| Codex            | `codex`            | CLI  | [Install CLI](https://developers.openai.com/codex/cli)                                  |
-| OpenCode         | `opencode`         | CLI  | [Install CLI](https://opencode.ai)                                                       |
-| Pi               | `pi`               | CLI  | [Install CLI](https://pi.dev)                                                            |
-| OpenRouter       | `openrouter`       | API  | [Get API Key](https://openrouter.ai/keys)                                               |
-| OpenAI           | `openai`           | API  | [Get API Key](https://platform.openai.com/api-keys)                                     |
-| Google AI Studio | `google-ai-studio` | API  | [Get API Key](https://aistudio.google.com/app/apikey)                                   |
-| Anthropic        | `anthropic`        | API  | [Get API Key](https://console.anthropic.com/settings/keys)                              |
-| Cerebras         | `cerebras`         | API  | [Get API Key](https://cloud.cerebras.ai/)                                               |
+| Provider         | ID                  | Type | Requirements                                                                            |
+| :--------------- | :------------------ | :--- | :-------------------------------------------------------------------------------------- |
+| Claude Code      | `claude-code`       | CLI  | [Install CLI](https://claude.com/claude-code)                                           |
+| Antigravity CLI  | `antigravity-cli`   | CLI  | [Install CLI](https://antigravity.google/docs/cli/install)                              |
+| Codex            | `codex`             | CLI  | [Install CLI](https://developers.openai.com/codex/cli)                                  |
+| OpenCode         | `opencode`          | CLI  | [Install CLI](https://opencode.ai)                                                       |
+| Pi               | `pi`                | CLI  | [Install CLI](https://pi.dev)                                                            |
+| OpenRouter       | `openrouter`        | API  | [Get API Key](https://openrouter.ai/keys)                                               |
+| OpenAI           | `openai`            | API  | [Get API Key](https://platform.openai.com/api-keys)                                     |
+| Google AI Studio | `google-ai-studio`  | API  | [Get API Key](https://aistudio.google.com/app/apikey)                                   |
+| Anthropic        | `anthropic`         | API  | [Get API Key](https://console.anthropic.com/settings/keys)                              |
+| Cerebras         | `cerebras`          | API  | [Get API Key](https://cloud.cerebras.ai/)                                               |
 
 Configure with `ai-git configure`
 
 Codex defaults to `gpt-5.6-luna-low` and Claude Code defaults to `haiku` for fast,
-repeatable commit-message generation. Pi, OpenCode, and API provider models are discovered at
-runtime. Retired Codex configurations are migrated to the corresponding GPT-5.6 family while
-preserving their supported effort level.
+repeatable commit-message generation. Antigravity CLI, Pi, OpenCode, and API provider models are
+discovered at runtime. Antigravity recommends the newest Gemini Flash Low model available to the
+signed-in account. Existing Gemini CLI configurations are migrated to Antigravity CLI with a live,
+account-compatible model. Retired Codex configurations are migrated to the corresponding GPT-5.6
+family while preserving their supported effort level.
+
+Antigravity generation runs with `--sandbox` in an empty workspace and an isolated temporary
+profile. AI Git installs deny-all permissions and a deny-all tool hook for the invocation, disables
+slash-command expansion, validates structured output, and removes the temporary conversation data
+afterward.
 
 ## Configuration
 
