@@ -144,6 +144,7 @@ describe("antigravityAdapter.invoke", () => {
   });
 
   it("generates inside a sandboxed temporary profile and removes all invocation state", async () => {
+    const spawnCommands: string[][] = [];
     let generationCommand: string[] = [];
     let generationOptions: any;
     let profileRoot = "";
@@ -152,8 +153,39 @@ describe("antigravityAdapter.invoke", () => {
     let agent = "";
 
     (Bun as any).spawn = (command: string[], options: any) => {
+      spawnCommands.push(command);
       if (command[1] === "--version") {
         return { stdout: stream("1.1.13\n"), stderr: stream(""), exited: Promise.resolve(0) };
+      }
+
+      if (command.at(-1) === "/config") {
+        return {
+          stdout: stream(
+            JSON.stringify({
+              status: "SUCCESS",
+              conversation_id: "",
+              command: {
+                data: {
+                  config: {
+                    enableTerminalSandbox: true,
+                    permissions: {
+                      deny: [
+                        "read_file(*)",
+                        "write_file(*)",
+                        "read_url(*)",
+                        "execute_url(*)",
+                        "command(*)",
+                        "mcp(*)",
+                      ],
+                    },
+                  },
+                },
+              },
+            }),
+          ),
+          stderr: stream(""),
+          exited: Promise.resolve(0),
+        };
       }
 
       generationCommand = command;
@@ -198,6 +230,14 @@ describe("antigravityAdapter.invoke", () => {
       "2m",
       "-p",
       "Generate a commit message for this diff.",
+    ]);
+    expect(spawnCommands[1]).toEqual([
+      "agy",
+      expect.stringMatching(/^--gemini_dir=/),
+      "--output-format",
+      "json",
+      "-p",
+      "/config",
     ]);
     expect(generationCommand).not.toContain("--dangerously-skip-permissions");
     expect(generationOptions.cwd).toBe(`${profileRoot}/workspace`);

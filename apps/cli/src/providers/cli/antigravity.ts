@@ -15,6 +15,10 @@ interface AntigravityEnvelope {
   command?: {
     data?: {
       models?: Array<{ id?: unknown; label?: unknown }>;
+      config?: {
+        enableTerminalSandbox?: boolean;
+        permissions?: { deny?: string[] };
+      };
     };
   };
 }
@@ -247,6 +251,54 @@ async function removeIsolatedRuntime(runtime: IsolatedRuntime): Promise<void> {
   await rm(runtime.root, { recursive: true, force: true });
 }
 
+async function assertIsolatedProfile(runtime: IsolatedRuntime): Promise<void> {
+  const proc = Bun.spawn(
+    [
+      "agy",
+      `--gemini_dir=${runtime.root}`,
+      "--output-format",
+      "json",
+      "-p",
+      "/config",
+    ],
+    {
+      cwd: runtime.workspace,
+      stdout: "pipe",
+      stderr: "pipe",
+      env: { ...process.env, AGY_CLI_DISABLE_AUTO_UPDATE: "1" },
+    },
+  );
+  const { stdout, stderr, exitCode } = await readProcessOutput(proc);
+  let envelope: AntigravityEnvelope;
+  try {
+    envelope = JSON.parse(stdout) as AntigravityEnvelope;
+  } catch {
+    throw new Error(
+      `Antigravity CLI does not support the required isolated profile contract: ${stderr.trim() || "invalid /config response"}`,
+    );
+  }
+
+  const deny = envelope.command?.data?.config?.permissions?.deny ?? [];
+  const requiredDeny = [
+    "read_file(*)",
+    "write_file(*)",
+    "read_url(*)",
+    "execute_url(*)",
+    "command(*)",
+    "mcp(*)",
+  ];
+  if (
+    exitCode !== 0 ||
+    envelope.status !== "SUCCESS" ||
+    envelope.command?.data?.config?.enableTerminalSandbox !== true ||
+    !requiredDeny.every((rule) => deny.includes(rule))
+  ) {
+    throw new Error(
+      "Antigravity CLI does not support the required isolated profile contract. Update `agy` before using this provider.",
+    );
+  }
+}
+
 function parseGeneration(stdout: string): string {
   let envelope: AntigravityEnvelope;
   try {
@@ -302,6 +354,7 @@ export const antigravityAdapter: CLIProviderAdapter = {
     await assertSupportedVersion();
     const runtime = await createIsolatedRuntime(system);
     try {
+      await assertIsolatedProfile(runtime);
       const proc = Bun.spawn(
         [
           "agy",
