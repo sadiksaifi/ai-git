@@ -16,18 +16,23 @@ import {
   type OnboardingActorResult,
 } from "./cli.machine.ts";
 import { stagingMachine } from "./staging.machine.ts";
-import type { ResolvedConfig } from "../config.ts";
+import type { ResolvedConfig, UserConfig } from "../config.ts";
 import {
+  CONFIG_FILE,
   loadUserConfig,
   loadProjectConfig,
   isConfigComplete,
+  queueMigrationNotice,
   resolveConfigAsync,
+  saveUserConfig,
   getProviderById,
   getModelById,
   flushMigrationNotice,
 } from "../config.ts";
+import { backupConfigFile, migrateLegacyGeminiCliConfig } from "../lib/migration.ts";
 import { PROVIDERS } from "../providers/registry.ts";
 import { getAdapter } from "../providers/index.ts";
+import { antigravityAdapter } from "../providers/cli/antigravity.ts";
 import {
   checkGitInstalled,
   checkInsideRepo,
@@ -65,11 +70,12 @@ import type { SupportedAPIProviderId } from "../providers/api/models/types.ts";
 async function resolveFullConfig(
   options: { provider?: string; model?: string },
   _version: string, // kept for future use (e.g. version-specific model validation)
+  loaded?: { userConfig?: UserConfig; projectConfig?: UserConfig },
 ): Promise<ConfigResolutionResult> {
   const resolvedConfig = await resolveConfigAsync({
     provider: options.provider,
     model: options.model,
-  });
+  }, loaded);
 
   // Validate provider (Bug #2 fix: use dynamic PROVIDERS list)
   const providerDef = getProviderById(resolvedConfig.provider);
@@ -136,6 +142,52 @@ async function resolveFullConfig(
   };
 }
 
+async function migrateLoadedLegacyConfigs(
+  userConfig: UserConfig | undefined,
+  projectConfig: UserConfig | undefined,
+): Promise<{ userConfig?: UserConfig; projectConfig?: UserConfig }> {
+  const hasLegacyConfig = [userConfig, projectConfig].some(
+    (config) => config?.provider === "gemini-cli",
+  );
+  if (!hasLegacyConfig) return { userConfig, projectConfig };
+
+  if (!(await antigravityAdapter.checkAvailable())) {
+    throw new Error(
+      "Antigravity CLI is required to migrate the existing configuration. Install it with: curl -fsSL https://antigravity.google/cli/install.sh | bash",
+    );
+  }
+
+  const models = await antigravityAdapter.fetchModels!();
+  const migrate = (config: UserConfig | undefined) =>
+    config
+      ? migrateLegacyGeminiCliConfig(config, async () => models)
+      : Promise.resolve({ config: undefined, changed: false, changes: [] });
+  const [userResult, projectResult] = await Promise.all([
+    migrate(userConfig),
+    migrate(projectConfig),
+  ]);
+
+  let backupPath: string | undefined;
+  if (userResult.changed && userResult.config) {
+    try {
+      backupPath = await backupConfigFile(CONFIG_FILE);
+    } catch {
+      // Best effort. Migration remains atomic because provider and model save together below.
+    }
+    await saveUserConfig(userResult.config);
+  }
+
+  const changes = [...userResult.changes, ...projectResult.changes];
+  if (changes.length > 0) {
+    queueMigrationNotice({ changes, backupPath });
+  }
+
+  return {
+    userConfig: userResult.config,
+    projectConfig: projectResult.config,
+  };
+}
+
 // ── Wired machine ────────────────────────────────────────────────────
 
 export const wiredCliMachine = cliMachine.provide({
@@ -158,8 +210,12 @@ export const wiredCliMachine = cliMachine.provide({
               })
             : startUpdateCheck(options.version);
 
-        const existingConfig = await loadUserConfig();
-        const existingProjectConfig = await loadProjectConfig();
+        const loaded = await migrateLoadedLegacyConfigs(
+          await loadUserConfig(),
+          await loadProjectConfig(),
+        );
+        const existingConfig = loaded.userConfig;
+        const existingProjectConfig = loaded.projectConfig;
 
         const isGlobalComplete = isConfigComplete(existingConfig);
         const isProjectComplete = isConfigComplete(existingProjectConfig);
@@ -215,6 +271,7 @@ export const wiredCliMachine = cliMachine.provide({
             model: options.options.model,
           },
           options.version,
+          loaded,
         );
         return result;
       },

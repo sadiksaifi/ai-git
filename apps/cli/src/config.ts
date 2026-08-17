@@ -97,6 +97,10 @@ export async function getProjectConfigPath(): Promise<string> {
 /** Pending migration notice to display after the welcome screen. */
 let pendingMigrationNotice: MigrationNotice | null = null;
 
+export function queueMigrationNotice(notice: MigrationNotice): void {
+  pendingMigrationNotice = notice;
+}
+
 /**
  * Show any pending migration notice and clear it.
  * Call this after the welcome screen renders so `console.clear()` doesn't wipe it.
@@ -296,9 +300,10 @@ export function mergePromptConfig(
  */
 export async function resolveConfigAsync(
   cliOptions: Partial<ResolvedConfig>,
+  loaded?: { userConfig?: UserConfig; projectConfig?: UserConfig },
 ): Promise<ResolvedConfig> {
-  const userConfig = await loadUserConfig();
-  const projectConfig = await loadProjectConfig();
+  const userConfig = loaded ? loaded.userConfig : await loadUserConfig();
+  const projectConfig = loaded ? loaded.projectConfig : await loadProjectConfig();
 
   // Config file must exist and be valid (setup wizard ensures this)
   // We check userConfig primarily, but if projectConfig exists and is complete, that's fine too.

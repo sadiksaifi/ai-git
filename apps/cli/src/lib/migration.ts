@@ -1,6 +1,8 @@
 import { log } from "@clack/prompts";
 import pc from "picocolors";
 import type { UserConfig } from "../config.ts";
+import { selectAntigravityMigrationModel } from "../providers/cli/antigravity.ts";
+import type { APIModelDefinition } from "../providers/types.ts";
 
 // ─── MIGRATION REGISTRY ──────────────────────────────────────────────
 
@@ -156,6 +158,31 @@ export function migrateConfig(raw: Record<string, unknown>): MigrationResult {
     if (change !== null) changes.push(change);
   }
   return { config: config as UserConfig, changed: changes.length > 0, changes };
+}
+
+export async function migrateLegacyGeminiCliConfig(
+  config: UserConfig,
+  loadModels: () => Promise<APIModelDefinition[]>,
+): Promise<MigrationResult> {
+  if (config.provider !== "gemini-cli" || typeof config.model !== "string") {
+    return { config, changed: false, changes: [] };
+  }
+
+  const models = await loadModels();
+  const migratedModel = selectAntigravityMigrationModel(config.model, models);
+  if (!migratedModel) {
+    throw new Error(
+      `Cannot migrate unsupported Gemini CLI model '${config.model}'. Run \`ai-git configure\` to select an Antigravity model.`,
+    );
+  }
+
+  return {
+    config: { ...config, provider: "antigravity-cli", model: migratedModel },
+    changed: true,
+    changes: [
+      `Migrated provider 'gemini-cli' → 'antigravity-cli' and model '${config.model}' → '${migratedModel}'`,
+    ],
+  };
 }
 
 // ─── UTILITIES ────────────────────────────────────────────────────────
