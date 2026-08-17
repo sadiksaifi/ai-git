@@ -100,22 +100,12 @@ export const PROVIDERS: ProviderDefinition[] = [
     ],
   },
   {
-    id: "gemini-cli",
-    name: "Gemini CLI",
+    id: "antigravity-cli",
+    name: "Antigravity CLI",
     mode: "cli",
-    binary: "gemini",
-    models: [
-      {
-        id: "gemini-3-flash-preview",
-        name: "Gemini 3 Flash Preview",
-        isRecommended: true,
-      },
-      { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro Preview" },
-      { id: "gemini-3-pro-preview", name: "Gemini 3 Pro Preview" },
-      { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite" },
-      { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
-      { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
-    ],
+    binary: "agy",
+    dynamicModels: true,
+    models: [],
   },
 
   // ==============================================================================

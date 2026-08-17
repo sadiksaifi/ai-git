@@ -133,6 +133,7 @@ function updateProviderDescription(
   if (providerId === "openai") providerLabel = "OpenAI";
   if (providerId === "google-ai-studio") providerLabel = "Google AI Studio";
   if (providerId === "anthropic") providerLabel = "Anthropic API";
+  if (providerId === "antigravity-cli") providerLabel = "Antigravity CLI";
 
   modelSchema.description = `${providerLabel} model ID (e.g., '${example}'). Models are fetched dynamically.`;
 
@@ -146,7 +147,6 @@ function updateStaticCLIModels(schema: Record<string, unknown>): void {
       "Claude Code virtual model ID. Fable, Sonnet, and Opus support low, medium, high, xhigh, and max. Haiku has no effort level and is recommended for this latency-sensitive workload.",
     codex:
       "Codex CLI virtual model ID: '<base-model>-<effort>'. Supported effort levels depend on the model and include low, medium, high, xhigh, and max. Default: 'gpt-5.6-luna-low'. Ultra is not a model effort and is not supported.",
-    "gemini-cli": "Gemini CLI model to use. 'gemini-3-flash-preview' is recommended for speed.",
   };
 
   for (const provider of PROVIDERS.filter(

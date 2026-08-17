@@ -21,7 +21,7 @@
       "type": "string",
       "enum": [
         "claude-code",
-        "gemini-cli",
+        "antigravity-cli",
         "codex",
         "opencode",
         "pi",
@@ -34,7 +34,7 @@
       "description": "AI provider to use for generating commit messages.",
       "examples": [
         "claude-code",
-        "gemini-cli",
+        "antigravity-cli",
         "codex",
         "opencode",
         "pi",
@@ -51,7 +51,7 @@
       "examples": [
         "gpt-5.6-luna-low",
         "haiku",
-        "gemini-3-flash-preview",
+        "gemini-3.7-flash-low",
         "opencode/gpt-5-nano#minimal",
         "openai-codex/gpt-5.6-luna#low",
         "openai/gpt-5.6",
@@ -184,22 +184,15 @@
       "if": {
         "properties": {
           "provider": {
-            "const": "gemini-cli"
+            "const": "antigravity-cli"
           }
         }
       },
       "then": {
         "properties": {
           "model": {
-            "enum": [
-              "gemini-3-flash-preview",
-              "gemini-3.1-pro-preview",
-              "gemini-3-pro-preview",
-              "gemini-2.5-flash-lite",
-              "gemini-2.5-flash",
-              "gemini-2.5-pro"
-            ],
-            "description": "Gemini CLI model to use. 'gemini-3-flash-preview' is recommended for speed."
+            "type": "string",
+            "description": "Antigravity CLI model slug fetched dynamically from the signed-in account."
           }
         }
       }
