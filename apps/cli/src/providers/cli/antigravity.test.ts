@@ -24,10 +24,20 @@ describe("antigravityAdapter.fetchModels", () => {
   let originalSpawn: typeof Bun.spawn;
   let spawnCalls: string[][];
   let modelRows: Array<{ id: string; label: string }>;
+  let versionOutput: string;
+  let versionExitCode: number;
+  let modelOutput: string | undefined;
+  let modelError: string;
+  let modelExitCode: number;
 
   beforeEach(() => {
     originalSpawn = Bun.spawn;
     spawnCalls = [];
+    versionOutput = "1.1.13\n";
+    versionExitCode = 0;
+    modelOutput = undefined;
+    modelError = "";
+    modelExitCode = 0;
     modelRows = [
       { id: "gemini-3.7-flash-low", label: "Gemini 3.7 Flash (Low)" },
       { id: "future/vendor:model", label: "Opaque Future Model" },
@@ -36,25 +46,26 @@ describe("antigravityAdapter.fetchModels", () => {
       spawnCalls.push(command);
       if (command[1] === "--version") {
         return {
-          stdout: stream("1.1.13\n"),
+          stdout: stream(versionOutput),
           stderr: stream(""),
-          exited: Promise.resolve(0),
+          exited: Promise.resolve(versionExitCode),
         };
       }
       return {
         stdout: stream(
-          JSON.stringify({
-            status: "SUCCESS",
-            error: null,
-            command: {
-              data: {
-                models: modelRows,
+          modelOutput ??
+            JSON.stringify({
+              status: "SUCCESS",
+              error: null,
+              command: {
+                data: {
+                  models: modelRows,
+                },
               },
-            },
-          }),
+            }),
         ),
-        stderr: stream(""),
-        exited: Promise.resolve(0),
+        stderr: stream(modelError),
+        exited: Promise.resolve(modelExitCode),
       };
     };
   });
@@ -127,6 +138,42 @@ describe("antigravityAdapter.fetchModels", () => {
     expect(models.find((model) => model.isRecommended)?.id).toBe(
       "gemini-3.7-flash-medium",
     );
+  });
+
+  it("rejects an unsupported Antigravity version before model discovery", async () => {
+    versionOutput = "1.1.12\n";
+    const { antigravityAdapter } = await import("./antigravity.ts");
+
+    await expect(antigravityAdapter.fetchModels!()).rejects.toThrow(
+      "Antigravity CLI 1.1.13 or newer is required",
+    );
+    expect(spawnCalls).toEqual([["agy", "--version"]]);
+  });
+
+  it.each([
+    ["malformed JSON", "not-json", "", 0, "malformed model-list JSON"],
+    [
+      "provider error",
+      JSON.stringify({ status: "ERROR", error: "authentication required" }),
+      "",
+      0,
+      "authentication required",
+    ],
+    [
+      "empty catalog",
+      JSON.stringify({ status: "SUCCESS", command: { data: { models: [] } } }),
+      "",
+      0,
+      "returned no usable models",
+    ],
+    ["non-zero exit", "", "account unavailable", 2, "exit code 2"],
+  ])("fails closed for %s", async (_name, stdout, stderr, exitCode, expected) => {
+    modelOutput = String(stdout);
+    modelError = String(stderr);
+    modelExitCode = Number(exitCode);
+    const { antigravityAdapter } = await import("./antigravity.ts");
+
+    await expect(antigravityAdapter.fetchModels!()).rejects.toThrow(String(expected));
   });
 });
 
@@ -311,4 +358,68 @@ describe("antigravityAdapter.invoke", () => {
     expect(agent).toContain("Follow AI Git's commit-message contract.");
     expect(existsSync(profileRoot)).toBe(false);
   });
+
+  it.each([
+    [JSON.stringify({ status: "CANCELED", response: "" }), "", 0, "CANCELED"],
+    [
+      JSON.stringify({ status: "ERROR", error: "authentication failed" }),
+      "",
+      0,
+      "authentication failed",
+    ],
+    [JSON.stringify({ status: "SUCCESS", response: "" }), "", 0, "empty response"],
+    ["not-json", "", 0, "malformed generation JSON"],
+    ["", "unknown model slug", 2, "unknown model slug"],
+  ])(
+    "fails closed for terminal generation failures",
+    async (generationOutput, generationError, generationExitCode, expected) => {
+      let profileRoot = "";
+      (Bun as any).spawn = (command: string[]) => {
+        if (command[1] === "--version") {
+          return { stdout: stream("1.1.13\n"), stderr: stream(""), exited: Promise.resolve(0) };
+        }
+        profileRoot = command.find((argument) => argument.startsWith("--gemini_dir="))!.slice(13);
+        if (command.at(-1) === "/config") {
+          return {
+            stdout: stream(
+              JSON.stringify({
+                status: "SUCCESS",
+                conversation_id: "",
+                command: {
+                  data: {
+                    config: {
+                      enableTerminalSandbox: true,
+                      permissions: {
+                        deny: [
+                          "read_file(*)",
+                          "write_file(*)",
+                          "read_url(*)",
+                          "execute_url(*)",
+                          "command(*)",
+                          "mcp(*)",
+                        ],
+                      },
+                    },
+                  },
+                },
+              }),
+            ),
+            stderr: stream(""),
+            exited: Promise.resolve(0),
+          };
+        }
+        return {
+          stdout: stream(String(generationOutput)),
+          stderr: stream(String(generationError)),
+          exited: Promise.resolve(Number(generationExitCode)),
+        };
+      };
+      const { antigravityAdapter } = await import("./antigravity.ts");
+
+      await expect(
+        antigravityAdapter.invoke({ model: "model", system: "system", prompt: "prompt" }),
+      ).rejects.toThrow(String(expected));
+      expect(existsSync(profileRoot)).toBe(false);
+    },
+  );
 });

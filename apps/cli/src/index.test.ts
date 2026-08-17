@@ -92,6 +92,18 @@ async function createPathWithoutProviderCLI(): Promise<string> {
   return binDir;
 }
 
+async function createPathWithFakeAntigravity(): Promise<string> {
+  const binDir = await createPathWithoutProviderCLI();
+  const executable = process.platform === "win32" ? "agy.cmd" : "agy";
+  const script =
+    process.platform === "win32"
+      ? `@echo off\r\nif "%1"=="--version" (echo 1.1.13) else (echo {"status":"SUCCESS","command":{"data":{"models":[{"id":"gemini-3.7-flash-low","label":"Gemini 3.7 Flash (Low)"},{"id":"gemini-3.1-pro-low","label":"Gemini 3.1 Pro (Low)"}]}}})\r\n`
+      : `#!/bin/sh\nif [ "$1" = "--version" ]; then\n  echo 1.1.13\nelse\n  echo '{"status":"SUCCESS","command":{"data":{"models":[{"id":"gemini-3.7-flash-low","label":"Gemini 3.7 Flash (Low)"},{"id":"gemini-3.1-pro-low","label":"Gemini 3.1 Pro (Low)"}]}}}'\nfi\n`;
+  const executablePath = path.join(binDir, executable);
+  fs.writeFileSync(executablePath, script, { mode: 0o700 });
+  return binDir;
+}
+
 async function runCLI(args: string[], options: RunCLIOptions): Promise<RunCLIResult> {
   const proc = spawn([process.execPath, "run", CLI_PATH, ...args], {
     cwd: options.cwd,
@@ -315,6 +327,34 @@ describe("ai-git CLI", () => {
 
     const configPath = path.join(homeDir, ".config", "ai-git", "config.json");
     expect(JSON.parse(fs.readFileSync(configPath, "utf8")).model).toBe("gpt-5.6-luna-xhigh");
+    const backupFile = fs
+      .readdirSync(path.dirname(configPath))
+      .find((file) => file.startsWith("config.json.") && file.endsWith(".bak"));
+    expect(backupFile).toBeDefined();
+  });
+
+  it("migrates an existing Gemini CLI config to Antigravity before dry-run", async () => {
+    const homeDir = createTestHome({
+      provider: "gemini-cli",
+      model: "gemini-3.1-pro-preview",
+    });
+    const providerPath = await createPathWithFakeAntigravity();
+    const repoDir = createGitRepo();
+    fs.writeFileSync(path.join(repoDir, "README.md"), "updated\n");
+
+    const result = await runCLI(["--dry-run", "-A"], {
+      cwd: repoDir,
+      homeDir,
+      pathEnv: providerPath,
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("DRY RUN: SYSTEM PROMPT");
+    const configPath = path.join(homeDir, ".config", "ai-git", "config.json");
+    expect(JSON.parse(fs.readFileSync(configPath, "utf8"))).toMatchObject({
+      provider: "antigravity-cli",
+      model: "gemini-3.1-pro-low",
+    });
     const backupFile = fs
       .readdirSync(path.dirname(configPath))
       .find((file) => file.startsWith("config.json.") && file.endsWith(".bak"));
