@@ -9,6 +9,17 @@ describe("formatModelChoiceTitle", () => {
     ).toBe("GPT-5.5 Mini");
   });
 
+  it("uses an account-provided dynamic recommendation", async () => {
+    const { getDynamicRecommendation } = await import("./wizard.ts");
+
+    expect(
+      getDynamicRecommendation([
+        { id: "gemini-3.7-flash-low", name: "Gemini 3.7 Flash", isRecommended: true },
+        { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
+      ]),
+    ).toBe("gemini-3.7-flash-low");
+  });
+
   it("marks curated static/API recommendations when enabled", async () => {
     const { formatModelChoiceTitle } = await import("./wizard.ts");
 

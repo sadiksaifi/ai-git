@@ -12,6 +12,8 @@ export interface CachedModel {
   id: string;
   /** Human-readable display name */
   name: string;
+  /** Account-compatible recommendation supplied by a dynamic provider */
+  isRecommended?: boolean;
   /** For OpenRouter: the original provider (anthropic, openai, google) */
   provider?: string;
   /** Sort rank (lower = higher priority, used for featured models) */
