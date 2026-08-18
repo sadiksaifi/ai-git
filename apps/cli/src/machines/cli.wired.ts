@@ -33,6 +33,7 @@ import { backupConfigFile, migrateLegacyGeminiCliConfig } from "../lib/migration
 import { PROVIDERS } from "../providers/registry.ts";
 import { getAdapter } from "../providers/index.ts";
 import { antigravityAdapter } from "../providers/cli/antigravity.ts";
+import { extractErrorMessage } from "../lib/errors.ts";
 import {
   checkGitInstalled,
   checkInsideRepo,
@@ -222,11 +223,17 @@ export const wiredCliMachine = cliMachine.provide({
               })
             : startUpdateCheck(options.version);
 
-        const loaded = await migrateLoadedLegacyConfigs(
-          await loadUserConfig(),
-          await loadProjectConfig(),
-          options.options,
-        );
+        let loaded: { userConfig?: UserConfig; projectConfig?: UserConfig };
+        try {
+          loaded = await migrateLoadedLegacyConfigs(
+            await loadUserConfig(),
+            await loadProjectConfig(),
+            options.options,
+          );
+        } catch (error) {
+          console.error(pc.red(`Error: ${extractErrorMessage(error)}`));
+          throw error;
+        }
         const existingConfig = loaded.userConfig;
         const existingProjectConfig = loaded.projectConfig;
 

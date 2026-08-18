@@ -404,6 +404,25 @@ describe("ai-git CLI", () => {
     expect(result.stderr).not.toContain("Antigravity CLI is required to migrate");
   });
 
+  it("prints actionable guidance when an active legacy migration cannot start", async () => {
+    const homeDir = createTestHome({
+      provider: "gemini-cli",
+      model: "gemini-3-flash-preview",
+    });
+    const noProviderPath = await createPathWithoutProviderCLI();
+    const repoDir = createGitRepo();
+
+    const result = await runCLI(["--dry-run", "-A"], {
+      cwd: repoDir,
+      homeDir,
+      pathEnv: noProviderPath,
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Antigravity CLI is required to migrate");
+    expect(result.stderr).toContain("curl -fsSL https://antigravity.google/cli/install.sh | bash");
+  });
+
   it.each([
     ["codex", "gpt-5.6-luna-low"],
     ["claude-code", "haiku"],
