@@ -258,6 +258,32 @@ describe("readAntigravityProcessOutput", () => {
 });
 
 describe("createIsolatedRuntime", () => {
+  it("preserves account authentication when an API key is only ambient", async () => {
+    const home = mkdtempSync(join(tmpdir(), "ai-git-antigravity-account-home-"));
+    const originalHome = process.env.HOME;
+    const originalGeminiApiKey = process.env.GEMINI_API_KEY;
+    process.env.HOME = home;
+    process.env.GEMINI_API_KEY = "ambient-test-key";
+    let runtime: { root: string } | undefined;
+
+    try {
+      const { createIsolatedRuntime } = await import("./antigravity.ts");
+      runtime = await createIsolatedRuntime("system");
+      const settings = JSON.parse(
+        readFileSync(join(runtime.root, "antigravity-cli", "settings.json"), "utf8"),
+      );
+
+      expect(settings).not.toHaveProperty("modelProvider");
+    } finally {
+      if (runtime) rmSync(runtime.root, { recursive: true, force: true });
+      rmSync(home, { recursive: true, force: true });
+      if (originalHome === undefined) delete process.env.HOME;
+      else process.env.HOME = originalHome;
+      if (originalGeminiApiKey === undefined) delete process.env.GEMINI_API_KEY;
+      else process.env.GEMINI_API_KEY = originalGeminiApiKey;
+    }
+  });
+
   it("removes a partial profile when isolated setup fails", async () => {
     const root = mkdtempSync(join(tmpdir(), "ai-git-antigravity-partial-"));
     const { createIsolatedRuntime } = await import("./antigravity.ts");
@@ -277,10 +303,14 @@ describe("createIsolatedRuntime", () => {
 describe("antigravityAdapter.invoke", () => {
   let originalSpawn: typeof Bun.spawn;
   let originalGeminiApiKey: string | undefined;
+  let originalHome: string | undefined;
+  let temporaryHomes: string[];
 
   beforeEach(() => {
     originalSpawn = Bun.spawn;
     originalGeminiApiKey = process.env.GEMINI_API_KEY;
+    originalHome = process.env.HOME;
+    temporaryHomes = [];
   });
 
   afterEach(() => {
@@ -290,10 +320,24 @@ describe("antigravityAdapter.invoke", () => {
     } else {
       process.env.GEMINI_API_KEY = originalGeminiApiKey;
     }
+    if (originalHome === undefined) {
+      delete process.env.HOME;
+    } else {
+      process.env.HOME = originalHome;
+    }
+    for (const home of temporaryHomes) rmSync(home, { recursive: true, force: true });
   });
 
   it("generates inside a sandboxed temporary profile and removes all invocation state", async () => {
     process.env.GEMINI_API_KEY = "synthetic-test-key";
+    const home = mkdtempSync(join(tmpdir(), "ai-git-antigravity-api-home-"));
+    temporaryHomes.push(home);
+    process.env.HOME = home;
+    mkdirSync(join(home, ".gemini", "antigravity-cli"), { recursive: true });
+    writeFileSync(
+      join(home, ".gemini", "antigravity-cli", "settings.json"),
+      JSON.stringify({ modelProvider: "gemini" }),
+    );
     const spawnCommands: string[][] = [];
     let generationCommand: string[] = [];
     let generationOptions: any;

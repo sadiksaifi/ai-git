@@ -246,6 +246,19 @@ export async function seedAntigravityAuthentication(
   }
 }
 
+async function usesGeminiApiAuthentication(
+  homeRoot: string = process.env.HOME || homedir(),
+): Promise<boolean> {
+  try {
+    const settings = JSON.parse(
+      await readFile(join(homeRoot, ".gemini", "antigravity-cli", "settings.json"), "utf8"),
+    ) as { modelProvider?: unknown };
+    return settings.modelProvider === "gemini";
+  } catch {
+    return false;
+  }
+}
+
 export async function createIsolatedRuntime(
   system: string,
   dependencies: Partial<IsolatedRuntimeDependencies> = {},
@@ -268,13 +281,14 @@ export async function createIsolatedRuntime(
       mkdir(agentDir, { recursive: true, mode: 0o700 }),
     ]);
     await seedAuthentication(root);
+    const useGeminiApi = await usesGeminiApiAuthentication();
 
     const settings = {
       allowNonWorkspaceAccess: false,
       disableSlashCommands: true,
       enableTelemetry: false,
       enableTerminalSandbox: true,
-      ...(process.env.GEMINI_API_KEY ? { modelProvider: "gemini" } : {}),
+      ...(useGeminiApi ? { modelProvider: "gemini" } : {}),
       notifications: false,
       toolPermission: "strict",
       permissions: {
