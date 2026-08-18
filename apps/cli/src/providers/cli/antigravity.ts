@@ -17,6 +17,8 @@ import { readProcessOutput } from "./dynamic.ts";
 const MINIMUM_ANTIGRAVITY_VERSION = [1, 1, 13] as const;
 const ISOLATED_PROFILE_PREFIX = "ai-git-antigravity-";
 const DENY_REASON = "AI Git disables all Antigravity tools.";
+const ANTIGRAVITY_PREFLIGHT_TIMEOUT_MS = 30_000;
+const ANTIGRAVITY_GENERATION_TIMEOUT_MS = 130_000;
 
 interface AntigravityEnvelope {
   status?: string;
@@ -41,6 +43,13 @@ interface IsolatedRuntime {
 interface PathOperations {
   basename(path: string): string;
   dirname(path: string): string;
+}
+
+interface KillablePipedProcess {
+  stdout: ReadableStream<Uint8Array>;
+  stderr: ReadableStream<Uint8Array>;
+  exited: Promise<number>;
+  kill(): void;
 }
 
 interface ModelRank {
@@ -172,11 +181,30 @@ export function selectAntigravityMigrationModel(
 
 async function assertSupportedVersion(): Promise<void> {
   const process = Bun.spawn(["agy", "--version"], { stdout: "pipe", stderr: "pipe" });
-  const { stdout, stderr, exitCode } = await readProcessOutput(process);
+  const { stdout, stderr, exitCode } = await readAntigravityProcessOutput(process);
   const version = parseVersion(stdout || stderr);
 
   if (exitCode !== 0 || !version || !isSupportedVersion(version)) {
     throw new Error("Antigravity CLI 1.1.13 or newer is required. Run `agy update` and try again.");
+  }
+}
+
+export async function readAntigravityProcessOutput(
+  process: KillablePipedProcess,
+  timeoutMs: number = ANTIGRAVITY_PREFLIGHT_TIMEOUT_MS,
+): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+  let timeout: Timer | undefined;
+  const timeoutPromise = new Promise<never>((_resolve, reject) => {
+    timeout = setTimeout(() => {
+      process.kill();
+      reject(new Error(`Antigravity CLI timed out after ${timeoutMs}ms.`));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([readProcessOutput(process), timeoutPromise]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
   }
 }
 
@@ -316,7 +344,7 @@ async function assertIsolatedProfile(runtime: IsolatedRuntime, model: string): P
       env: { ...process.env, AGY_CLI_DISABLE_AUTO_UPDATE: "1" },
     },
   );
-  const { stdout, stderr, exitCode } = await readProcessOutput(proc);
+  const { stdout, stderr, exitCode } = await readAntigravityProcessOutput(proc);
   let envelope: AntigravityEnvelope;
   try {
     envelope = JSON.parse(stdout) as AntigravityEnvelope;
@@ -448,7 +476,10 @@ export const antigravityAdapter: CLIProviderAdapter = {
           env: { ...process.env, AGY_CLI_DISABLE_AUTO_UPDATE: "1" },
         },
       );
-      const { stdout, stderr, exitCode } = await readProcessOutput(proc);
+      const { stdout, stderr, exitCode } = await readAntigravityProcessOutput(
+        proc,
+        ANTIGRAVITY_GENERATION_TIMEOUT_MS,
+      );
       if (exitCode !== 0) {
         throw new Error(
           `Antigravity CLI error (exit code ${exitCode}):\n${stderr.trim() || stdout.trim() || "Unknown error"}`,
@@ -470,7 +501,7 @@ export const antigravityAdapter: CLIProviderAdapter = {
       stdout: "pipe",
       stderr: "pipe",
     });
-    const { stdout, stderr, exitCode } = await readProcessOutput(process);
+    const { stdout, stderr, exitCode } = await readAntigravityProcessOutput(process);
     if (exitCode !== 0) {
       throw new Error(
         `Antigravity CLI model discovery failed (exit code ${exitCode}): ${stderr.trim() || stdout.trim() || "Unknown error"}`,

@@ -236,6 +236,27 @@ describe("isOwnedIsolatedProfilePath", () => {
   });
 });
 
+describe("readAntigravityProcessOutput", () => {
+  it("kills a stalled Antigravity subprocess when its deadline expires", async () => {
+    let killed = false;
+    const pendingStream = new ReadableStream<Uint8Array>();
+    const process = {
+      stdout: pendingStream,
+      stderr: new ReadableStream<Uint8Array>(),
+      exited: new Promise<number>(() => {}),
+      kill: () => {
+        killed = true;
+      },
+    };
+    const { readAntigravityProcessOutput } = await import("./antigravity.ts");
+
+    await expect(readAntigravityProcessOutput(process, 1)).rejects.toThrow(
+      "Antigravity CLI timed out",
+    );
+    expect(killed).toBe(true);
+  });
+});
+
 describe("antigravityAdapter.invoke", () => {
   let originalSpawn: typeof Bun.spawn;
   let originalGeminiApiKey: string | undefined;
