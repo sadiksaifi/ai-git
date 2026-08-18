@@ -15,7 +15,7 @@ type InvokeAIInput = {
   adapter?: ProviderAdapter;
 };
 
-type SpinnerController = Pick<ReturnType<typeof spinner>, "start" | "message" | "stop">;
+type SpinnerController = Pick<ReturnType<typeof spinner>, "start" | "message" | "stop" | "error">;
 
 type InvokeAIActorOptions = {
   shouldUseInteractiveSpinner?: () => boolean;
@@ -26,6 +26,7 @@ const noopSpinner: SpinnerController = {
   start: () => {},
   message: () => {},
   stop: () => {},
+  error: () => {},
 };
 
 export function shouldUseInteractiveSpinner(): boolean {
@@ -83,7 +84,7 @@ export function createInvokeAIActor(
       return rawMsg;
     } catch (e) {
       cancelSlowWarning();
-      s.stop("Generation failed");
+      s.error("Generation failed");
       throw e;
     }
   });
