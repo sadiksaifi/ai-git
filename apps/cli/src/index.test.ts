@@ -361,6 +361,30 @@ describe("ai-git CLI", () => {
     expect(backupFile).toBeDefined();
   });
 
+  it("migrates the effective legacy pair when a project overrides only the model", async () => {
+    const homeDir = createTestHome({
+      provider: "gemini-cli",
+      model: "gemini-3-flash-preview",
+    });
+    const providerPath = await createPathWithFakeAntigravity();
+    const repoDir = createGitRepo();
+    const projectConfigPath = path.join(repoDir, ".ai-git.json");
+    fs.writeFileSync(projectConfigPath, JSON.stringify({ model: "gemini-3.1-pro-preview" }));
+    fs.writeFileSync(path.join(repoDir, "README.md"), "updated\n");
+
+    const result = await runCLI(["--dry-run", "-A"], {
+      cwd: repoDir,
+      homeDir,
+      pathEnv: providerPath,
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(fs.readFileSync(projectConfigPath, "utf8"))).toMatchObject({
+      provider: "antigravity-cli",
+      model: "gemini-3.1-pro-low",
+    });
+  });
+
   it("does not migrate an inactive legacy global config beneath a valid project config", async () => {
     const homeDir = createTestHome({
       provider: "gemini-cli",

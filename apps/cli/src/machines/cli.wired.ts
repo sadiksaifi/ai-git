@@ -154,11 +154,17 @@ async function migrateLoadedLegacyConfigs(
   overrides: { provider?: string; model?: string },
 ): Promise<{ userConfig?: UserConfig; projectConfig?: UserConfig }> {
   const hasCompleteOverride = Boolean(overrides.provider && overrides.model);
-  const hasCompleteProjectConfig = Boolean(projectConfig?.provider && projectConfig.model);
-  const migrateUser =
-    !hasCompleteOverride && !hasCompleteProjectConfig && userConfig?.provider === "gemini-cli";
-  const migrateProject =
-    !hasCompleteOverride && hasCompleteProjectConfig && projectConfig?.provider === "gemini-cli";
+  const effectiveProvider = projectConfig?.provider ?? userConfig?.provider;
+  const effectiveModel = projectConfig?.model ?? userConfig?.model;
+  const projectDefinesProviderOrModel = Boolean(
+    projectConfig?.provider !== undefined || projectConfig?.model !== undefined,
+  );
+  const hasEffectiveLegacyConfig =
+    !hasCompleteOverride &&
+    effectiveProvider === "gemini-cli" &&
+    typeof effectiveModel === "string";
+  const migrateProject = hasEffectiveLegacyConfig && projectDefinesProviderOrModel;
+  const migrateUser = hasEffectiveLegacyConfig && !migrateProject;
   const hasLegacyConfig = migrateUser || migrateProject;
   if (!hasLegacyConfig) return { userConfig, projectConfig };
 
@@ -171,7 +177,10 @@ async function migrateLoadedLegacyConfigs(
   const models = await antigravityAdapter.fetchModels!();
   const migrate = (config: UserConfig | undefined) =>
     config
-      ? migrateLegacyGeminiCliConfig(config, async () => models)
+      ? migrateLegacyGeminiCliConfig(
+          { ...config, provider: effectiveProvider, model: effectiveModel },
+          async () => models,
+        )
       : Promise.resolve({ config: undefined, changed: false, changes: [] });
   const [userResult, projectResult] = await Promise.all([
     migrateUser
