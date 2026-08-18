@@ -8,6 +8,9 @@ import {
 import { PROVIDERS } from "../src/providers/registry.ts";
 
 const MODELS_DEV_API_URL = "https://models.dev/api.json";
+const DYNAMIC_CLI_EXAMPLES: Record<string, string> = {
+  "antigravity-cli": "gemini-3.7-flash-low",
+};
 
 type ModelsDevStatus = "alpha" | "beta" | "deprecated";
 
@@ -164,16 +167,19 @@ function updateStaticCLIModels(schema: Record<string, unknown>): void {
   }
 }
 
-async function main(): Promise<void> {
-  const payload = await fetchModelsDev();
-
+export function updateSchemaModels(
+  current: Record<string, any>,
+  payload: ModelsDevPayload,
+): {
+  openRouterExample: string;
+  openAIExample: string;
+  googleExample: string;
+  anthropicExample: string;
+} {
   const openAIExample = pickProviderExample("openai", payload);
   const googleExample = pickProviderExample("google", payload);
   const anthropicExample = pickProviderExample("anthropic", payload);
   const openRouterExample = `openai/${openAIExample}`;
-
-  const schemaPath = path.resolve(import.meta.dir, "../../../schema.json");
-  const current = JSON.parse(await readFile(schemaPath, "utf8")) as Record<string, any>;
 
   const staticCliExamples = PROVIDERS.filter(
     (provider) => provider.mode === "cli" && !provider.dynamicModels,
@@ -183,6 +189,7 @@ async function main(): Promise<void> {
 
   current.properties.model.examples = unique([
     ...staticCliExamples,
+    ...Object.values(DYNAMIC_CLI_EXAMPLES),
     "opencode/gpt-5-nano#minimal",
     "openai-codex/gpt-5.6-luna#low",
     openRouterExample,
@@ -195,15 +202,28 @@ async function main(): Promise<void> {
   updateProviderDescription(current, "openai", openAIExample);
   updateProviderDescription(current, "google-ai-studio", googleExample);
   updateProviderDescription(current, "anthropic", anthropicExample);
+  for (const [providerId, example] of Object.entries(DYNAMIC_CLI_EXAMPLES)) {
+    updateProviderDescription(current, providerId, example);
+  }
   updateStaticCLIModels(current);
+
+  return { openRouterExample, openAIExample, googleExample, anthropicExample };
+}
+
+async function main(): Promise<void> {
+  const payload = await fetchModelsDev();
+  const schemaPath = path.resolve(import.meta.dir, "../../../schema.json");
+  const current = JSON.parse(await readFile(schemaPath, "utf8")) as Record<string, any>;
+
+  const examples = updateSchemaModels(current, payload);
 
   await writeFile(schemaPath, JSON.stringify(current, null, 2) + "\n", "utf8");
 
   console.log(`Updated ${schemaPath}`);
-  console.log(`openrouter example: ${openRouterExample}`);
-  console.log(`openai example: ${openAIExample}`);
-  console.log(`google example: ${googleExample}`);
-  console.log(`anthropic example: ${anthropicExample}`);
+  console.log(`openrouter example: ${examples.openRouterExample}`);
+  console.log(`openai example: ${examples.openAIExample}`);
+  console.log(`google example: ${examples.googleExample}`);
+  console.log(`anthropic example: ${examples.anthropicExample}`);
 }
 
-await main();
+if (import.meta.main) await main();

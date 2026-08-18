@@ -192,7 +192,7 @@
         "properties": {
           "model": {
             "type": "string",
-            "description": "Antigravity CLI model slug fetched dynamically from the signed-in account."
+            "description": "Antigravity CLI model ID (e.g., 'gemini-3.7-flash-low'). Models are fetched dynamically."
           }
         }
       }
