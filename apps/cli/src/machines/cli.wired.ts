@@ -148,10 +148,15 @@ async function resolveFullConfig(
 async function migrateLoadedLegacyConfigs(
   userConfig: UserConfig | undefined,
   projectConfig: UserConfig | undefined,
+  overrides: { provider?: string; model?: string },
 ): Promise<{ userConfig?: UserConfig; projectConfig?: UserConfig }> {
-  const hasLegacyConfig = [userConfig, projectConfig].some(
-    (config) => config?.provider === "gemini-cli",
-  );
+  const hasCompleteOverride = Boolean(overrides.provider && overrides.model);
+  const hasCompleteProjectConfig = Boolean(projectConfig?.provider && projectConfig.model);
+  const migrateUser =
+    !hasCompleteOverride && !hasCompleteProjectConfig && userConfig?.provider === "gemini-cli";
+  const migrateProject =
+    !hasCompleteOverride && hasCompleteProjectConfig && projectConfig?.provider === "gemini-cli";
+  const hasLegacyConfig = migrateUser || migrateProject;
   if (!hasLegacyConfig) return { userConfig, projectConfig };
 
   if (!(await antigravityAdapter.checkAvailable())) {
@@ -166,8 +171,12 @@ async function migrateLoadedLegacyConfigs(
       ? migrateLegacyGeminiCliConfig(config, async () => models)
       : Promise.resolve({ config: undefined, changed: false, changes: [] });
   const [userResult, projectResult] = await Promise.all([
-    migrate(userConfig),
-    migrate(projectConfig),
+    migrateUser
+      ? migrate(userConfig)
+      : Promise.resolve({ config: userConfig, changed: false, changes: [] }),
+    migrateProject
+      ? migrate(projectConfig)
+      : Promise.resolve({ config: projectConfig, changed: false, changes: [] }),
   ]);
 
   let backupPath: string | undefined;
@@ -216,12 +225,14 @@ export const wiredCliMachine = cliMachine.provide({
         const loaded = await migrateLoadedLegacyConfigs(
           await loadUserConfig(),
           await loadProjectConfig(),
+          options.options,
         );
         const existingConfig = loaded.userConfig;
         const existingProjectConfig = loaded.projectConfig;
 
         const isGlobalComplete = isConfigComplete(existingConfig);
         const isProjectComplete = isConfigComplete(existingProjectConfig);
+        const hasCompleteOverride = Boolean(options.options.provider && options.options.model);
 
         // Show update notification early
         const updateResult = await updateCheckPromise;
@@ -230,7 +241,7 @@ export const wiredCliMachine = cliMachine.provide({
         // Neither config is complete. Two scenarios:
         // 1. Config has provider+model but they're invalid → hard error with guidance
         // 2. Config is truly missing or empty → return needsSetup to trigger onboarding
-        if (!isGlobalComplete && !isProjectComplete) {
+        if (!isGlobalComplete && !isProjectComplete && !hasCompleteOverride) {
           const bestConfig = existingProjectConfig ?? existingConfig;
           if (bestConfig?.provider && bestConfig?.model) {
             // Scenario 1: User has a config file with values that don't match any

@@ -304,13 +304,15 @@ export async function resolveConfigAsync(
 ): Promise<ResolvedConfig> {
   const userConfig = loaded ? loaded.userConfig : await loadUserConfig();
   const projectConfig = loaded ? loaded.projectConfig : await loadProjectConfig();
+  const hasCompleteCliOptions = Boolean(cliOptions.provider && cliOptions.model);
 
   // Config file must exist and be valid (setup wizard ensures this)
   // We check userConfig primarily, but if projectConfig exists and is complete, that's fine too.
   // However, usually we expect at least a user config to exist after setup.
   if (
     (!userConfig || !isConfigComplete(userConfig)) &&
-    (!projectConfig || !isConfigComplete(projectConfig))
+    (!projectConfig || !isConfigComplete(projectConfig)) &&
+    !hasCompleteCliOptions
   ) {
     throw new Error("Configuration is incomplete. Please run: ai-git configure");
   }

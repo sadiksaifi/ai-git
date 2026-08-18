@@ -361,6 +361,49 @@ describe("ai-git CLI", () => {
     expect(backupFile).toBeDefined();
   });
 
+  it("does not migrate an inactive legacy global config beneath a valid project config", async () => {
+    const homeDir = createTestHome({
+      provider: "gemini-cli",
+      model: "gemini-3-flash-preview",
+    });
+    const noProviderPath = await createPathWithoutProviderCLI();
+    const repoDir = createGitRepo();
+    fs.writeFileSync(
+      path.join(repoDir, ".ai-git.json"),
+      JSON.stringify({ provider: "claude-code", model: "haiku" }),
+    );
+    fs.writeFileSync(path.join(repoDir, "README.md"), "updated\n");
+
+    const result = await runCLI(["--dry-run", "-A"], {
+      cwd: repoDir,
+      homeDir,
+      pathEnv: noProviderPath,
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("DRY RUN: SYSTEM PROMPT");
+    expect(result.stderr).not.toContain("Antigravity CLI is required to migrate");
+  });
+
+  it("does not migrate an inactive legacy config beneath an explicit provider override", async () => {
+    const homeDir = createTestHome({
+      provider: "gemini-cli",
+      model: "gemini-3-flash-preview",
+    });
+    const noProviderPath = await createPathWithoutProviderCLI();
+    const repoDir = createGitRepo();
+    fs.writeFileSync(path.join(repoDir, "README.md"), "updated\n");
+
+    const result = await runCLI(
+      ["--provider", "claude-code", "--model", "haiku", "--dry-run", "-A"],
+      { cwd: repoDir, homeDir, pathEnv: noProviderPath },
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("DRY RUN: SYSTEM PROMPT");
+    expect(result.stderr).not.toContain("Antigravity CLI is required to migrate");
+  });
+
   it.each([
     ["codex", "gpt-5.6-luna-low"],
     ["claude-code", "haiku"],
