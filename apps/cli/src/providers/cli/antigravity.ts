@@ -233,6 +233,7 @@ async function createIsolatedRuntime(system: string): Promise<IsolatedRuntime> {
     disableSlashCommands: true,
     enableTelemetry: false,
     enableTerminalSandbox: true,
+    ...(process.env.GEMINI_API_KEY ? { modelProvider: "gemini" } : {}),
     notifications: false,
     toolPermission: "strict",
     permissions: {

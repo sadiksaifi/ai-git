@@ -238,16 +238,24 @@ describe("isOwnedIsolatedProfilePath", () => {
 
 describe("antigravityAdapter.invoke", () => {
   let originalSpawn: typeof Bun.spawn;
+  let originalGeminiApiKey: string | undefined;
 
   beforeEach(() => {
     originalSpawn = Bun.spawn;
+    originalGeminiApiKey = process.env.GEMINI_API_KEY;
   });
 
   afterEach(() => {
     (Bun as any).spawn = originalSpawn;
+    if (originalGeminiApiKey === undefined) {
+      delete process.env.GEMINI_API_KEY;
+    } else {
+      process.env.GEMINI_API_KEY = originalGeminiApiKey;
+    }
   });
 
   it("generates inside a sandboxed temporary profile and removes all invocation state", async () => {
+    process.env.GEMINI_API_KEY = "synthetic-test-key";
     const spawnCommands: string[][] = [];
     let generationCommand: string[] = [];
     let generationOptions: any;
@@ -347,6 +355,7 @@ describe("antigravityAdapter.invoke", () => {
       allowNonWorkspaceAccess: false,
       disableSlashCommands: true,
       enableTerminalSandbox: true,
+      modelProvider: "gemini",
       toolPermission: "strict",
       permissions: {
         deny: [
