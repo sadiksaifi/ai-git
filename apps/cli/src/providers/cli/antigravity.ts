@@ -10,7 +10,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import type { CLIProviderAdapter, InvokeOptions, APIModelDefinition } from "../types.ts";
 import { readProcessOutput } from "./dynamic.ts";
 
@@ -36,6 +36,11 @@ interface AntigravityEnvelope {
 interface IsolatedRuntime {
   root: string;
   workspace: string;
+}
+
+interface PathOperations {
+  basename(path: string): string;
+  dirname(path: string): string;
 }
 
 interface ModelRank {
@@ -282,12 +287,19 @@ ${system}
   return { root, workspace };
 }
 
+export function isOwnedIsolatedProfilePath(
+  root: string,
+  temporaryDirectory: string = tmpdir(),
+  pathOperations: PathOperations = { basename, dirname },
+): boolean {
+  return (
+    pathOperations.dirname(root) === temporaryDirectory &&
+    pathOperations.basename(root).startsWith(ISOLATED_PROFILE_PREFIX)
+  );
+}
+
 async function removeIsolatedRuntime(runtime: IsolatedRuntime): Promise<void> {
-  const expectedParent = tmpdir();
-  if (
-    !runtime.root.startsWith(`${expectedParent}/`) ||
-    !runtime.root.slice(expectedParent.length + 1).startsWith(ISOLATED_PROFILE_PREFIX)
-  ) {
+  if (!isOwnedIsolatedProfilePath(runtime.root)) {
     throw new Error("Refusing to remove an unexpected Antigravity profile path.");
   }
   await rm(runtime.root, { recursive: true, force: true });

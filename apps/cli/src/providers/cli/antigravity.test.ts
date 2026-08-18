@@ -9,7 +9,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, win32 } from "node:path";
 
 function stream(text: string): ReadableStream<Uint8Array> {
   return new ReadableStream({
@@ -219,6 +219,20 @@ describe("seedAntigravityAuthentication", () => {
       rmSync(profile, { recursive: true, force: true });
       rmSync(home, { recursive: true, force: true });
     }
+  });
+});
+
+describe("isOwnedIsolatedProfilePath", () => {
+  it("accepts an owned Windows temporary profile path", async () => {
+    const { isOwnedIsolatedProfilePath } = await import("./antigravity.ts");
+
+    expect(
+      isOwnedIsolatedProfilePath(
+        "C:\\Users\\test\\AppData\\Local\\Temp\\ai-git-antigravity-abc123",
+        "C:\\Users\\test\\AppData\\Local\\Temp",
+        win32,
+      ),
+    ).toBe(true);
   });
 });
 
