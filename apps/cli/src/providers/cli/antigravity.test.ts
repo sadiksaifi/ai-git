@@ -237,23 +237,51 @@ describe("isOwnedIsolatedProfilePath", () => {
 });
 
 describe("readAntigravityProcessOutput", () => {
-  it("kills a stalled Antigravity subprocess when its deadline expires", async () => {
+  it("waits for a killed Antigravity subprocess to exit before rejecting", async () => {
     let killed = false;
-    const pendingStream = new ReadableStream<Uint8Array>();
+    let closeStdout!: () => void;
+    let closeStderr!: () => void;
+    let resolveExit!: (exitCode: number) => void;
+    const stdout = new ReadableStream<Uint8Array>({
+      start(controller) {
+        closeStdout = () => controller.close();
+      },
+    });
+    const stderr = new ReadableStream<Uint8Array>({
+      start(controller) {
+        closeStderr = () => controller.close();
+      },
+    });
     const process = {
-      stdout: pendingStream,
-      stderr: new ReadableStream<Uint8Array>(),
-      exited: new Promise<number>(() => {}),
+      stdout,
+      stderr,
+      exited: new Promise<number>((resolve) => {
+        resolveExit = resolve;
+      }),
       kill: () => {
         killed = true;
+        closeStdout();
+        closeStderr();
       },
     };
     const { readAntigravityProcessOutput } = await import("./antigravity.ts");
-
-    await expect(readAntigravityProcessOutput(process, 1)).rejects.toThrow(
-      "Antigravity CLI timed out",
+    const result = readAntigravityProcessOutput(process, 1);
+    let settled = false;
+    void result.then(
+      () => {
+        settled = true;
+      },
+      () => {
+        settled = true;
+      },
     );
+
+    await Bun.sleep(5);
     expect(killed).toBe(true);
+    expect(settled).toBe(false);
+    resolveExit(143);
+
+    await expect(result).rejects.toThrow("Antigravity CLI timed out");
   });
 });
 

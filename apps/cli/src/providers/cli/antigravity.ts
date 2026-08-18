@@ -199,15 +199,20 @@ export async function readAntigravityProcessOutput(
   timeoutMs: number = ANTIGRAVITY_PREFLIGHT_TIMEOUT_MS,
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   let timeout: Timer | undefined;
-  const timeoutPromise = new Promise<never>((_resolve, reject) => {
+  const outputPromise = readProcessOutput(process);
+  const timeoutPromise = new Promise<"timeout">((resolve) => {
     timeout = setTimeout(() => {
       process.kill();
-      reject(new Error(`Antigravity CLI timed out after ${timeoutMs}ms.`));
+      resolve("timeout");
     }, timeoutMs);
   });
 
   try {
-    return await Promise.race([readProcessOutput(process), timeoutPromise]);
+    const result = await Promise.race([outputPromise, timeoutPromise]);
+    if (result !== "timeout") return result;
+
+    await outputPromise.catch(() => {});
+    throw new Error(`Antigravity CLI timed out after ${timeoutMs}ms.`);
   } finally {
     if (timeout) clearTimeout(timeout);
   }
