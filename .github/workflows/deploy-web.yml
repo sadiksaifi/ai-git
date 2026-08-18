@@ -28,18 +28,18 @@ jobs:
       url: https://ai-git.xyz
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # Astro 6 requires Node >=22.12; the runner default is older. Bun runs
       # alchemy/CLI itself, but the Astro build shells out to Node.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
 
       - uses: oven-sh/setup-bun@v2
 
       - name: Cache Bun install
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
