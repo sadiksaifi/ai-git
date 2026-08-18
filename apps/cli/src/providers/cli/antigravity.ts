@@ -45,6 +45,11 @@ interface PathOperations {
   dirname(path: string): string;
 }
 
+interface IsolatedRuntimeDependencies {
+  makeTemporaryDirectory(prefix: string): Promise<string>;
+  seedAuthentication(profileRoot: string): Promise<void>;
+}
+
 interface KillablePipedProcess {
   stdout: ReadableStream<Uint8Array>;
   stderr: ReadableStream<Uint8Array>;
@@ -241,51 +246,59 @@ export async function seedAntigravityAuthentication(
   }
 }
 
-async function createIsolatedRuntime(system: string): Promise<IsolatedRuntime> {
-  const root = await mkdtemp(join(tmpdir(), ISOLATED_PROFILE_PREFIX));
-  await chmod(root, 0o700);
+export async function createIsolatedRuntime(
+  system: string,
+  dependencies: Partial<IsolatedRuntimeDependencies> = {},
+): Promise<IsolatedRuntime> {
+  const makeTemporaryDirectory =
+    dependencies.makeTemporaryDirectory ?? ((prefix: string) => mkdtemp(prefix));
+  const seedAuthentication = dependencies.seedAuthentication ?? seedAntigravityAuthentication;
+  const root = await makeTemporaryDirectory(join(tmpdir(), ISOLATED_PROFILE_PREFIX));
 
-  const workspace = join(root, "workspace");
-  const cliConfigDir = join(root, "antigravity-cli");
-  const sharedConfigDir = join(root, "config");
-  const agentDir = join(sharedConfigDir, "agents", "ai-git");
-  await Promise.all([
-    mkdir(workspace, { recursive: true, mode: 0o700 }),
-    mkdir(cliConfigDir, { recursive: true, mode: 0o700 }),
-    mkdir(agentDir, { recursive: true, mode: 0o700 }),
-  ]);
-  await seedAntigravityAuthentication(root);
+  try {
+    await chmod(root, 0o700);
 
-  const settings = {
-    allowNonWorkspaceAccess: false,
-    disableSlashCommands: true,
-    enableTelemetry: false,
-    enableTerminalSandbox: true,
-    ...(process.env.GEMINI_API_KEY ? { modelProvider: "gemini" } : {}),
-    notifications: false,
-    toolPermission: "strict",
-    permissions: {
-      deny: [
-        "read_file(*)",
-        "write_file(*)",
-        "read_url(*)",
-        "execute_url(*)",
-        "command(*)",
-        "mcp(*)",
-      ],
-    },
-  };
-  const hooks = {
-    "ai-git-deny-all": {
-      PreToolUse: [
-        {
-          matcher: "*",
-          hooks: [{ type: "command", command: denyHookCommand(), timeout: 5 }],
-        },
-      ],
-    },
-  };
-  const agent = `---
+    const workspace = join(root, "workspace");
+    const cliConfigDir = join(root, "antigravity-cli");
+    const sharedConfigDir = join(root, "config");
+    const agentDir = join(sharedConfigDir, "agents", "ai-git");
+    await Promise.all([
+      mkdir(workspace, { recursive: true, mode: 0o700 }),
+      mkdir(cliConfigDir, { recursive: true, mode: 0o700 }),
+      mkdir(agentDir, { recursive: true, mode: 0o700 }),
+    ]);
+    await seedAuthentication(root);
+
+    const settings = {
+      allowNonWorkspaceAccess: false,
+      disableSlashCommands: true,
+      enableTelemetry: false,
+      enableTerminalSandbox: true,
+      ...(process.env.GEMINI_API_KEY ? { modelProvider: "gemini" } : {}),
+      notifications: false,
+      toolPermission: "strict",
+      permissions: {
+        deny: [
+          "read_file(*)",
+          "write_file(*)",
+          "read_url(*)",
+          "execute_url(*)",
+          "command(*)",
+          "mcp(*)",
+        ],
+      },
+    };
+    const hooks = {
+      "ai-git-deny-all": {
+        PreToolUse: [
+          {
+            matcher: "*",
+            hooks: [{ type: "command", command: denyHookCommand(), timeout: 5 }],
+          },
+        ],
+      },
+    };
+    const agent = `---
 name: ai-git
 description: Generate an AI Git commit message without tools or delegation.
 tools: []
@@ -303,17 +316,23 @@ plugins: []
 ${system}
 `;
 
-  await Promise.all([
-    writeFile(join(cliConfigDir, "settings.json"), JSON.stringify(settings, null, 2), {
-      mode: 0o600,
-    }),
-    writeFile(join(sharedConfigDir, "hooks.json"), JSON.stringify(hooks, null, 2), {
-      mode: 0o600,
-    }),
-    writeFile(join(agentDir, "agent.md"), agent, { mode: 0o600 }),
-  ]);
+    await Promise.all([
+      writeFile(join(cliConfigDir, "settings.json"), JSON.stringify(settings, null, 2), {
+        mode: 0o600,
+      }),
+      writeFile(join(sharedConfigDir, "hooks.json"), JSON.stringify(hooks, null, 2), {
+        mode: 0o600,
+      }),
+      writeFile(join(agentDir, "agent.md"), agent, { mode: 0o600 }),
+    ]);
 
-  return { root, workspace };
+    return { root, workspace };
+  } catch (error) {
+    if (isOwnedIsolatedProfilePath(root)) {
+      await rm(root, { recursive: true, force: true }).catch(() => {});
+    }
+    throw error;
+  }
 }
 
 export function isOwnedIsolatedProfilePath(

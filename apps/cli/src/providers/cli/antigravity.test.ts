@@ -257,6 +257,23 @@ describe("readAntigravityProcessOutput", () => {
   });
 });
 
+describe("createIsolatedRuntime", () => {
+  it("removes a partial profile when isolated setup fails", async () => {
+    const root = mkdtempSync(join(tmpdir(), "ai-git-antigravity-partial-"));
+    const { createIsolatedRuntime } = await import("./antigravity.ts");
+
+    await expect(
+      createIsolatedRuntime("system", {
+        makeTemporaryDirectory: async () => root,
+        seedAuthentication: async () => {
+          throw new Error("auth setup failed");
+        },
+      }),
+    ).rejects.toThrow("auth setup failed");
+    expect(existsSync(root)).toBe(false);
+  });
+});
+
 describe("antigravityAdapter.invoke", () => {
   let originalSpawn: typeof Bun.spawn;
   let originalGeminiApiKey: string | undefined;
