@@ -519,3 +519,35 @@ describe("ai-git CLI", () => {
     },
   );
 });
+
+it("persists and backs up an effective legacy project configuration", async () => {
+  const homeDir = createTestHome();
+  const providerPath = await createPathWithFakeAntigravity();
+  const repoDir = createGitRepo();
+  const projectConfigPath = path.join(repoDir, ".ai-git.json");
+  fs.writeFileSync(
+    projectConfigPath,
+    JSON.stringify({ provider: "gemini-cli", model: "gemini-3.1-pro-preview" }),
+  );
+  fs.writeFileSync(path.join(repoDir, "README.md"), "updated\n");
+
+  const result = await runCLI(["--dry-run", "-A"], {
+    cwd: repoDir,
+    homeDir,
+    pathEnv: providerPath,
+  });
+
+  expect(result.exitCode).toBe(0);
+  expect(JSON.parse(fs.readFileSync(projectConfigPath, "utf8"))).toMatchObject({
+    provider: "antigravity-cli",
+    model: "gemini-3.1-pro-low",
+  });
+  const backupFile = fs
+    .readdirSync(repoDir)
+    .find((file) => file.startsWith(".ai-git.json.") && file.endsWith(".bak"));
+  expect(backupFile).toBeDefined();
+  expect(JSON.parse(fs.readFileSync(path.join(repoDir, backupFile!), "utf8"))).toEqual({
+    provider: "gemini-cli",
+    model: "gemini-3.1-pro-preview",
+  });
+});

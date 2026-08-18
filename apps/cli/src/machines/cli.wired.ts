@@ -24,7 +24,9 @@ import {
   isConfigComplete,
   queueMigrationNotice,
   resolveConfigAsync,
+  saveProjectConfig,
   saveUserConfig,
+  getProjectConfigPath,
   getProviderById,
   getModelById,
   flushMigrationNotice,
@@ -188,6 +190,15 @@ async function migrateLoadedLegacyConfigs(
       // Best effort. Migration remains atomic because provider and model save together below.
     }
     await saveUserConfig(userResult.config);
+  }
+  if (projectResult.changed && projectResult.config) {
+    const projectConfigPath = await getProjectConfigPath();
+    try {
+      backupPath = await backupConfigFile(projectConfigPath);
+    } catch {
+      // Best effort. Migration remains atomic because provider and model save together below.
+    }
+    await saveProjectConfig(projectResult.config);
   }
 
   const changes = [...userResult.changes, ...projectResult.changes];
