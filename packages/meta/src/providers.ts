@@ -20,14 +20,14 @@ export const PROVIDERS: Record<string, ProviderDoc | CLIProviderDoc> = {
     requirementsUrl: "https://claude.com/claude-code",
     requirementsLabel: "Install CLI",
   },
-  "gemini-cli": {
-    id: "gemini-cli",
-    name: "Gemini CLI",
+  "antigravity-cli": {
+    id: "antigravity-cli",
+    name: "Antigravity CLI",
     type: "cli",
-    binary: "gemini",
-    installCommand: "npm install -g @google/gemini-cli",
-    docsUrl: "https://geminicli.com/docs/get-started/installation",
-    requirementsUrl: "https://geminicli.com/docs/get-started/installation",
+    binary: "agy",
+    installCommand: "curl -fsSL https://antigravity.google/cli/install.sh | bash",
+    docsUrl: "https://antigravity.google/docs/cli/overview",
+    requirementsUrl: "https://antigravity.google/docs/cli/install",
     requirementsLabel: "Install CLI",
   },
   codex: {

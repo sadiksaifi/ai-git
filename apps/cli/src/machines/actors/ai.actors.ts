@@ -67,9 +67,7 @@ export function createInvokeAIActor(
 
     const cancelSlowWarning = createSlowWarningTimer(input.slowThresholdMs, () => {
       s.message(
-        pc.yellow(
-          `Still generating with ${input.modelName}, speed varies by provider/model`,
-        ),
+        pc.yellow(`Still generating with ${input.modelName}, speed varies by provider/model`),
       );
     });
 

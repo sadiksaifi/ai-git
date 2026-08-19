@@ -30,10 +30,12 @@ ai-git is designed for developers and teams that want clean, reviewable commit h
 
 ai-git supports both CLI-based and API-based providers.
 
-- CLI providers: Claude Code, Gemini CLI, Codex, OpenCode, Pi.
+- CLI providers: Claude Code, Antigravity CLI, Codex, OpenCode, Pi.
 - API providers: OpenRouter, OpenAI, Anthropic, Google AI Studio, Cerebras.
 
 CLI providers require the corresponding provider binary on `PATH`. API providers require an API key stored through the operating system keychain when available.
+
+Antigravity CLI models are discovered from the signed-in account. Generation runs in an empty workspace with a temporary isolated profile, sandboxing, deny-all permissions and hooks, disabled slash commands, structured output validation, and post-run cleanup. Existing Gemini CLI configurations migrate provider and model together to an account-compatible Antigravity model.
 
 ## Configuration
 

@@ -1,7 +1,7 @@
 import type { CLIProviderAdapter } from "../types.ts";
+import { antigravityAdapter } from "./antigravity.ts";
 import { claudeCodeAdapter } from "./claude-code.ts";
 import { codexAdapter } from "./codex.ts";
-import { geminiCliAdapter } from "./gemini-cli.ts";
 import { opencodeAdapter } from "./opencode.ts";
 import { piAdapter } from "./pi.ts";
 
@@ -14,16 +14,16 @@ import { piAdapter } from "./pi.ts";
  * Add new CLI adapters here when adding support for new CLI tools.
  */
 const cliAdapters: Map<string, CLIProviderAdapter> = new Map([
+  [antigravityAdapter.providerId, antigravityAdapter],
   [claudeCodeAdapter.providerId, claudeCodeAdapter],
   [codexAdapter.providerId, codexAdapter],
-  [geminiCliAdapter.providerId, geminiCliAdapter],
   [opencodeAdapter.providerId, opencodeAdapter],
   [piAdapter.providerId, piAdapter],
 ]);
 
 /**
  * Get a CLI adapter by provider ID.
- * @param providerId - The provider ID (e.g., "gemini-cli", "claude-code")
+ * @param providerId - The provider ID (e.g., "antigravity-cli", "claude-code")
  * @returns The CLI adapter or undefined if not found
  */
 export function getCLIAdapter(providerId: string): CLIProviderAdapter | undefined {
@@ -32,7 +32,7 @@ export function getCLIAdapter(providerId: string): CLIProviderAdapter | undefine
 
 /**
  * Get a CLI adapter by binary name.
- * @param binary - The binary name (e.g., "gemini", "claude")
+ * @param binary - The binary name (e.g., "agy", "claude")
  * @returns The CLI adapter or undefined if not found
  */
 export function getCLIAdapterByBinary(binary: string): CLIProviderAdapter | undefined {
@@ -52,8 +52,8 @@ export function getCLIProviderIds(): string[] {
 }
 
 // Re-export adapters for direct access if needed
+export { antigravityAdapter } from "./antigravity.ts";
 export { claudeCodeAdapter } from "./claude-code.ts";
 export { codexAdapter } from "./codex.ts";
-export { geminiCliAdapter } from "./gemini-cli.ts";
 export { opencodeAdapter } from "./opencode.ts";
 export { piAdapter } from "./pi.ts";

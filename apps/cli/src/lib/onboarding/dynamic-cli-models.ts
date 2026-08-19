@@ -57,8 +57,13 @@ export async function loadDynamicCLIModelsForSetup(
   const rows = models.map((model) => ({
     id: model.id,
     name: model.name,
-    provider: model.provider,
+    ...(model.isRecommended ? { isRecommended: true } : {}),
+    ...(model.provider ? { provider: model.provider } : {}),
   }));
+
+  if (rows.some((model) => model.isRecommended)) {
+    return rows;
+  }
 
   const catalog = await loadOptionalCatalog(
     options.loadCatalog ?? getModelCatalog,

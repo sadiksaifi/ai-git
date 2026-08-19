@@ -36,20 +36,16 @@ describe("sortRecommendedFirst", () => {
 });
 
 describe("configuration schema parity", () => {
-  test("keeps the Gemini CLI catalog and default unchanged", () => {
-    expect(getModelIds("gemini-cli")).toEqual([
-      "gemini-3-flash-preview",
-      "gemini-3.1-pro-preview",
-      "gemini-3-pro-preview",
-      "gemini-2.5-flash-lite",
-      "gemini-2.5-flash",
-      "gemini-2.5-pro",
-    ]);
-    expect(
-      PROVIDERS.find((provider) => provider.id === "gemini-cli")?.models.find(
-        (model) => model.isRecommended,
-      )?.id,
-    ).toBe("gemini-3-flash-preview");
+  test("offers Antigravity as dynamic and removes Gemini CLI", () => {
+    expect(PROVIDERS.find((provider) => provider.id === "antigravity-cli")).toMatchObject({
+      name: "Antigravity CLI",
+      mode: "cli",
+      binary: "agy",
+      dynamicModels: true,
+      models: [],
+    });
+    expect(PROVIDERS.find((provider) => provider.id === "gemini-cli")).toBeUndefined();
+    expect(getModelIds("antigravity-cli")).toEqual([]);
   });
 
   test("every static CLI provider enum exactly matches the runtime registry", async () => {

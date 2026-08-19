@@ -115,7 +115,7 @@ describe("cliMachine", () => {
         ...happyPathActors(),
         loadAndResolveConfigActor: fromPromise(async (): Promise<ConfigResolutionResult> => {
           throw new Error(
-            "Unknown provider 'invalid'. Supported providers: codex, claude-code, gemini-cli, openrouter, openai, google-ai-studio, anthropic, cerebras",
+            "Unknown provider 'invalid'. Supported providers: opencode, pi, codex, claude-code, antigravity-cli, openrouter, openai, google-ai-studio, anthropic, cerebras",
           );
         }),
       },

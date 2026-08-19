@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { migrateConfig, migrations } from "./migration.ts";
+import { migrateConfig, migrateLegacyGeminiCliConfig, migrations } from "./migration.ts";
 
 describe("migrations registry", () => {
   it("should have unique IDs", () => {
@@ -155,5 +155,25 @@ describe("migrateConfig", () => {
     expect(result.config).toEqual(raw);
     expect(result.changed).toBe(false);
     expect(result.changes).toHaveLength(0);
+  });
+});
+
+describe("migrateLegacyGeminiCliConfig", () => {
+  it("updates the provider and model together from the live Antigravity catalog", async () => {
+    const result = await migrateLegacyGeminiCliConfig(
+      { provider: "gemini-cli", model: "gemini-3.1-pro-preview" },
+      async () => [
+        { id: "gemini-3.7-flash-low", name: "Gemini 3.7 Flash (Low)" },
+        { id: "gemini-3.1-pro-low", name: "Gemini 3.1 Pro (Low)" },
+      ],
+    );
+
+    expect(result).toEqual({
+      config: { provider: "antigravity-cli", model: "gemini-3.1-pro-low" },
+      changed: true,
+      changes: [
+        "Migrated provider 'gemini-cli' → 'antigravity-cli' and model 'gemini-3.1-pro-preview' → 'gemini-3.1-pro-low'",
+      ],
+    });
   });
 });

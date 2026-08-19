@@ -235,7 +235,7 @@ async function setupCLIFlow(
     }
 
     const selectedModel = await selectModel(models, providerId, defaults?.model, {
-      showRecommended: false,
+      showRecommended: getDynamicRecommendation(models) !== undefined,
     });
     if (!selectedModel) {
       return { config: null, completed: false };
@@ -444,6 +444,10 @@ export function formatModelChoiceTitle(
   return showRecommended && modelId === recommendedModel ? `${modelName} (recommended)` : modelName;
 }
 
+export function getDynamicRecommendation(models: CachedModel[]): string | undefined {
+  return models.find((model) => model.isRecommended)?.id;
+}
+
 /**
  * Select a model with fuzzy search support for large lists.
  */
@@ -455,7 +459,9 @@ async function selectModel(
 ): Promise<string | null> {
   // Find the recommended default model
   const showRecommended = options?.showRecommended ?? true;
-  let recommendedModel = showRecommended ? defaultModel : undefined;
+  let recommendedModel = showRecommended
+    ? (getDynamicRecommendation(models) ?? defaultModel)
+    : undefined;
 
   if (showRecommended && !recommendedModel) {
     try {

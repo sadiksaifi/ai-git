@@ -22,6 +22,41 @@ describe("loadDynamicCLIModelsForSetup", () => {
     expect(models).toEqual([{ id: "vendor/model#low", name: "Vendor Model (low)" }]);
   });
 
+  it("preserves provider-ranked models and their dynamic recommendation", async () => {
+    const { loadDynamicCLIModelsForSetup } = await import("./dynamic-cli-models.ts");
+
+    const models = await loadDynamicCLIModelsForSetup("antigravity-cli", {
+      providerName: "Antigravity CLI",
+      loadCatalog: async () => {
+        throw new Error("provider ranking does not need models.dev");
+      },
+      adapter: {
+        providerId: "antigravity-cli",
+        mode: "cli",
+        binary: "agy",
+        checkAvailable: async () => true,
+        invoke: async () => "",
+        fetchModels: async () => [
+          {
+            id: "gemini-3.7-flash-low",
+            name: "Gemini 3.7 Flash (Low)",
+            isRecommended: true,
+          },
+          { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
+        ],
+      },
+    });
+
+    expect(models).toEqual([
+      {
+        id: "gemini-3.7-flash-low",
+        name: "Gemini 3.7 Flash (Low)",
+        isRecommended: true,
+      },
+      { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
+    ]);
+  });
+
   it("falls back when catalog loading does not settle", async () => {
     const { loadDynamicCLIModelsForSetup } = await import("./dynamic-cli-models.ts");
 
