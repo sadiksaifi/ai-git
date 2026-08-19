@@ -19,6 +19,7 @@ const ISOLATED_PROFILE_PREFIX = "ai-git-antigravity-";
 const DENY_REASON = "AI Git disables all Antigravity tools.";
 const ANTIGRAVITY_PREFLIGHT_TIMEOUT_MS = 30_000;
 const ANTIGRAVITY_GENERATION_TIMEOUT_MS = 130_000;
+const ANTIGRAVITY_TERMINATION_GRACE_MS = 2_000;
 
 interface AntigravityEnvelope {
   status?: string;
@@ -54,7 +55,7 @@ interface KillablePipedProcess {
   stdout: ReadableStream<Uint8Array>;
   stderr: ReadableStream<Uint8Array>;
   exited: Promise<number>;
-  kill(): void;
+  kill(signal?: number | NodeJS.Signals): void;
 }
 
 interface ModelRank {
@@ -197,6 +198,7 @@ async function assertSupportedVersion(): Promise<void> {
 export async function readAntigravityProcessOutput(
   process: KillablePipedProcess,
   timeoutMs: number = ANTIGRAVITY_PREFLIGHT_TIMEOUT_MS,
+  terminationGraceMs: number = ANTIGRAVITY_TERMINATION_GRACE_MS,
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   let timeout: Timer | undefined;
   const outputPromise = readProcessOutput(process);
@@ -211,7 +213,30 @@ export async function readAntigravityProcessOutput(
     const result = await Promise.race([outputPromise, timeoutPromise]);
     if (result !== "timeout") return result;
 
-    await outputPromise.catch(() => {});
+    let terminationTimeout: Timer | undefined;
+    const settledAfterTermination = await Promise.race([
+      outputPromise.then(
+        () => true,
+        () => true,
+      ),
+      new Promise<boolean>((resolve) => {
+        terminationTimeout = setTimeout(() => resolve(false), terminationGraceMs);
+      }),
+    ]);
+    if (terminationTimeout) clearTimeout(terminationTimeout);
+
+    if (!settledAfterTermination) {
+      process.kill("SIGKILL");
+      let forceKillTimeout: Timer | undefined;
+      await Promise.race([
+        outputPromise.catch(() => {}),
+        new Promise<void>((resolve) => {
+          forceKillTimeout = setTimeout(resolve, terminationGraceMs);
+        }),
+      ]);
+      if (forceKillTimeout) clearTimeout(forceKillTimeout);
+    }
+
     throw new Error(`Antigravity CLI timed out after ${timeoutMs}ms.`);
   } finally {
     if (timeout) clearTimeout(timeout);

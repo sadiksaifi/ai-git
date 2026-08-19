@@ -206,9 +206,7 @@ describe("selectAntigravityMigrationModel", () => {
       { id: "gemini-4.0-pro-high", name: "Gemini 4.0 Pro (High)" },
     ];
 
-    expect(selectAntigravityMigrationModel("gemini-3-flash-preview", models)).toBe(
-      "vendor-first",
-    );
+    expect(selectAntigravityMigrationModel("gemini-3-flash-preview", models)).toBe("vendor-first");
   });
 });
 
@@ -294,6 +292,30 @@ describe("readAntigravityProcessOutput", () => {
     resolveExit(143);
 
     await expect(result).rejects.toThrow("Antigravity CLI timed out");
+  });
+
+  it("escalates and returns when a killed subprocess never terminates", async () => {
+    const killSignals: Array<string | number | undefined> = [];
+    const process = {
+      stdout: new ReadableStream<Uint8Array>(),
+      stderr: new ReadableStream<Uint8Array>(),
+      exited: new Promise<number>(() => {}),
+      kill: (signal?: string | number) => {
+        killSignals.push(signal);
+      },
+    };
+    const { readAntigravityProcessOutput } = await import("./antigravity.ts");
+    const result = readAntigravityProcessOutput(process, 1, 1);
+    const outcome = await Promise.race([
+      result.then(
+        () => "resolved",
+        (error) => String(error),
+      ),
+      Bun.sleep(20).then(() => "still pending"),
+    ]);
+
+    expect(outcome).toContain("Antigravity CLI timed out");
+    expect(killSignals).toEqual([undefined, "SIGKILL"]);
   });
 });
 
