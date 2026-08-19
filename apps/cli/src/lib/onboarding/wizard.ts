@@ -210,7 +210,7 @@ async function setupCLIFlow(
       models = await loadDynamicCLIModelsForSetup(providerId, { providerName: providerDef.name });
       s.stop(pc.green(`Found ${models.length} models`));
     } catch (error) {
-      s.stop(pc.red("Error fetching models"));
+      s.error("Error fetching models");
       log.error("");
       log.error(pc.red(error instanceof Error ? error.message : "Model listing failed."));
       log.error("");
@@ -330,7 +330,7 @@ async function setupAPIFlow(ctx: FlowContext, providerId: string): Promise<Wizar
   try {
     const adapter = getAPIAdapter(providerId);
     if (!adapter) {
-      s.stop(pc.red("Error: Provider adapter not found"));
+      s.error("Error: Provider adapter not found");
       return { config: null, completed: false };
     }
 
@@ -338,7 +338,7 @@ async function setupAPIFlow(ctx: FlowContext, providerId: string): Promise<Wizar
     const fetchedModels = await adapter.fetchModels(apiKey);
 
     if (fetchedModels.length === 0) {
-      s.stop(pc.red("Error: No models available"));
+      s.error("Error: No models available");
       log.error(pc.red("The API returned no models. Please check your API key."));
       return { config: null, completed: false };
     }
@@ -358,7 +358,7 @@ async function setupAPIFlow(ctx: FlowContext, providerId: string): Promise<Wizar
 
     s.stop(pc.green(`Found ${models.length} models`));
   } catch (error) {
-    s.stop(pc.red("Error validating API key"));
+    s.error("Error validating API key");
     log.error("");
     log.error(pc.red(`API Error: ${error instanceof Error ? error.message : "Unknown error"}`));
     log.error("");

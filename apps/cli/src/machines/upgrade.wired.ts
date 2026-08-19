@@ -37,7 +37,7 @@ export const wiredUpgradeMachine = upgradeMachine.provide({
         }
         return result;
       } catch (error) {
-        s.stop(extractErrorMessage(error), 1);
+        s.error(extractErrorMessage(error));
         throw error;
       }
     }),
@@ -55,7 +55,7 @@ export const wiredUpgradeMachine = upgradeMachine.provide({
         s.stop("Platform detected");
         return platform;
       } catch (error) {
-        s.stop(extractErrorMessage(error), 1);
+        s.error(extractErrorMessage(error));
         throw error;
       }
     }),
@@ -69,7 +69,7 @@ export const wiredUpgradeMachine = upgradeMachine.provide({
           s.stop("Downloaded");
           return result;
         } catch (error) {
-          s.stop(extractErrorMessage(error), 1);
+          s.error(extractErrorMessage(error));
           throw error;
         }
       },
@@ -92,7 +92,7 @@ export const wiredUpgradeMachine = upgradeMachine.provide({
           if (!valid) throw new Error("Checksum verification failed. Aborting upgrade.");
           s.stop("Checksum verified");
         } catch (error) {
-          s.stop(extractErrorMessage(error), 1);
+          s.error(extractErrorMessage(error));
           throw error;
         }
       },
@@ -107,7 +107,7 @@ export const wiredUpgradeMachine = upgradeMachine.provide({
           s.stop("Extracted");
           return result;
         } catch (error) {
-          s.stop(extractErrorMessage(error), 1);
+          s.error(extractErrorMessage(error));
           throw error;
         }
       },
@@ -125,7 +125,7 @@ export const wiredUpgradeMachine = upgradeMachine.provide({
           installBinary(input.extractedBinPath);
           s.stop(`Upgraded ai-git: ${input.version} -> ${input.latestVersion}`);
         } catch (error) {
-          s.stop(extractErrorMessage(error), 1);
+          s.error(extractErrorMessage(error));
           throw error;
         }
       },
