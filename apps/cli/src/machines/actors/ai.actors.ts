@@ -63,12 +63,12 @@ export function createInvokeAIActor(
       options.shouldUseInteractiveSpinner ?? shouldUseInteractiveSpinner;
     const createSpinner = options.spinnerFactory ?? spinner;
     const s = useInteractiveSpinner() ? createSpinner() : noopSpinner;
-    s.start(`Analyzing changes with ${input.modelName}...`);
+    s.start(`Generating with ${input.modelName}`);
 
     const cancelSlowWarning = createSlowWarningTimer(input.slowThresholdMs, () => {
       s.message(
         pc.yellow(
-          `Still generating with ${input.modelName}... Speed depends on your selected provider and model.`,
+          `Still generating with ${input.modelName}, speed varies by provider/model`,
         ),
       );
     });
