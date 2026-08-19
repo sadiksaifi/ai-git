@@ -144,7 +144,7 @@ function rankModels(models: APIModelDefinition[]): APIModelDefinition[] {
   const recommendedId =
     recommendationPatterns
       .map((pattern) => ranked.find((model) => pattern.test(model.id))?.id)
-      .find(Boolean) ?? ranked[0]?.id;
+      .find(Boolean) ?? models[0]?.id;
 
   return ranked.map((model) => ({
     ...model,

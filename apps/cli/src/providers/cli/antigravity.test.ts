@@ -198,6 +198,18 @@ describe("selectAntigravityMigrationModel", () => {
       expect(selectAntigravityMigrationModel(legacyModel, models)).toBe("gemini-3.7-pro-low");
     }
   });
+
+  it("preserves provider order for the final account-compatible fallback", async () => {
+    const { selectAntigravityMigrationModel } = await import("./antigravity.ts");
+    const models = [
+      { id: "vendor-first", name: "Provider First" },
+      { id: "gemini-4.0-pro-high", name: "Gemini 4.0 Pro (High)" },
+    ];
+
+    expect(selectAntigravityMigrationModel("gemini-3-flash-preview", models)).toBe(
+      "vendor-first",
+    );
+  });
 });
 
 describe("seedAntigravityAuthentication", () => {
