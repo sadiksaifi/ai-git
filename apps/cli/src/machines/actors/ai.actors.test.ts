@@ -47,6 +47,7 @@ describe("createInvokeAIActor", () => {
       start: mock(() => {}),
       message: mock(() => {}),
       stop: mock(() => {}),
+      error: mock(() => {}),
     }));
     const actor = createInvokeAIActor(async () => "feat: add login", {
       shouldUseInteractiveSpinner: () => false,

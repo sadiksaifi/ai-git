@@ -60,7 +60,10 @@ export function createConfirmActor(
 
 export function createTextActor(
   resolver: (input: TextInput) => Promise<string | symbol> = (input) =>
-    text(input) as Promise<string | symbol>,
+    text({
+      ...input,
+      validate: input.validate ? (value) => input.validate?.(value ?? "") : undefined,
+    }) as Promise<string | symbol>,
 ) {
   return fromPromise(async ({ input }: { input: TextInput }) => {
     const result = await resolver(input);
