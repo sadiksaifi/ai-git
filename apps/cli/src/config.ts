@@ -103,7 +103,7 @@ export function queueMigrationNotice(notice: MigrationNotice): void {
 
 /**
  * Show any pending migration notice and clear it.
- * Call this after the welcome screen renders so `console.clear()` doesn't wipe it.
+ * Call this after the welcome screen renders so the fresh viewport doesn't hide it.
  */
 export function flushMigrationNotice(): void {
   if (pendingMigrationNotice) {

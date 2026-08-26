@@ -14,6 +14,22 @@ export interface WelcomeResult {
 }
 
 /**
+ * Build a blank viewport while retaining the current screen in scrollback.
+ */
+export function freshViewportSequence(rows: number): string {
+  if (!Number.isInteger(rows) || rows <= 0) return "";
+
+  return `\x1b[${rows};1H${"\n".repeat(rows)}\x1b[H`;
+}
+
+function startOnFreshViewport(): void {
+  if (!process.stdout.isTTY) return;
+
+  const sequence = freshViewportSequence(process.stdout.rows);
+  if (sequence) process.stdout.write(sequence);
+}
+
+/**
  * Strip ANSI escape codes from a string.
  */
 function stripAnsi(str: string): string {
@@ -90,7 +106,7 @@ export async function showWelcomeScreen(
   version: string,
   options?: WelcomeOptions,
 ): Promise<WelcomeResult> {
-  console.clear();
+  startOnFreshViewport();
 
   // Layout dimensions
   const leftWidth = 30;
