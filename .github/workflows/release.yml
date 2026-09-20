@@ -359,6 +359,15 @@ jobs:
           name: release-artifacts
           path: apps/cli/dist
 
+      - name: Ensure release does not already exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::Release $GITHUB_REF_NAME already exists; refusing to overwrite verified assets."
+            exit 1
+          fi
+
       - name: Generate Changelog
         uses: orhun/git-cliff-action@v4
         id: changelog
@@ -373,6 +382,8 @@ jobs:
         with:
           body: ${{ steps.changelog.outputs.content }}
           generate_release_notes: false
+          overwrite_files: false
+          fail_on_unmatched_files: true
           files: |
             apps/cli/dist/ai-git-darwin-arm64.tar.gz
             apps/cli/dist/ai-git-darwin-x64.tar.gz
@@ -447,21 +458,15 @@ jobs:
       - name: Install latest npm
         run: npm install -g npm@latest
 
-      - name: Download release artifacts
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION=${{ github.ref_name }}
-          mkdir -p /tmp/artifacts
-          cd /tmp/artifacts
-          gh release download "$VERSION" \
-            -R ${{ github.repository }} \
-            -p "ai-git-darwin-arm64.tar.gz" \
-            -p "ai-git-darwin-x64.tar.gz" \
-            -p "ai-git-linux-arm64.tar.gz" \
-            -p "ai-git-linux-x64.tar.gz" \
-            -p "ai-git-windows-x64.zip" \
-            -p "ai-git-windows-arm64.zip"
+      - name: Download verified release artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: release-artifacts
+          path: /tmp/artifacts
+
+      - name: Verify release artifact checksums
+        working-directory: /tmp/artifacts
+        run: shasum -a 256 -c checksums.txt
 
       - name: Place binaries in platform packages
         run: |
