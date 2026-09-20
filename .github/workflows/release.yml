@@ -162,7 +162,7 @@ jobs:
       contents: read
     env:
       PLATFORM: ${{ matrix.platform }}
-      RUNNER_ARCH: ${{ matrix.runner_arch }}
+      EXPECTED_RUNNER_ARCH: ${{ matrix.runner_arch }}
       FILE_ARCH: ${{ matrix.file_arch }}
 
     steps:
@@ -176,7 +176,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(uname -m)" = "$RUNNER_ARCH"
+          actual_arch="$(uname -m)"
+          if [ "$actual_arch" != "$EXPECTED_RUNNER_ARCH" ]; then
+            echo "::error::Expected runner architecture $EXPECTED_RUNNER_ARCH, got $actual_arch"
+            exit 1
+          fi
           mkdir extracted
           tar -xzf "artifacts/ai-git-${PLATFORM}.tar.gz" -C extracted
           test -x extracted/ai-git
@@ -240,7 +244,7 @@ jobs:
       contents: read
     env:
       PLATFORM: ${{ matrix.platform }}
-      RUNNER_ARCH: ${{ matrix.runner_arch }}
+      EXPECTED_RUNNER_ARCH: ${{ matrix.runner_arch }}
       PE_MACHINE: ${{ matrix.pe_machine }}
 
     steps:
@@ -255,8 +259,8 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           $osArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
-          if ($osArchitecture -ne $env:RUNNER_ARCH) {
-            throw "Expected runner architecture $env:RUNNER_ARCH, got $osArchitecture"
+          if ($osArchitecture -ne $env:EXPECTED_RUNNER_ARCH) {
+            throw "Expected runner architecture $env:EXPECTED_RUNNER_ARCH, got $osArchitecture"
           }
 
           $archive = Join-Path $PWD "artifacts/ai-git-$env:PLATFORM.zip"
