@@ -6,10 +6,10 @@ on:
       - "v*"
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
 
     steps:
       - name: Checkout
@@ -83,9 +83,293 @@ jobs:
           cd dist
           zip ai-git-windows-arm64.zip ai-git.exe
 
+      - name: Upload macOS ARM64 artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-darwin-arm64
+          path: apps/cli/dist/ai-git-darwin-arm64.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload macOS x64 artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-darwin-x64
+          path: apps/cli/dist/ai-git-darwin-x64.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload Linux x64 artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-linux-x64
+          path: apps/cli/dist/ai-git-linux-x64.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload Linux ARM64 artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-linux-arm64
+          path: apps/cli/dist/ai-git-linux-arm64.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload Windows x64 artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-windows-x64
+          path: apps/cli/dist/ai-git-windows-x64.zip
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload Windows ARM64 artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-windows-arm64
+          path: apps/cli/dist/ai-git-windows-arm64.zip
+          if-no-files-found: error
+          retention-days: 1
+
+  verify-unix:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: darwin-arm64
+            runner: macos-15
+            runner_arch: arm64
+            file_arch: arm64
+            macos: true
+          - platform: darwin-x64
+            runner: macos-15-intel
+            runner_arch: x86_64
+            file_arch: x86_64
+            macos: true
+          - platform: linux-arm64
+            runner: ubuntu-24.04-arm
+            runner_arch: aarch64
+            file_arch: AArch64
+            macos: false
+          - platform: linux-x64
+            runner: ubuntu-24.04
+            runner_arch: x86_64
+            file_arch: Advanced Micro Devices X86-64
+            macos: false
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    env:
+      PLATFORM: ${{ matrix.platform }}
+      RUNNER_ARCH: ${{ matrix.runner_arch }}
+      FILE_ARCH: ${{ matrix.file_arch }}
+
+    steps:
+      - name: Download ${{ matrix.platform }} artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: build-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Extract artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "$RUNNER_ARCH"
+          mkdir extracted
+          tar -xzf "artifacts/ai-git-${PLATFORM}.tar.gz" -C extracted
+          test -x extracted/ai-git
+
+      - name: Sign and package macOS artifact
+        if: matrix.macos
+        shell: bash
+        run: |
+          set -euo pipefail
+          codesign --force --sign - --preserve-metadata=entitlements,flags,runtime extracted/ai-git
+          COPYFILE_DISABLE=1 tar --no-xattrs --no-mac-metadata \
+            -czf "artifacts/ai-git-${PLATFORM}.tar.gz" -C extracted ai-git
+
+      - name: Verify final artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="artifacts/ai-git-${PLATFORM}.tar.gz"
+          python3 -c 'import sys, tarfile; names = tarfile.open(sys.argv[1]).getnames(); assert names == ["ai-git"], f"unexpected archive members: {names}"' "$archive"
+          rm -rf verified
+          mkdir verified
+          tar -xzf "$archive" -C verified
+          test -x verified/ai-git
+
+          if [ "${{ matrix.macos }}" = "true" ]; then
+            test "$(lipo -archs verified/ai-git)" = "$FILE_ARCH"
+            codesign --verify --strict --verbose=2 verified/ai-git
+          else
+            actual_arch="$(readelf -h verified/ai-git | sed -n 's/^[[:space:]]*Machine:[[:space:]]*//p')"
+            test "$actual_arch" = "$FILE_ARCH"
+          fi
+
+          expected="${GITHUB_REF_NAME#v}"
+          actual="$(verified/ai-git --version)"
+          test "$actual" = "$expected"
+
+      - name: Upload verified ${{ matrix.platform }} artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: verified-${{ matrix.platform }}
+          path: artifacts/ai-git-${{ matrix.platform }}.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+  verify-windows:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-arm64
+            runner: windows-11-arm
+            runner_arch: Arm64
+            pe_machine: 43620
+          - platform: windows-x64
+            runner: windows-2025
+            runner_arch: X64
+            pe_machine: 34404
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    env:
+      PLATFORM: ${{ matrix.platform }}
+      RUNNER_ARCH: ${{ matrix.runner_arch }}
+      PE_MACHINE: ${{ matrix.pe_machine }}
+
+    steps:
+      - name: Download ${{ matrix.platform }} artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: build-${{ matrix.platform }}
+          path: artifacts
+
+      - name: Inspect and run artifact
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $osArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
+          if ($osArchitecture -ne $env:RUNNER_ARCH) {
+            throw "Expected runner architecture $env:RUNNER_ARCH, got $osArchitecture"
+          }
+
+          $archive = Join-Path $PWD "artifacts/ai-git-$env:PLATFORM.zip"
+          $extract = Join-Path $PWD "extracted"
+          Expand-Archive -Path $archive -DestinationPath $extract
+
+          $executable = Join-Path $extract "ai-git.exe"
+          if (-not (Test-Path $executable -PathType Leaf)) {
+            throw "ai-git.exe was not found in $archive"
+          }
+
+          $bytes = [System.IO.File]::ReadAllBytes($executable)
+          if ([System.Text.Encoding]::ASCII.GetString($bytes, 0, 2) -ne "MZ") {
+            throw "ai-git.exe is not a PE executable"
+          }
+          $peOffset = [System.BitConverter]::ToInt32($bytes, 0x3c)
+          $machine = [System.BitConverter]::ToUInt16($bytes, $peOffset + 4)
+          if ($machine -ne [int]$env:PE_MACHINE) {
+            throw "Expected PE machine $env:PE_MACHINE, got $machine"
+          }
+
+          $expected = $env:GITHUB_REF_NAME -replace '^v', ''
+          $actual = (& $executable --version | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) {
+            throw "ai-git.exe exited with code $LASTEXITCODE"
+          }
+          if ($actual -ne $expected) {
+            throw "Expected version $expected, got $actual"
+          }
+
+      - name: Upload verified ${{ matrix.platform }} artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: verified-${{ matrix.platform }}
+          path: artifacts/ai-git-${{ matrix.platform }}.zip
+          if-no-files-found: error
+          retention-days: 1
+
+  assemble:
+    needs:
+      - verify-unix
+      - verify-windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Download verified artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: verified-*
+          path: apps/cli/dist
+          merge-multiple: true
+
       - name: Generate checksums
         working-directory: apps/cli/dist
-        run: shasum -a 256 ./*.tar.gz ./*.zip > checksums.txt
+        run: |
+          set -euo pipefail
+          for archive in \
+            ai-git-darwin-arm64.tar.gz \
+            ai-git-darwin-x64.tar.gz \
+            ai-git-linux-arm64.tar.gz \
+            ai-git-linux-x64.tar.gz \
+            ai-git-windows-arm64.zip \
+            ai-git-windows-x64.zip; do
+            test -f "$archive"
+          done
+          shasum -a 256 ./*.tar.gz ./*.zip > checksums.txt
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-artifacts
+          path: |
+            apps/cli/dist/ai-git-darwin-arm64.tar.gz
+            apps/cli/dist/ai-git-darwin-x64.tar.gz
+            apps/cli/dist/ai-git-linux-x64.tar.gz
+            apps/cli/dist/ai-git-linux-arm64.tar.gz
+            apps/cli/dist/ai-git-windows-x64.zip
+            apps/cli/dist/ai-git-windows-arm64.zip
+            apps/cli/dist/checksums.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  release:
+    needs: assemble
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Fetch tags and remote branches
+        run: git fetch --force --tags origin '+refs/heads/*:refs/remotes/origin/*'
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: release-artifacts
+          path: apps/cli/dist
+
+      - name: Ensure release does not already exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::Release $GITHUB_REF_NAME already exists; refusing to overwrite verified assets."
+            exit 1
+          fi
 
       - name: Generate Changelog
         uses: orhun/git-cliff-action@v4
@@ -101,6 +385,8 @@ jobs:
         with:
           body: ${{ steps.changelog.outputs.content }}
           generate_release_notes: false
+          overwrite_files: false
+          fail_on_unmatched_files: true
           files: |
             apps/cli/dist/ai-git-darwin-arm64.tar.gz
             apps/cli/dist/ai-git-darwin-x64.tar.gz
@@ -175,21 +461,15 @@ jobs:
       - name: Install latest npm
         run: npm install -g npm@latest
 
-      - name: Download release artifacts
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION=${{ github.ref_name }}
-          mkdir -p /tmp/artifacts
-          cd /tmp/artifacts
-          gh release download "$VERSION" \
-            -R ${{ github.repository }} \
-            -p "ai-git-darwin-arm64.tar.gz" \
-            -p "ai-git-darwin-x64.tar.gz" \
-            -p "ai-git-linux-arm64.tar.gz" \
-            -p "ai-git-linux-x64.tar.gz" \
-            -p "ai-git-windows-x64.zip" \
-            -p "ai-git-windows-arm64.zip"
+      - name: Download verified release artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: release-artifacts
+          path: /tmp/artifacts
+
+      - name: Verify release artifact checksums
+        working-directory: /tmp/artifacts
+        run: shasum -a 256 -c checksums.txt
 
       - name: Place binaries in platform packages
         run: |
