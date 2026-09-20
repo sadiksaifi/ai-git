@@ -20,10 +20,8 @@ jobs:
       - name: Fetch tags and remote branches
         run: git fetch --force --tags origin '+refs/heads/*:refs/remotes/origin/*'
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
+      - name: Setup tools
+        uses: jdx/mise-action@v4
 
       - name: Validate release tag
         id: tagsmith
