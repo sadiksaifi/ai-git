@@ -187,15 +187,18 @@ jobs:
         run: |
           set -euo pipefail
           codesign --force --sign - --preserve-metadata=entitlements,flags,runtime extracted/ai-git
-          tar -czf "artifacts/ai-git-${PLATFORM}.tar.gz" -C extracted ai-git
+          COPYFILE_DISABLE=1 tar --no-xattrs --no-mac-metadata \
+            -czf "artifacts/ai-git-${PLATFORM}.tar.gz" -C extracted ai-git
 
       - name: Verify final artifact
         shell: bash
         run: |
           set -euo pipefail
+          archive="artifacts/ai-git-${PLATFORM}.tar.gz"
+          python3 -c 'import sys, tarfile; names = tarfile.open(sys.argv[1]).getnames(); assert names == ["ai-git"], f"unexpected archive members: {names}"' "$archive"
           rm -rf verified
           mkdir verified
-          tar -xzf "artifacts/ai-git-${PLATFORM}.tar.gz" -C verified
+          tar -xzf "$archive" -C verified
           test -x verified/ai-git
 
           if [ "${{ matrix.macos }}" = "true" ]; then
