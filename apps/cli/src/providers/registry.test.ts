@@ -1,6 +1,8 @@
 import { describe, test, expect } from "bun:test";
 import * as path from "node:path";
-import { PROVIDERS, getModelIds, sortRecommendedFirst } from "./registry.ts";
+import { PROVIDERS as PROVIDER_DOCS } from "@ai-git/meta";
+import { getAdapter } from "./index.ts";
+import { PROVIDERS, sortRecommendedFirst } from "./registry.ts";
 
 type Item = { id: string; isRecommended?: boolean };
 
@@ -35,38 +37,49 @@ describe("sortRecommendedFirst", () => {
   });
 });
 
+describe("provider registry", () => {
+  test("derives every provider from @ai-git/meta docs", () => {
+    expect(PROVIDERS.map((provider) => provider.id)).toEqual(Object.keys(PROVIDER_DOCS));
+    for (const provider of PROVIDERS) {
+      const doc = PROVIDER_DOCS[provider.id]!;
+      expect(provider.name).toBe(doc.name);
+      expect(provider.mode).toBe(doc.type);
+    }
+  });
+
+  test("every provider has an adapter in the same mode", () => {
+    for (const provider of PROVIDERS) {
+      expect(getAdapter(provider.id)?.mode).toBe(provider.mode);
+    }
+  });
+
+  test("every CLI provider can list models live", () => {
+    for (const provider of PROVIDERS.filter((entry) => entry.mode === "cli")) {
+      const adapter = getAdapter(provider.id) as { fetchModels?: unknown } | undefined;
+      expect(typeof adapter?.fetchModels).toBe("function");
+    }
+  });
+});
+
 describe("configuration schema parity", () => {
-  test("offers Antigravity as dynamic and removes Gemini CLI", () => {
+  test("offers Antigravity and removes Gemini CLI", () => {
     expect(PROVIDERS.find((provider) => provider.id === "antigravity-cli")).toMatchObject({
       name: "Antigravity CLI",
       mode: "cli",
       binary: "agy",
-      dynamicModels: true,
-      models: [],
     });
     expect(PROVIDERS.find((provider) => provider.id === "gemini-cli")).toBeUndefined();
-    expect(getModelIds("antigravity-cli")).toEqual([]);
   });
 
-  test("every static CLI provider enum exactly matches the runtime registry", async () => {
+  test("the schema provider enum matches the runtime registry", async () => {
     const schema = await Bun.file(path.resolve(import.meta.dir, "../../../../schema.json")).json();
-
-    for (const provider of PROVIDERS.filter(
-      (entry) => entry.mode === "cli" && !entry.dynamicModels,
-    )) {
-      const providerSchema = schema.allOf.find(
-        (entry: any) => entry.if?.properties?.provider?.const === provider.id,
-      );
-      expect(providerSchema?.then?.properties?.model?.enum).toEqual(
-        provider.models.map((model) => model.id),
-      );
-    }
+    expect(schema.properties.provider.enum).toEqual(PROVIDERS.map((provider) => provider.id));
   });
 
-  test("dynamic providers remain unrestricted strings without static model IDs", async () => {
+  test("every provider model is an unrestricted string without static model IDs", async () => {
     const schema = await Bun.file(path.resolve(import.meta.dir, "../../../../schema.json")).json();
 
-    for (const provider of PROVIDERS.filter((entry) => entry.dynamicModels)) {
+    for (const provider of PROVIDERS) {
       const modelSchema = schema.allOf.find(
         (entry: any) => entry.if?.properties?.provider?.const === provider.id,
       )?.then?.properties?.model;

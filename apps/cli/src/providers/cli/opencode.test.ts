@@ -123,7 +123,6 @@ describe("opencode registry", () => {
       name: "OpenCode",
       mode: "cli",
       binary: "opencode",
-      dynamicModels: true,
     });
   });
 });

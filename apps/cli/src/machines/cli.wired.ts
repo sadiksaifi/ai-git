@@ -28,7 +28,6 @@ import {
   saveUserConfig,
   getProjectConfigPath,
   getProviderById,
-  getModelById,
   flushMigrationNotice,
 } from "../config.ts";
 import { backupConfigFile, migrateLegacyGeminiCliConfig } from "../lib/migration.ts";
@@ -101,41 +100,24 @@ async function resolveFullConfig(
 
   // Resolve model
   const modelId = options.model ?? resolvedConfig.model;
-  let model: string;
-  let modelName: string;
+  const model = modelId;
+  const modelName = modelId;
 
-  if (providerDef.dynamicModels) {
-    model = modelId;
-    modelName = modelId;
-
-    // API providers validate configured models against models.dev deprecation metadata.
-    // Dynamic CLI providers list models only during configure; generation intentionally
-    // does not re-fetch or revalidate live CLI model lists.
-    if (providerDef.mode === "api") {
-      try {
-        await assertConfiguredModelAllowed(providerDef.id as SupportedAPIProviderId, model);
-      } catch (error) {
-        console.error(
-          pc.red(
-            `Error: ${error instanceof Error ? error.message : "Configured model is not allowed."}`,
-          ),
-        );
-        console.error(pc.dim("Run `ai-git configure` to select a supported model."));
-        throw error;
-      }
-    }
-  } else {
-    const modelDef = getModelById(providerDef, modelId);
-    if (!modelDef) {
+  // API providers validate configured models against models.dev deprecation metadata.
+  // CLI providers list models only during configure; generation intentionally
+  // does not re-fetch or revalidate live CLI model lists.
+  if (providerDef.mode === "api") {
+    try {
+      await assertConfiguredModelAllowed(providerDef.id as SupportedAPIProviderId, model);
+    } catch (error) {
       console.error(
-        pc.red(`Error: Unknown model '${modelId}' for provider '${providerDef.name}'.`),
+        pc.red(
+          `Error: ${error instanceof Error ? error.message : "Configured model is not allowed."}`,
+        ),
       );
-      console.error(pc.dim(`Available models: ${providerDef.models.map((m) => m.id).join(", ")}`));
       console.error(pc.dim("Run `ai-git configure` to select a supported model."));
-      throw new Error(`Unknown model '${modelId}' for provider '${providerDef.name}'`);
+      throw error;
     }
-    model = modelDef.id;
-    modelName = modelDef.name;
   }
 
   return {
@@ -266,30 +248,17 @@ export const wiredCliMachine = cliMachine.provide({
         showUpdateNotification(updateResult);
 
         // Neither config is complete. Two scenarios:
-        // 1. Config has provider+model but they're invalid → hard error with guidance
+        // 1. Config has provider+model but the provider is unknown → hard error with guidance
         // 2. Config is truly missing or empty → return needsSetup to trigger onboarding
         if (!isGlobalComplete && !isProjectComplete && !hasCompleteOverride) {
           const bestConfig = existingProjectConfig ?? existingConfig;
-          if (bestConfig?.provider && bestConfig?.model) {
-            // Scenario 1: User has a config file with values that don't match any
-            // known provider/model. Fail loudly instead of silently re-running setup.
-            const provider = getProviderById(bestConfig.provider);
-            if (!provider) {
-              const validProviders = PROVIDERS.map((p) => p.id).join(", ");
-              console.error(pc.red(`Error: Unknown provider '${bestConfig.provider}'.`));
-              console.error(pc.dim(`Supported providers: ${validProviders}`));
-              console.error(pc.dim("Run `ai-git configure` to select a valid provider."));
-              throw new Error(`Unknown provider '${bestConfig.provider}'`);
-            }
-            // Provider is valid but model is not
-            console.error(
-              pc.red(`Error: Unknown model '${bestConfig.model}' for provider '${provider.name}'.`),
-            );
-            console.error(
-              pc.dim(`Available models: ${provider.models.map((m) => m.id).join(", ")}`),
-            );
-            console.error(pc.dim("Run `ai-git configure` to select a valid model."));
-            throw new Error(`Unknown model '${bestConfig.model}' for provider '${provider.name}'`);
+          if (bestConfig?.provider && bestConfig?.model && !getProviderById(bestConfig.provider)) {
+            // Scenario 1: Fail loudly instead of silently re-running setup.
+            const validProviders = PROVIDERS.map((p) => p.id).join(", ");
+            console.error(pc.red(`Error: Unknown provider '${bestConfig.provider}'.`));
+            console.error(pc.dim(`Supported providers: ${validProviders}`));
+            console.error(pc.dim("Run `ai-git configure` to select a valid provider."));
+            throw new Error(`Unknown provider '${bestConfig.provider}'`);
           }
 
           return {

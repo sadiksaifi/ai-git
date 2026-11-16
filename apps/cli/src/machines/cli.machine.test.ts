@@ -34,8 +34,6 @@ const mockConfigResult = (): ConfigResolutionResult => ({
     mode: "cli" as const,
     binary: "claude",
     isRecommended: false,
-    dynamicModels: false,
-    models: [{ id: "sonnet-low", name: "Claude Sonnet (low)", isRecommended: true }],
   },
   adapter: {
     providerId: "claude-code",

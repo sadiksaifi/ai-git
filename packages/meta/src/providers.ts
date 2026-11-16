@@ -6,8 +6,10 @@ import type { ProviderDoc, CLIProviderDoc } from "./types.ts";
 
 /**
  * Provider documentation metadata.
- * Display-only data for help screens, README, and documentation sites.
- * Runtime data (adapters, model lists, binaries) stays in apps/cli.
+ * Display data for help screens, README, and documentation sites.
+ * The CLI provider registry (apps/cli/src/providers/registry.ts) derives its
+ * provider list from this record, so adding a provider starts here.
+ * Adapters stay in apps/cli. No provider has a hardcoded model list.
  */
 export const PROVIDERS: Record<string, ProviderDoc | CLIProviderDoc> = {
   "claude-code": {
@@ -55,7 +57,7 @@ export const PROVIDERS: Record<string, ProviderDoc | CLIProviderDoc> = {
     name: "Pi",
     type: "cli",
     binary: "pi",
-    installCommand: "npm install -g @mariozechner/pi-coding-agent",
+    installCommand: "npm install -g @earendil-works/pi-coding-agent",
     docsUrl: "https://pi.dev",
     requirementsUrl: "https://pi.dev",
     requirementsLabel: "Install CLI",

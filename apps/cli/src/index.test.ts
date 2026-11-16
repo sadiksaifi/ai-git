@@ -467,18 +467,33 @@ describe("ai-git CLI", () => {
     expect(result.stdout).toContain("DRY RUN: SYSTEM PROMPT");
   });
 
-  it("rejects a retired Codex CLI override with reconfiguration guidance", async () => {
-    const homeDir = createTestHome({ provider: "codex", model: "gpt-5.6-luna-low" });
+  it.each([
+    ["codex", "gpt-6.1-sol#low"],
+    ["claude-code", "haiku#low"],
+  ])("passes a live-listed %s model ID through without a static check", async (provider, model) => {
+    const homeDir = createTestHome({ provider, model });
     const noProviderPath = await createPathWithoutProviderCLI();
     const repoDir = createGitRepo();
+    fs.writeFileSync(path.join(repoDir, "README.md"), "updated\n");
 
-    const result = await runCLI(["--provider", "codex", "--model", "gpt-5.4-low"], {
+    const result = await runCLI(["--dry-run", "-A"], {
       cwd: repoDir,
       homeDir,
       pathEnv: noProviderPath,
     });
 
-    expect(result.stderr).toContain("Unknown model 'gpt-5.4-low'");
+    expect(result.stdout).toContain("DRY RUN: SYSTEM PROMPT");
+    expect(result.exitCode).toBe(0);
+  });
+
+  it("rejects a configured provider that does not exist", async () => {
+    const homeDir = createTestHome({ provider: "not-a-provider", model: "any" });
+    const noProviderPath = await createPathWithoutProviderCLI();
+    const repoDir = createGitRepo();
+
+    const result = await runCLI([], { cwd: repoDir, homeDir, pathEnv: noProviderPath });
+
+    expect(result.stderr).toContain("Unknown provider 'not-a-provider'");
     expect(result.stderr).toContain("ai-git configure");
     expect(result.exitCode).toBe(1);
   });
@@ -522,26 +537,6 @@ describe("ai-git CLI", () => {
     expect(result.stdout).toContain("DRY RUN: SYSTEM PROMPT");
     expect(result.exitCode).toBe(0);
   });
-
-  it.each(["haiku-high", "haiku-medium", "haiku-low"])(
-    "should reject %s as invalid model",
-    async (model) => {
-      const homeDir = createTestHome({ provider: "claude-code", model });
-      const noProviderPath = await createPathWithoutProviderCLI();
-      const repoDir = createGitRepo();
-
-      const result = await runCLI([], {
-        cwd: repoDir,
-        homeDir,
-        pathEnv: noProviderPath,
-      });
-
-      expect(result.stderr).toContain(model);
-      expect(result.stderr).toContain("Unknown model");
-      expect(result.stderr).toContain("configure");
-      expect(result.exitCode).toBe(1);
-    },
-  );
 });
 
 it("persists and backs up an effective legacy project configuration", async () => {

@@ -114,17 +114,7 @@ export async function diagnoseConfig(config: UserConfig | undefined): Promise<Co
     });
   } else if (config.provider) {
     const provider = getProviderById(config.provider);
-    if (provider && !provider.dynamicModels) {
-      const modelExists = provider.models.some((m) => m.id === config.model);
-      if (!modelExists) {
-        const err = ERROR_MESSAGES.invalidModel(config.model, provider.name);
-        errors.push({
-          code: "INVALID_MODEL",
-          message: err.message,
-          suggestion: `Available models: ${provider.models.map((m) => m.id).join(", ")}`,
-        });
-      }
-    } else if (
+    if (
       provider &&
       (config.provider === "openrouter" ||
         config.provider === "openai" ||
@@ -193,14 +183,5 @@ export function isConfigValid(config: UserConfig | undefined): boolean {
   if (!config.provider) return false;
   if (!config.model) return false;
 
-  const provider = getProviderById(config.provider);
-  if (!provider) return false;
-
-  // For non-dynamic providers, validate model exists
-  if (!provider.dynamicModels) {
-    const modelExists = provider.models.some((m) => m.id === config.model);
-    if (!modelExists) return false;
-  }
-
-  return true;
+  return getProviderById(config.provider) !== undefined;
 }
