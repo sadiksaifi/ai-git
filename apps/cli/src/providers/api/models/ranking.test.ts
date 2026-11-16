@@ -93,7 +93,7 @@ describe("provider model ranking", () => {
     expect(ranked.map((m) => m.id)).toEqual(["gpt-5"]);
   });
 
-  it("uses deterministic tier ordering", () => {
+  it("uses deterministic tier ordering for current models", () => {
     const catalog = testCatalog();
     const models: APIModelDefinition[] = [
       { id: "o3", name: "o3" },
@@ -104,7 +104,76 @@ describe("provider model ranking", () => {
 
     const ranked = rankProviderModels("openai", models, catalog);
 
-    expect(ranked.map((m) => m.id)).toEqual(["gpt-5", "gpt-5-mini", "o3", "gpt-4"]);
+    expect(ranked.map((m) => m.id)).toEqual(["gpt-5", "gpt-5-mini", "o3"]);
+  });
+
+  it("hides legacy models", () => {
+    const catalog = testCatalog();
+    const ranked = rankProviderModels(
+      "openai",
+      [
+        { id: "gpt-4", name: "GPT-4" },
+        { id: "gpt-4o", name: "GPT-4o" },
+        { id: "gpt-5", name: "GPT-5" },
+      ],
+      catalog,
+    );
+    expect(ranked.map((m) => m.id)).toEqual(["gpt-5"]);
+  });
+
+  it("drops models that cannot output text before choosing what replaces legacy models", () => {
+    const catalog = createCatalogFromRaw(
+      {
+        openai: {
+          models: {
+            "gpt-4o": { last_updated: "2024-08-06", modalities: { output: ["text"] } },
+            "gpt-image-2": { last_updated: "2026-04-21", modalities: { output: ["image"] } },
+          },
+        },
+      },
+      "snapshot",
+    );
+    const ranked = rankProviderModels(
+      "openai",
+      [
+        { id: "gpt-4o", name: "GPT-4o" },
+        { id: "gpt-image-2", name: "GPT Image 2" },
+      ],
+      catalog,
+    );
+    expect(ranked.map((m) => m.id)).toEqual(["gpt-4o"]);
+  });
+
+  it("drops non-text models only on a direct catalog match", () => {
+    const catalog = createCatalogFromRaw(
+      {
+        google: {
+          models: {
+            "gemini-2.5-pro-preview-tts": {
+              last_updated: "2026-05-01",
+              modalities: { output: ["audio"] },
+            },
+            "gemini-2.5-pro": { last_updated: "2026-05-01", modalities: { output: ["text"] } },
+          },
+        },
+      },
+      "snapshot",
+    );
+    const ranked = rankProviderModels(
+      "openrouter",
+      [
+        { id: "google/gemini-2.5-pro-preview", name: "Gemini 2.5 Pro Preview" },
+        { id: "google/gemini-2.5-pro-preview-tts", name: "Gemini 2.5 Pro Preview TTS" },
+      ],
+      catalog,
+    );
+    expect(ranked.map((m) => m.id)).toEqual(["google/gemini-2.5-pro-preview"]);
+  });
+
+  it("keeps legacy models when the provider returns nothing newer", () => {
+    const catalog = testCatalog();
+    const ranked = rankProviderModels("openai", [{ id: "gpt-4", name: "GPT-4" }], catalog);
+    expect(ranked.map((m) => m.id)).toEqual(["gpt-4"]);
   });
 
   it("appends unknown models alphabetically after known models", () => {
@@ -279,5 +348,57 @@ describe("provider model ranking", () => {
     expect(findRecommendedModel("google-ai-studio", models, catalog, "speed")).toBe(
       "gemini-3.7-flash",
     );
+  });
+
+  it("ranks new releases in known families without version-specific rules", () => {
+    const catalog = createCatalogFromRaw(
+      {
+        anthropic: {
+          models: {
+            "claude-sonnet-7": { last_updated: "2027-06-01" },
+            "claude-opus-7": { last_updated: "2027-06-01" },
+          },
+        },
+        openai: {
+          models: {
+            "gpt-7": { last_updated: "2027-06-01" },
+            "gpt-7-luna": { last_updated: "2027-06-01" },
+            "gpt-7-codex": { last_updated: "2027-06-01" },
+          },
+        },
+        google: {
+          models: {
+            "gemini-5-pro": { last_updated: "2027-06-01" },
+            "gemini-5-flash": { last_updated: "2027-06-01" },
+          },
+        },
+      },
+      "snapshot",
+    );
+
+    const ids = (providerId: "anthropic" | "openai" | "google-ai-studio", list: string[]) =>
+      list.map((id) => ({ id, name: id }));
+
+    expect(
+      findRecommendedModel(
+        "anthropic",
+        ids("anthropic", ["claude-opus-7", "claude-sonnet-7"]),
+        catalog,
+      ),
+    ).toBe("claude-sonnet-7");
+    expect(
+      rankProviderModels(
+        "openai",
+        ids("openai", ["gpt-7-codex", "gpt-7-luna", "gpt-7"]),
+        catalog,
+      ).map((model) => model.id),
+    ).toEqual(["gpt-7", "gpt-7-luna", "gpt-7-codex"]);
+    expect(
+      findRecommendedModel(
+        "google-ai-studio",
+        ids("google-ai-studio", ["gemini-5-flash", "gemini-5-pro"]),
+        catalog,
+      ),
+    ).toBe("gemini-5-pro");
   });
 });

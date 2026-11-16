@@ -6,11 +6,11 @@ import {
   matchesProviderRules,
 } from "../src/providers/api/models/provider-rules.ts";
 import { PROVIDERS } from "../src/providers/registry.ts";
-
-const MODELS_DEV_API_URL = "https://models.dev/api.json";
-const DYNAMIC_CLI_EXAMPLES: Record<string, string> = {
-  "antigravity-cli": "gemini-3.7-flash-low",
-};
+import { buildClaudeCodeModels } from "../src/providers/cli/claude-code.ts";
+import {
+  MODELS_DEV_API_URL,
+  createCatalogFromRaw,
+} from "../src/providers/api/models/models-dev-client.ts";
 
 type ModelsDevStatus = "alpha" | "beta" | "deprecated";
 
@@ -67,6 +67,7 @@ function unique<T>(values: T[]): T[] {
 function pickProviderExample(
   provider: "openai" | "anthropic" | "google",
   payload: ModelsDevPayload,
+  filter: (modelId: string) => boolean = () => true,
 ): string {
   const rawModels = payload[provider]?.models ?? {};
 
@@ -75,7 +76,7 @@ function pickProviderExample(
 
   const candidates: Candidate[] = Object.entries(rawModels)
     .filter(([, model]) => model.status !== "deprecated")
-    .filter(([id]) => matchesProviderRules(ruleProvider, id))
+    .filter(([id]) => matchesProviderRules(ruleProvider, id) && filter(id))
     .map(([id, model]) => ({
       id,
       status: model.status,
@@ -136,35 +137,69 @@ function updateProviderDescription(
   if (providerId === "openai") providerLabel = "OpenAI";
   if (providerId === "google-ai-studio") providerLabel = "Google AI Studio";
   if (providerId === "anthropic") providerLabel = "Anthropic API";
-  if (providerId === "antigravity-cli") providerLabel = "Antigravity CLI";
 
   modelSchema.description = `${providerLabel} model ID (e.g., '${example}'). Models are fetched dynamically.`;
 
   (match.then as any).properties.model = modelSchema;
 }
 
-function updateStaticCLIModels(schema: Record<string, unknown>): void {
+const CLI_MODEL_DESCRIPTIONS: Record<string, (example: string) => string> = {
+  "claude-code": (example) =>
+    `Claude Code model: '<alias>#<effort>' (e.g., '${example}'). Aliases and effort levels come from models.dev and \`claude --help\` during \`ai-git configure\`.`,
+  "antigravity-cli": (example) =>
+    `Antigravity CLI model ID (e.g., '${example}'). Models are fetched dynamically.`,
+  codex: (example) =>
+    `Codex model: '<model>#<effort>' (e.g., '${example}'). Models are fetched dynamically from \`codex debug models\`.`,
+  pi: () =>
+    "Pi model ID fetched dynamically from Pi's RPC mode. Thinking selections use '<provider/model>#<thinking>'.",
+};
+
+function findProviderModelSchema(
+  schema: Record<string, unknown>,
+  providerId: string,
+): Record<string, unknown> | null {
   const allOf = schema.allOf as Array<Record<string, unknown>>;
-  const descriptions: Record<string, string> = {
-    "claude-code":
-      "Claude Code virtual model ID. Fable, Sonnet, and Opus support low, medium, high, xhigh, and max. Haiku has no effort level and is recommended for this latency-sensitive workload.",
-    codex:
-      "Codex CLI virtual model ID: '<base-model>-<effort>'. Supported effort levels depend on the model and include low, medium, high, xhigh, and max. Default: 'gpt-5.6-luna-low'. Ultra is not a model effort and is not supported.",
-  };
+  const match = allOf.find(
+    (entry) => (entry.if as any)?.properties?.provider?.const === providerId,
+  );
+  return match ? (((match.then as any).properties.model ??= {}) as Record<string, unknown>) : null;
+}
 
-  for (const provider of PROVIDERS.filter(
-    (entry) => entry.mode === "cli" && !entry.dynamicModels,
-  )) {
-    const match = allOf.find(
-      (entry) => (entry.if as any)?.properties?.provider?.const === provider.id,
-    );
-    if (!match) continue;
+function updateCLIModelSchemas(
+  schema: Record<string, unknown>,
+  examples: Record<string, string>,
+): void {
+  for (const provider of PROVIDERS.filter((entry) => entry.mode === "cli")) {
+    const modelSchema = findProviderModelSchema(schema, provider.id);
+    const describe = CLI_MODEL_DESCRIPTIONS[provider.id];
+    if (!modelSchema || !describe) continue;
 
-    const modelSchema = ((match.then as any)?.properties?.model ?? {}) as Record<string, unknown>;
-    modelSchema.enum = provider.models.map((model) => model.id);
-    modelSchema.description = descriptions[provider.id];
-    (match.then as any).properties.model = modelSchema;
+    delete modelSchema.enum;
+    modelSchema.type = "string";
+    modelSchema.description = describe(examples[provider.id] ?? "");
   }
+}
+
+function updateProviderEnum(schema: Record<string, any>): void {
+  const ids = PROVIDERS.map((provider) => provider.id);
+  schema.properties.provider.enum = ids;
+  schema.properties.provider.examples = ids;
+
+  // Drop per-provider model rules for providers that are no longer registered.
+  schema.allOf = (schema.allOf as Array<Record<string, any>>).filter((entry) => {
+    const providerId = entry.if?.properties?.provider?.const;
+    return typeof providerId !== "string" || ids.includes(providerId);
+  });
+}
+
+function pickClaudeCodeExample(payload: ModelsDevPayload): string {
+  const catalog = createCatalogFromRaw(payload, "network");
+  const models = buildClaudeCodeModels(catalog.providers.anthropic.models, null);
+  const example = models.find((model) => model.isRecommended)?.id;
+  if (!example) {
+    throw new Error("No Claude model families found from models.dev");
+  }
+  return example;
 }
 
 export function updateSchemaModels(
@@ -175,39 +210,37 @@ export function updateSchemaModels(
   openAIExample: string;
   googleExample: string;
   anthropicExample: string;
+  cliExamples: Record<string, string>;
 } {
   const openAIExample = pickProviderExample("openai", payload);
   const googleExample = pickProviderExample("google", payload);
+  const googleFlashExample = pickProviderExample("google", payload, (id) => /flash/i.test(id));
   const anthropicExample = pickProviderExample("anthropic", payload);
   const openRouterExample = `openai/${openAIExample}`;
 
-  const staticCliExamples = PROVIDERS.filter(
-    (provider) => provider.mode === "cli" && !provider.dynamicModels,
-  ).flatMap((provider) =>
-    provider.models.filter((model) => model.isRecommended).map((model) => model.id),
-  );
+  const cliExamples: Record<string, string> = {
+    codex: `${openAIExample}#low`,
+    "claude-code": pickClaudeCodeExample(payload),
+    "antigravity-cli": `${googleFlashExample}-low`,
+    pi: `openai-codex/${openAIExample}#low`,
+  };
 
   current.properties.model.examples = unique([
-    ...staticCliExamples,
-    ...Object.values(DYNAMIC_CLI_EXAMPLES),
-    "opencode/gpt-5-nano#minimal",
-    "openai-codex/gpt-5.6-luna#low",
+    ...Object.values(cliExamples),
     openRouterExample,
     openAIExample,
     googleExample,
     anthropicExample,
   ]);
 
+  updateProviderEnum(current);
   updateProviderDescription(current, "openrouter", openRouterExample);
   updateProviderDescription(current, "openai", openAIExample);
   updateProviderDescription(current, "google-ai-studio", googleExample);
   updateProviderDescription(current, "anthropic", anthropicExample);
-  for (const [providerId, example] of Object.entries(DYNAMIC_CLI_EXAMPLES)) {
-    updateProviderDescription(current, providerId, example);
-  }
-  updateStaticCLIModels(current);
+  updateCLIModelSchemas(current, cliExamples);
 
-  return { openRouterExample, openAIExample, googleExample, anthropicExample };
+  return { openRouterExample, openAIExample, googleExample, anthropicExample, cliExamples };
 }
 
 async function main(): Promise<void> {
@@ -224,6 +257,9 @@ async function main(): Promise<void> {
   console.log(`openai example: ${examples.openAIExample}`);
   console.log(`google example: ${examples.googleExample}`);
   console.log(`anthropic example: ${examples.anthropicExample}`);
+  for (const [providerId, example] of Object.entries(examples.cliExamples)) {
+    console.log(`${providerId} example: ${example}`);
+  }
 }
 
 if (import.meta.main) await main();

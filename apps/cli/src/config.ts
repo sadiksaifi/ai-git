@@ -97,10 +97,6 @@ export async function getProjectConfigPath(): Promise<string> {
 /** Pending migration notice to display after the welcome screen. */
 let pendingMigrationNotice: MigrationNotice | null = null;
 
-export function queueMigrationNotice(notice: MigrationNotice): void {
-  pendingMigrationNotice = notice;
-}
-
 /**
  * Show any pending migration notice and clear it.
  * Call this after the welcome screen renders so the fresh viewport doesn't hide it.
@@ -218,7 +214,7 @@ export async function saveProjectConfig(config: UserConfig): Promise<void> {
  *
  * A config is complete if it has:
  * - provider set to a valid provider ID
- * - model set to a valid model ID for that provider
+ * - a non-empty model ID
  */
 export function isConfigComplete(config: UserConfig | undefined): boolean {
   if (!config) {
@@ -230,25 +226,9 @@ export function isConfigComplete(config: UserConfig | undefined): boolean {
     return false;
   }
 
-  // Validate provider exists
-  const provider = getProviderById(config.provider);
-  if (!provider) {
-    return false;
-  }
-
-  // For API providers with dynamic models, skip model validation
-  // (models are fetched at runtime, not stored in the registry)
-  if (provider.dynamicModels) {
-    return true;
-  }
-
-  // Validate model exists for this provider (CLI providers only)
-  const modelExists = provider.models.some((m) => m.id === config.model);
-  if (!modelExists) {
-    return false;
-  }
-
-  return true;
+  // Validate provider exists. Models are listed live, so any model ID is
+  // accepted here; the provider reports unknown models at generation time.
+  return getProviderById(config.provider) !== undefined;
 }
 
 /**
@@ -357,10 +337,4 @@ export async function resolveConfigAsync(
 }
 
 // Re-export registry functions for convenience
-export {
-  getProviderById,
-  getProviderByBinary,
-  getProviderIds,
-  getModelIds,
-  getModelById,
-} from "./providers/registry.ts";
+export { getProviderById, getProviderByBinary, getProviderIds } from "./providers/registry.ts";

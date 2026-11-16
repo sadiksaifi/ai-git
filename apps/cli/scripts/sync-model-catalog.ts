@@ -1,37 +1,23 @@
 #!/usr/bin/env bun
 import * as path from "node:path";
+import {
+  MODELS_DEV_API_URL,
+  toCatalogModelDefinition,
+  type ModelsDevRawModel,
+} from "../src/providers/api/models/models-dev-client.ts";
+import type { CatalogModelDefinition } from "../src/providers/api/models/types.ts";
 
-const MODELS_DEV_API_URL = "https://models.dev/api.json";
 const PROVIDERS = ["anthropic", "openai", "google"] as const;
 
 type CatalogProviderId = (typeof PROVIDERS)[number];
 
-type RawModel = {
-  name?: string;
-  status?: "alpha" | "beta" | "deprecated";
-  release_date?: string;
-  last_updated?: string;
-  reasoning?: boolean;
-  tool_call?: boolean;
-};
-
 type RawProvider = {
-  models?: Record<string, RawModel>;
+  models?: Record<string, ModelsDevRawModel>;
 };
 
 type RawResponse = Record<string, RawProvider>;
 
-type SnapshotModel = {
-  id: string;
-  name: string;
-  status?: "alpha" | "beta" | "deprecated";
-  releaseDate?: string;
-  lastUpdated?: string;
-  reasoning: boolean;
-  toolCall: boolean;
-};
-
-type Snapshot = Record<CatalogProviderId, { models: Record<string, SnapshotModel> }>;
+type Snapshot = Record<CatalogProviderId, { models: Record<string, CatalogModelDefinition> }>;
 
 function sortObjectByKeys<T>(value: Record<string, T>): Record<string, T> {
   return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)));
@@ -57,18 +43,10 @@ function toSnapshot(raw: RawResponse): Snapshot {
 
   for (const providerId of PROVIDERS) {
     const providerModels = raw[providerId]?.models || {};
-    const snapshotModels: Record<string, SnapshotModel> = {};
+    const snapshotModels: Record<string, CatalogModelDefinition> = {};
 
     for (const [id, model] of Object.entries(providerModels)) {
-      snapshotModels[id] = {
-        id,
-        name: model.name || id,
-        ...(model.status ? { status: model.status } : {}),
-        ...(model.release_date ? { releaseDate: model.release_date } : {}),
-        ...(model.last_updated ? { lastUpdated: model.last_updated } : {}),
-        reasoning: model.reasoning ?? false,
-        toolCall: model.tool_call ?? false,
-      };
+      snapshotModels[id] = toCatalogModelDefinition(id, model);
     }
 
     snapshot[providerId] = {

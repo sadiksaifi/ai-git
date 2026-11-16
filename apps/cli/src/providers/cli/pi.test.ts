@@ -1,161 +1,124 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { getProviderById } from "../registry.ts";
-import { parsePiModelsTable } from "./pi.ts";
+import {
+  getPiSupportedThinkingLevels,
+  isSupportedPiVersion,
+  parsePiModelsTable,
+  parsePiRpcModels,
+  parsePiVersion,
+} from "./pi.ts";
 
 const table = `provider        model                 thinking
 openai-codex    gpt-5.6-luna          yes
 anthropic       claude-haiku-4-5      no
 `;
 
-describe("parsePiModelsTable", () => {
-  function levelsFor(model: string, provider = "test"): string[] {
-    return parsePiModelsTable(`provider  model  thinking\n${provider}  ${model}  yes`)
-      .map((entry) => entry.id.split("#")[1])
-      .filter((level): level is string => Boolean(level));
-  }
+const STANDARD_LEVELS = ["off", "minimal", "low", "medium", "high"];
+const ALL_LEVELS = [...STANDARD_LEVELS, "xhigh", "max"];
 
-  it("combines provider/model rows and expands all supported GPT-5.6 levels", async () => {
-    expect(parsePiModelsTable(table)).toEqual([
-      { id: "openai-codex/gpt-5.6-luna#off", name: "openai-codex/gpt-5.6-luna (off)" },
-      { id: "openai-codex/gpt-5.6-luna#minimal", name: "openai-codex/gpt-5.6-luna (minimal)" },
-      { id: "openai-codex/gpt-5.6-luna#low", name: "openai-codex/gpt-5.6-luna (low)" },
-      { id: "openai-codex/gpt-5.6-luna#medium", name: "openai-codex/gpt-5.6-luna (medium)" },
-      { id: "openai-codex/gpt-5.6-luna#high", name: "openai-codex/gpt-5.6-luna (high)" },
-      { id: "openai-codex/gpt-5.6-luna#xhigh", name: "openai-codex/gpt-5.6-luna (xhigh)" },
-      { id: "openai-codex/gpt-5.6-luna#max", name: "openai-codex/gpt-5.6-luna (max)" },
+function rpcResponse(models: unknown[]): string {
+  return `${JSON.stringify({
+    id: "ai-git-models",
+    type: "response",
+    command: "get_available_models",
+    success: true,
+    data: { models },
+  })}\n`;
+}
+
+describe("getPiSupportedThinkingLevels", () => {
+  it("returns only off for non-reasoning models", () => {
+    expect(getPiSupportedThinkingLevels({ reasoning: false })).toEqual(["off"]);
+  });
+
+  it("returns the standard levels when the model has no level map", () => {
+    expect(getPiSupportedThinkingLevels({ reasoning: true })).toEqual(STANDARD_LEVELS);
+  });
+
+  it("adds xhigh and max only when the map defines them", () => {
+    expect(
+      getPiSupportedThinkingLevels({
+        reasoning: true,
+        thinkingLevelMap: { xhigh: "xhigh", max: "max", minimal: "low" },
+      }),
+    ).toEqual(ALL_LEVELS);
+  });
+
+  it("drops levels mapped to null", () => {
+    expect(
+      getPiSupportedThinkingLevels({
+        reasoning: true,
+        thinkingLevelMap: { off: null, xhigh: "xhigh", max: null },
+      }),
+    ).toEqual(["minimal", "low", "medium", "high", "xhigh"]);
+  });
+});
+
+describe("parsePiRpcModels", () => {
+  it("expands each model into its supported thinking levels", () => {
+    const output = [
+      "startup notice",
+      rpcResponse([
+        {
+          provider: "openai-codex",
+          id: "gpt-6.1-sol",
+          reasoning: true,
+          thinkingLevelMap: { off: null, xhigh: "xhigh", max: "max" },
+        },
+        { provider: "anthropic", id: "claude-haiku-4-5", reasoning: false },
+      ]),
+    ].join("\n");
+
+    expect(parsePiRpcModels(output)).toEqual([
+      { id: "openai-codex/gpt-6.1-sol#minimal", name: "openai-codex/gpt-6.1-sol (minimal)" },
+      { id: "openai-codex/gpt-6.1-sol#low", name: "openai-codex/gpt-6.1-sol (low)" },
+      { id: "openai-codex/gpt-6.1-sol#medium", name: "openai-codex/gpt-6.1-sol (medium)" },
+      { id: "openai-codex/gpt-6.1-sol#high", name: "openai-codex/gpt-6.1-sol (high)" },
+      { id: "openai-codex/gpt-6.1-sol#xhigh", name: "openai-codex/gpt-6.1-sol (xhigh)" },
+      { id: "openai-codex/gpt-6.1-sol#max", name: "openai-codex/gpt-6.1-sol (max)" },
       { id: "anthropic/claude-haiku-4-5", name: "anthropic/claude-haiku-4-5" },
     ]);
   });
 
-  it.each(["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol"])(
-    "%s supports xhigh and max",
-    (model) => {
-      expect(levelsFor(model, "openai-codex")).toEqual([
-        "off",
-        "minimal",
-        "low",
-        "medium",
-        "high",
-        "xhigh",
-        "max",
-      ]);
-    },
-  );
+  it("returns null while no response has arrived", () => {
+    expect(parsePiRpcModels("")).toBeNull();
+  });
 
-  it("GPT-5.5 supports xhigh without max", () => {
-    expect(levelsFor("gpt-5.5", "openai-codex")).toEqual([
-      "off",
-      "minimal",
-      "low",
-      "medium",
-      "high",
-      "xhigh",
+  it("returns an empty list for a failed response so setup falls back without waiting", () => {
+    expect(
+      parsePiRpcModels(
+        JSON.stringify({ type: "response", command: "get_available_models", success: false }),
+      ),
+    ).toEqual([]);
+  });
+});
+
+describe("Pi version gate", () => {
+  it("parses the version from `pi --version` output", () => {
+    expect(parsePiVersion("1.5.2\n")).toEqual([1, 5, 2]);
+    expect(parsePiVersion("pi v0.72.0")).toEqual([0, 72, 0]);
+    expect(parsePiVersion("unknown")).toBeNull();
+  });
+
+  it("requires 0.72.0, the first release with thinkingLevelMap", () => {
+    expect(isSupportedPiVersion([0, 71, 1])).toBe(false);
+    expect(isSupportedPiVersion([0, 72, 0])).toBe(true);
+    expect(isSupportedPiVersion([1, 5, 2])).toBe(true);
+  });
+});
+
+describe("parsePiModelsTable", () => {
+  it("offers bare model IDs because the table has no per-model thinking levels", () => {
+    expect(parsePiModelsTable(table)).toEqual([
+      { id: "openai-codex/gpt-5.6-luna", name: "openai-codex/gpt-5.6-luna" },
+      { id: "anthropic/claude-haiku-4-5", name: "anthropic/claude-haiku-4-5" },
     ]);
   });
 
-  it.each(["gpt-5.3-codex-spark", "gpt-5.4", "gpt-5.4-mini"])(
-    "%s keeps its supported xhigh level",
-    (model) => {
-      expect(levelsFor(model, "openai-codex")).toEqual([
-        "off",
-        "minimal",
-        "low",
-        "medium",
-        "high",
-        "xhigh",
-      ]);
-    },
-  );
-
-  it("respects OpenCode GPT level exclusions", () => {
-    expect(levelsFor("gpt-5.4", "opencode")).toEqual(["low", "medium", "high", "xhigh"]);
-    expect(levelsFor("gpt-5.4-pro", "opencode")).toEqual(["medium", "high", "xhigh"]);
-  });
-
-  it.each(["claude-opus-5", "claude-sonnet-5", "claude-opus-4-7", "claude-opus-4-8"])(
-    "%s supports xhigh and max",
-    (model) => {
-      expect(levelsFor(model, "anthropic")).toEqual([
-        "off",
-        "minimal",
-        "low",
-        "medium",
-        "high",
-        "xhigh",
-        "max",
-      ]);
-    },
-  );
-
-  it("Claude Fable 5 supports xhigh and max but cannot disable thinking", () => {
-    expect(levelsFor("claude-fable-5", "anthropic")).toEqual([
-      "minimal",
-      "low",
-      "medium",
-      "high",
-      "xhigh",
-      "max",
-    ]);
-  });
-
-  it.each(["claude-opus-4-6", "claude-sonnet-4-6"])("%s supports max without xhigh", (model) => {
-    expect(levelsFor(model, "anthropic")).toEqual([
-      "off",
-      "minimal",
-      "low",
-      "medium",
-      "high",
-      "max",
-    ]);
-  });
-
-  it("matches region-qualified Claude families without dropping xhigh or max", () => {
-    expect(levelsFor("us.anthropic.claude-opus-4-7", "amazon-bedrock")).toEqual([
-      "off",
-      "minimal",
-      "low",
-      "medium",
-      "high",
-      "xhigh",
-      "max",
-    ]);
-  });
-
-  it("matches nested provider-qualified Claude families", () => {
-    expect(levelsFor("anthropic/claude-opus-5", "openrouter")).toEqual([
-      "off",
-      "minimal",
-      "low",
-      "medium",
-      "high",
-      "xhigh",
-      "max",
-    ]);
-  });
-
-  it("DeepSeek V4 Pro exposes only its effective levels", () => {
-    expect(levelsFor("deepseek-v4-pro", "deepseek")).toEqual(["off", "high", "max"]);
-  });
-
-  it("DeepSeek V4 Flash exposes only its effective levels", () => {
-    expect(levelsFor("deepseek-v4-flash", "deepseek")).toEqual(["off", "low", "high", "max"]);
-  });
-
-  it("preserves provider-specific DeepSeek V4 capabilities", () => {
-    expect(levelsFor("deepseek-v4-flash", "opencode")).toEqual(["high", "max"]);
-    expect(levelsFor("deepseek-v4-pro", "opencode")).toEqual(["high", "max"]);
-    expect(levelsFor("deepseek-v4-flash", "opencode-go")).toEqual(["off", "high", "max"]);
-    expect(levelsFor("deepseek-v4-pro", "opencode-go")).toEqual(["off", "high", "max"]);
-    expect(levelsFor("deepseek/deepseek-v4-pro", "openrouter")).toEqual(["off", "high", "xhigh"]);
-  });
-
-  it("ordinary thinking models expose the standard levels without xhigh or max", () => {
-    expect(levelsFor("ordinary-reasoning-model")).toEqual([
-      "off",
-      "minimal",
-      "low",
-      "medium",
-      "high",
+  it("parses box-drawn tables", () => {
+    const boxed = `│ provider │ model │ thinking │\n├──┼──┼──┤\n│ openai │ gpt-6-luna │ no │`;
+    expect(parsePiModelsTable(boxed)).toEqual([
+      { id: "openai/gpt-6-luna", name: "openai/gpt-6-luna" },
     ]);
   });
 });
@@ -182,6 +145,7 @@ describe("piAdapter.invoke", () => {
           },
         }),
         exited: Promise.resolve(0),
+        kill() {},
       };
     };
   });
@@ -221,33 +185,134 @@ describe("piAdapter.invoke", () => {
     ]);
   });
 
-  it("reads model listing output from stderr when Pi prints tables there", async () => {
+  function mockProcess(stdout: string, stderr = "") {
+    const stream = (text: string) =>
+      new ReadableStream({
+        start(controller) {
+          if (text) controller.enqueue(new TextEncoder().encode(text));
+          controller.close();
+        },
+      });
+    const stdinWrites: string[] = [];
+    return {
+      stdinWrites,
+      process: {
+        stdin: {
+          write: (chunk: string) => stdinWrites.push(chunk),
+          flush: async () => {},
+          end: async () => {},
+        },
+        stdout: stream(stdout),
+        stderr: stream(stderr),
+        exited: Promise.resolve(0),
+        kill() {},
+      },
+    };
+  }
+
+  it("lists models through RPC mode with the generation isolation flags", async () => {
+    const rpc = mockProcess(
+      rpcResponse([
+        {
+          provider: "openai-codex",
+          id: "gpt-6-luna",
+          reasoning: true,
+          thinkingLevelMap: { xhigh: "xhigh" },
+        },
+      ]),
+    );
     (Bun as any).spawn = (cmd: string[], opts: unknown) => {
       spawnCalls.push({ cmd, opts });
-      return {
-        stdout: new ReadableStream({
-          start(controller) {
-            controller.close();
-          },
-        }),
-        stderr: new ReadableStream({
-          start(controller) {
-            controller.enqueue(new TextEncoder().encode(table));
-            controller.close();
-          },
-        }),
-        exited: Promise.resolve(0),
-      };
+      return cmd.includes("--version") ? mockProcess("1.5.2\n").process : rpc.process;
     };
 
     const { piAdapter } = await import("./pi.ts");
     const models = await piAdapter.fetchModels!();
 
-    expect(spawnCalls[0]!.cmd).toEqual(["pi", "--list-models"]);
-    expect(models[0]).toEqual({
-      id: "openai-codex/gpt-5.6-luna#off",
-      name: "openai-codex/gpt-5.6-luna (off)",
+    expect(spawnCalls).toHaveLength(2);
+    expect(spawnCalls[0]!.cmd).toEqual(["pi", "--version"]);
+    expect(spawnCalls[1]!.cmd).toEqual([
+      "pi",
+      "--mode",
+      "rpc",
+      "--no-tools",
+      "--no-extensions",
+      "--no-skills",
+      "--no-prompt-templates",
+      "--no-themes",
+      "--no-context-files",
+      "--no-session",
+    ]);
+    expect(JSON.parse(rpc.stdinWrites[0]!)).toEqual({
+      id: "ai-git-models",
+      type: "get_available_models",
     });
+    expect(models.map((model) => model.id)).toEqual([
+      ...STANDARD_LEVELS.map((level) => `openai-codex/gpt-6-luna#${level}`),
+      "openai-codex/gpt-6-luna#xhigh",
+    ]);
+  });
+
+  it("falls back to the --list-models table, read from stderr, when RPC fails", async () => {
+    (Bun as any).spawn = (cmd: string[], opts: unknown) => {
+      spawnCalls.push({ cmd, opts });
+      if (cmd.includes("--version")) return mockProcess("1.5.2\n").process;
+      return cmd.includes("rpc") ? mockProcess("").process : mockProcess("", table).process;
+    };
+
+    const { piAdapter } = await import("./pi.ts");
+    const models = await piAdapter.fetchModels!();
+
+    expect(spawnCalls[2]!.cmd).toEqual(["pi", "--list-models"]);
+    expect(models[0]).toEqual({
+      id: "openai-codex/gpt-5.6-luna",
+      name: "openai-codex/gpt-5.6-luna",
+    });
+  });
+});
+
+describe("piAdapter.fetchModels version gate", () => {
+  let originalSpawn: typeof Bun.spawn;
+  beforeEach(() => {
+    originalSpawn = Bun.spawn;
+  });
+  afterEach(() => {
+    (Bun as any).spawn = originalSpawn;
+  });
+
+  function stubVersion(stdout: string, exitCode: number, stderr = "") {
+    const spawned: string[][] = [];
+    const stream = (text: string) =>
+      new ReadableStream({
+        start(controller) {
+          if (text) controller.enqueue(new TextEncoder().encode(text));
+          controller.close();
+        },
+      });
+    (Bun as any).spawn = (cmd: string[]) => {
+      spawned.push(cmd);
+      return { stdout: stream(stdout), stderr: stream(stderr), exited: Promise.resolve(exitCode) };
+    };
+    return spawned;
+  }
+
+  it("asks users of Pi before 0.72.0 to install the current package", async () => {
+    const spawned = stubVersion("0.60.0\n", 0);
+
+    const { piAdapter } = await import("./pi.ts");
+    await expect(piAdapter.fetchModels!()).rejects.toThrow(
+      "Pi 0.72.0 or newer is required to list models with their thinking levels. Found 0.60.0. Install the current release: npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
+    );
+    expect(spawned).toEqual([["pi", "--version"]]);
+  });
+
+  it("reports the real error when `pi --version` fails", async () => {
+    stubVersion("", 127, "env: node: No such file or directory");
+
+    const { piAdapter } = await import("./pi.ts");
+    await expect(piAdapter.fetchModels!()).rejects.toThrow(
+      "`pi --version` failed (exit code 127): env: node: No such file or directory",
+    );
   });
 });
 
@@ -258,7 +323,6 @@ describe("pi registry", () => {
       name: "Pi",
       mode: "cli",
       binary: "pi",
-      dynamicModels: true,
     });
   });
 });

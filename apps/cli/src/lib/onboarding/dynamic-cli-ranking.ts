@@ -1,5 +1,5 @@
 import type { ModelCatalog, CatalogModelDefinition } from "../../providers/api/models/types.ts";
-import { normalizeModelKey } from "../../providers/api/models/provider-rules.ts";
+import { isLegacyModel, normalizeModelKey } from "../../providers/api/models/provider-rules.ts";
 import { parseDynamicVariantModel } from "../../providers/cli/dynamic.ts";
 import type { CachedModel } from "../model-cache.ts";
 
@@ -34,6 +34,8 @@ const EFFORT_ORDER = new Map([
 
 interface DynamicModelRankKeys {
   model: CachedModel;
+  /** models.dev lists this exact model as deprecated or legacy */
+  outdated: boolean;
   originalIndex: number;
   providerRank: number;
   version: number[];
@@ -163,9 +165,12 @@ function toRankKeys(
   const { provider, modelId } = splitProviderAndModel(baseModelId);
   const normalizedProvider = normalizeProvider(provider, modelId);
   const metadata = findCatalogMetadata(catalog, normalizedProvider, modelId);
+  const exactMetadata =
+    metadata && normalizeModelKey(metadata.id) === normalizeModelKey(modelId) ? metadata : null;
 
   return {
     model,
+    outdated: exactMetadata?.status === "deprecated" || isLegacyModel(exactMetadata),
     originalIndex,
     providerRank: getProviderRank(normalizedProvider),
     version: extractVersion(modelId),
@@ -179,8 +184,13 @@ export function rankDynamicCLIModels(
   models: CachedModel[],
   catalog?: ModelCatalog | null,
 ): CachedModel[] {
-  return models
-    .map((model, index) => toRankKeys(model, index, catalog))
+  const keyed = models.map((model, index) => toRankKeys(model, index, catalog));
+  // Hide deprecated and legacy models unless nothing newer is available.
+  const current = keyed.some((entry) => !entry.outdated)
+    ? keyed.filter((entry) => !entry.outdated)
+    : keyed;
+
+  return current
     .sort((a, b) => {
       const providerDiff = a.providerRank - b.providerRank;
       if (providerDiff !== 0) return providerDiff;

@@ -9,7 +9,7 @@
 import { fromPromise } from "xstate";
 import pc from "picocolors";
 import { log, spinner } from "@clack/prompts";
-import { ERROR_TEMPLATES } from "@ai-git/meta";
+import { DISABLED_PROVIDERS, ERROR_TEMPLATES } from "@ai-git/meta";
 import {
   cliMachine,
   type ConfigResolutionResult,
@@ -18,24 +18,15 @@ import {
 import { stagingMachine } from "./staging.machine.ts";
 import type { ResolvedConfig, UserConfig } from "../config.ts";
 import {
-  CONFIG_FILE,
   loadUserConfig,
   loadProjectConfig,
   isConfigComplete,
-  queueMigrationNotice,
   resolveConfigAsync,
-  saveProjectConfig,
-  saveUserConfig,
-  getProjectConfigPath,
   getProviderById,
-  getModelById,
   flushMigrationNotice,
 } from "../config.ts";
-import { backupConfigFile, migrateLegacyGeminiCliConfig } from "../lib/migration.ts";
 import { PROVIDERS } from "../providers/registry.ts";
 import { getAdapter } from "../providers/index.ts";
-import { antigravityAdapter } from "../providers/cli/antigravity.ts";
-import { extractErrorMessage } from "../lib/errors.ts";
 import {
   checkGitInstalled,
   checkInsideRepo,
@@ -68,6 +59,26 @@ import { startUpdateCheck, showUpdateNotification } from "../lib/update-check.ts
 import { assertConfiguredModelAllowed } from "../providers/api/models/index.ts";
 import type { SupportedAPIProviderId } from "../providers/api/models/types.ts";
 
+/**
+ * Print guidance for a provider ID that is not in the registry and return the
+ * error to throw. Disabled providers get their reason and tracking issue.
+ */
+function reportUnknownProvider(providerId: string): Error {
+  const disabled = DISABLED_PROVIDERS[providerId];
+  if (disabled) {
+    console.error(pc.red(`Error: ${disabled.name} support is disabled. ${disabled.reason}`));
+    console.error(pc.dim(`Tracking: ${disabled.issueUrl}`));
+    console.error(pc.dim("Run `ai-git configure` to choose another provider."));
+    return new Error(`${disabled.name} support is disabled`);
+  }
+
+  const validProviders = PROVIDERS.map((p) => p.id).join(", ");
+  console.error(pc.red(`Error: Unknown provider '${providerId}'.`));
+  console.error(pc.dim(`Supported providers: ${validProviders}`));
+  console.error(pc.dim("Run `ai-git configure` to select a valid provider."));
+  return new Error(`Unknown provider '${providerId}'`);
+}
+
 // ── Helper: resolve config into a ConfigResolutionResult ─────────────
 
 async function resolveFullConfig(
@@ -86,10 +97,7 @@ async function resolveFullConfig(
   // Validate provider (Bug #2 fix: use dynamic PROVIDERS list)
   const providerDef = getProviderById(resolvedConfig.provider);
   if (!providerDef) {
-    const validProviders = PROVIDERS.map((p) => p.id).join(", ");
-    console.error(pc.red(`Error: Unknown provider '${resolvedConfig.provider}'.`));
-    console.error(pc.dim(`Supported providers: ${validProviders}`));
-    throw new Error(`Unknown provider '${resolvedConfig.provider}'`);
+    throw reportUnknownProvider(resolvedConfig.provider);
   }
 
   // Get adapter
@@ -101,41 +109,24 @@ async function resolveFullConfig(
 
   // Resolve model
   const modelId = options.model ?? resolvedConfig.model;
-  let model: string;
-  let modelName: string;
+  const model = modelId;
+  const modelName = modelId;
 
-  if (providerDef.dynamicModels) {
-    model = modelId;
-    modelName = modelId;
-
-    // API providers validate configured models against models.dev deprecation metadata.
-    // Dynamic CLI providers list models only during configure; generation intentionally
-    // does not re-fetch or revalidate live CLI model lists.
-    if (providerDef.mode === "api") {
-      try {
-        await assertConfiguredModelAllowed(providerDef.id as SupportedAPIProviderId, model);
-      } catch (error) {
-        console.error(
-          pc.red(
-            `Error: ${error instanceof Error ? error.message : "Configured model is not allowed."}`,
-          ),
-        );
-        console.error(pc.dim("Run `ai-git configure` to select a supported model."));
-        throw error;
-      }
-    }
-  } else {
-    const modelDef = getModelById(providerDef, modelId);
-    if (!modelDef) {
+  // API providers validate configured models against models.dev deprecation metadata.
+  // CLI providers list models only during configure; generation intentionally
+  // does not re-fetch or revalidate live CLI model lists.
+  if (providerDef.mode === "api") {
+    try {
+      await assertConfiguredModelAllowed(providerDef.id as SupportedAPIProviderId, model);
+    } catch (error) {
       console.error(
-        pc.red(`Error: Unknown model '${modelId}' for provider '${providerDef.name}'.`),
+        pc.red(
+          `Error: ${error instanceof Error ? error.message : "Configured model is not allowed."}`,
+        ),
       );
-      console.error(pc.dim(`Available models: ${providerDef.models.map((m) => m.id).join(", ")}`));
       console.error(pc.dim("Run `ai-git configure` to select a supported model."));
-      throw new Error(`Unknown model '${modelId}' for provider '${providerDef.name}'`);
+      throw error;
     }
-    model = modelDef.id;
-    modelName = modelDef.name;
   }
 
   return {
@@ -145,79 +136,6 @@ async function resolveFullConfig(
     model,
     modelName,
     needsSetup: false,
-  };
-}
-
-async function migrateLoadedLegacyConfigs(
-  userConfig: UserConfig | undefined,
-  projectConfig: UserConfig | undefined,
-  overrides: { provider?: string; model?: string },
-): Promise<{ userConfig?: UserConfig; projectConfig?: UserConfig }> {
-  const hasCompleteOverride = Boolean(overrides.provider && overrides.model);
-  const effectiveProvider = projectConfig?.provider ?? userConfig?.provider;
-  const effectiveModel = projectConfig?.model ?? userConfig?.model;
-  const projectDefinesProviderOrModel = Boolean(
-    projectConfig?.provider !== undefined || projectConfig?.model !== undefined,
-  );
-  const hasEffectiveLegacyConfig =
-    !hasCompleteOverride &&
-    effectiveProvider === "gemini-cli" &&
-    typeof effectiveModel === "string";
-  const migrateProject = hasEffectiveLegacyConfig && projectDefinesProviderOrModel;
-  const migrateUser = hasEffectiveLegacyConfig && !migrateProject;
-  const hasLegacyConfig = migrateUser || migrateProject;
-  if (!hasLegacyConfig) return { userConfig, projectConfig };
-
-  if (!(await antigravityAdapter.checkAvailable())) {
-    throw new Error(
-      "Antigravity CLI is required to migrate the existing configuration. Install it with: curl -fsSL https://antigravity.google/cli/install.sh | bash",
-    );
-  }
-
-  const models = await antigravityAdapter.fetchModels!();
-  const migrate = (config: UserConfig | undefined) =>
-    config
-      ? migrateLegacyGeminiCliConfig(
-          { ...config, provider: effectiveProvider, model: effectiveModel },
-          async () => models,
-        )
-      : Promise.resolve({ config: undefined, changed: false, changes: [] });
-  const [userResult, projectResult] = await Promise.all([
-    migrateUser
-      ? migrate(userConfig)
-      : Promise.resolve({ config: userConfig, changed: false, changes: [] }),
-    migrateProject
-      ? migrate(projectConfig)
-      : Promise.resolve({ config: projectConfig, changed: false, changes: [] }),
-  ]);
-
-  let backupPath: string | undefined;
-  if (userResult.changed && userResult.config) {
-    try {
-      backupPath = await backupConfigFile(CONFIG_FILE);
-    } catch {
-      // Best effort. Migration remains atomic because provider and model save together below.
-    }
-    await saveUserConfig(userResult.config);
-  }
-  if (projectResult.changed && projectResult.config) {
-    const projectConfigPath = await getProjectConfigPath();
-    try {
-      backupPath = await backupConfigFile(projectConfigPath);
-    } catch {
-      // Best effort. Migration remains atomic because provider and model save together below.
-    }
-    await saveProjectConfig(projectResult.config);
-  }
-
-  const changes = [...userResult.changes, ...projectResult.changes];
-  if (changes.length > 0) {
-    queueMigrationNotice({ changes, backupPath });
-  }
-
-  return {
-    userConfig: userResult.config,
-    projectConfig: projectResult.config,
   };
 }
 
@@ -243,19 +161,8 @@ export const wiredCliMachine = cliMachine.provide({
               })
             : startUpdateCheck(options.version);
 
-        let loaded: { userConfig?: UserConfig; projectConfig?: UserConfig };
-        try {
-          loaded = await migrateLoadedLegacyConfigs(
-            await loadUserConfig(),
-            await loadProjectConfig(),
-            options.options,
-          );
-        } catch (error) {
-          console.error(pc.red(`Error: ${extractErrorMessage(error)}`));
-          throw error;
-        }
-        const existingConfig = loaded.userConfig;
-        const existingProjectConfig = loaded.projectConfig;
+        const existingConfig = await loadUserConfig();
+        const existingProjectConfig = await loadProjectConfig();
 
         const isGlobalComplete = isConfigComplete(existingConfig);
         const isProjectComplete = isConfigComplete(existingProjectConfig);
@@ -266,30 +173,13 @@ export const wiredCliMachine = cliMachine.provide({
         showUpdateNotification(updateResult);
 
         // Neither config is complete. Two scenarios:
-        // 1. Config has provider+model but they're invalid → hard error with guidance
+        // 1. Config has provider+model but the provider is unknown → hard error with guidance
         // 2. Config is truly missing or empty → return needsSetup to trigger onboarding
         if (!isGlobalComplete && !isProjectComplete && !hasCompleteOverride) {
           const bestConfig = existingProjectConfig ?? existingConfig;
-          if (bestConfig?.provider && bestConfig?.model) {
-            // Scenario 1: User has a config file with values that don't match any
-            // known provider/model. Fail loudly instead of silently re-running setup.
-            const provider = getProviderById(bestConfig.provider);
-            if (!provider) {
-              const validProviders = PROVIDERS.map((p) => p.id).join(", ");
-              console.error(pc.red(`Error: Unknown provider '${bestConfig.provider}'.`));
-              console.error(pc.dim(`Supported providers: ${validProviders}`));
-              console.error(pc.dim("Run `ai-git configure` to select a valid provider."));
-              throw new Error(`Unknown provider '${bestConfig.provider}'`);
-            }
-            // Provider is valid but model is not
-            console.error(
-              pc.red(`Error: Unknown model '${bestConfig.model}' for provider '${provider.name}'.`),
-            );
-            console.error(
-              pc.dim(`Available models: ${provider.models.map((m) => m.id).join(", ")}`),
-            );
-            console.error(pc.dim("Run `ai-git configure` to select a valid model."));
-            throw new Error(`Unknown model '${bestConfig.model}' for provider '${provider.name}'`);
+          if (bestConfig?.provider && bestConfig?.model && !getProviderById(bestConfig.provider)) {
+            // Scenario 1: Fail loudly instead of silently re-running setup.
+            throw reportUnknownProvider(bestConfig.provider);
           }
 
           return {
@@ -312,7 +202,7 @@ export const wiredCliMachine = cliMachine.provide({
             model: options.options.model,
           },
           options.version,
-          loaded,
+          { userConfig: existingConfig, projectConfig: existingProjectConfig },
         );
         return result;
       },

@@ -28,37 +28,17 @@ interface CerebrasModelsResponse {
 }
 
 /**
- * Get a human-readable name for a Cerebras model.
+ * Get a human-readable name for a Cerebras model from its ID.
+ * The Cerebras models endpoint returns IDs only.
  */
-function getModelDisplayName(modelId: string): string {
-  // Convert model IDs to readable names
-  const nameMap: Record<string, string> = {
-    "llama3.1-8b": "Llama 3.1 8B",
-    "llama-3.3-70b": "Llama 3.3 70B",
-    "gpt-oss-120b": "GPT-OSS 120B",
-    "qwen-3-32b": "Qwen 3 32B",
-    "qwen-3-235b-a22b-instruct-2507": "Qwen 3 235B Instruct",
-    "qwen-3-235b-a22b-thinking-2507": "Qwen 3 235B Thinking",
-    "zai-glm-4.6": "ZAI GLM 4.6",
-    "zai-glm-4.7": "ZAI GLM 4.7",
-  };
-
-  // Check for exact match
-  if (nameMap[modelId]) return nameMap[modelId];
-
-  // Check for prefix match
-  for (const [prefix, name] of Object.entries(nameMap)) {
-    if (modelId.startsWith(prefix)) {
-      const suffix = modelId.slice(prefix.length);
-      if (suffix) return `${name} ${suffix}`;
-      return name;
-    }
-  }
-
-  // Fall back to formatted ID
+export function getModelDisplayName(modelId: string): string {
   return modelId
     .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) =>
+      /^(?:gpt|oss|glm|zai|\d+b)$/i.test(word)
+        ? word.toUpperCase()
+        : word.charAt(0).toUpperCase() + word.slice(1),
+    )
     .join(" ");
 }
 

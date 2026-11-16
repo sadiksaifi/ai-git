@@ -10,19 +10,9 @@
 export type Mode = "cli" | "api";
 
 /**
- * Model definition within a provider.
- */
-export interface ModelDefinition {
-  /** Unique model identifier (e.g., "haiku", "gemini-3-flash-preview") */
-  id: string;
-  /** Human-readable model name (e.g., "Claude Haiku") */
-  name: string;
-  /** Whether this model is recommended for new users */
-  isRecommended?: boolean;
-}
-
-/**
  * Provider definition - represents an AI service.
+ * Every provider lists its models live: CLI providers during `configure`,
+ * API providers from their models endpoint.
  */
 export interface ProviderDefinition {
   /** Unique provider identifier (e.g., "claude-code", "antigravity-cli") */
@@ -33,10 +23,6 @@ export interface ProviderDefinition {
   mode: Mode;
   /** CLI binary name (only for mode: "cli") */
   binary?: string;
-  /** Available models for this provider (empty for dynamicModels providers) */
-  models: ModelDefinition[];
   /** Whether this provider is recommended for new users */
   isRecommended?: boolean;
-  /** Whether models should be fetched dynamically via API (for API mode providers) */
-  dynamicModels?: boolean;
 }

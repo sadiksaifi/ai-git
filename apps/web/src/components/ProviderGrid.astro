@@ -3,13 +3,13 @@ import { PROVIDERS } from "@ai-git/meta"
 
 const logos: Record<string, string> = {
   anthropic: "/logos/anthropic.svg",
+  "antigravity-cli": "/logos/antigravity.svg",
   cerebras: "/logos/cerebras.svg",
   "claude-code": "/logos/claude.svg",
   codex: "/logos/codex.svg",
   "google-ai-studio": "/logos/google.svg",
   openai: "/logos/openai.svg",
   openrouter: "/logos/openrouter.svg",
-  opencode: "/logos/opencode.svg",
   pi: "/logos/pi.svg",
 }
 
@@ -22,7 +22,7 @@ const providers = Object.values(PROVIDERS).sort((a, b) => a.name.localeCompare(b
       <span class="eyebrow">Providers</span>
       <h2>Bring your own AI.</h2>
       <p>
-        Ten providers, two integration types. Swap with one flag. No vendor lock-in, no opaque
+        {providers.length} providers, two integration types. Swap with one flag. No vendor lock-in, no opaque
         proxy. Your diff goes where you point it.
       </p>
     </header>

@@ -34,11 +34,6 @@ export const ERROR_TEMPLATES = {
     suggestion: `Run: ${CLI_NAME} configure to select a model.`,
   } satisfies ErrorTemplate,
 
-  invalidModel: (modelId: string, providerName: string): ErrorTemplate => ({
-    message: `Unknown model '${modelId}' for ${providerName}.`,
-    suggestion: `Run: ${CLI_NAME} configure to choose a valid model.`,
-  }),
-
   apiKeyMissing: (providerName: string): ErrorTemplate => ({
     message: `API key for ${providerName} not found in secure storage.`,
     suggestion: `Run: ${CLI_NAME} configure to set up your API key.`,

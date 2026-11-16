@@ -1,87 +1,185 @@
+import { PROVIDERS as PROVIDER_DOCS, isCLIProviderDoc } from "@ai-git/meta";
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
 import { parseDynamicVariantModel, readProcessOutput, type DynamicCLIModel } from "./dynamic.ts";
 
-type PiThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
+/**
+ * Pi thinking levels, lowest to highest. Mirrors Pi's own level list; per-model
+ * support comes from each model's `reasoning` flag and `thinkingLevelMap`.
+ */
+const PI_THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
 
-const STANDARD_PI_THINKING_LEVELS: PiThinkingLevel[] = ["off", "minimal", "low", "medium", "high"];
+const PI_RPC_TIMEOUT_MS = 15_000;
 
-const LOW_TO_XHIGH: PiThinkingLevel[] = ["low", "medium", "high", "xhigh"];
-const MEDIUM_TO_XHIGH: PiThinkingLevel[] = ["medium", "high", "xhigh"];
-const LOW_TO_MAX: PiThinkingLevel[] = ["low", "medium", "high", "xhigh", "max"];
+/** First Pi release whose RPC model records carry `thinkingLevelMap`. */
+const MINIMUM_PI_VERSION = [0, 72, 0] as const;
+const PI_RPC_REQUEST_ID = "ai-git-models";
 
-const PI_MODEL_THINKING_LEVELS: ReadonlyArray<{
-  providers?: readonly string[];
-  modelPattern: RegExp;
-  levels: readonly PiThinkingLevel[];
-}> = [
-  {
-    providers: ["opencode"],
-    modelPattern: /deepseek-v4-(?:flash|pro)/,
-    levels: ["high", "max"],
-  },
-  {
-    providers: [
-      "opencode-go",
-      "qwen-token-plan",
-      "qwen-token-plan-cn",
-      "qwen-token-plan-individual",
-    ],
-    modelPattern: /deepseek-v4-(?:flash|pro)/,
-    levels: ["off", "high", "max"],
-  },
-  {
-    providers: ["deepseek"],
-    modelPattern: /deepseek-v4-flash/,
-    levels: ["off", "low", "high", "max"],
-  },
-  {
-    providers: ["deepseek"],
-    modelPattern: /deepseek-v4-pro/,
-    levels: ["off", "high", "max"],
-  },
-  {
-    providers: ["openrouter"],
-    modelPattern: /deepseek-v4-(?:flash|pro)/,
-    levels: ["off", "high", "xhigh"],
-  },
-  {
-    providers: ["openai-codex"],
-    modelPattern: /(?:^|[-/])gpt-5-6-(?:luna|terra|sol)(?:$|[-/:])/,
-    levels: [...STANDARD_PI_THINKING_LEVELS, "xhigh", "max"],
-  },
-  {
-    providers: ["openai-codex"],
-    modelPattern: /(?:^|[-/])gpt-5-(?:3-codex-spark|4|5)(?:$|[-/:])/,
-    levels: [...STANDARD_PI_THINKING_LEVELS, "xhigh"],
-  },
-  {
-    providers: ["opencode"],
-    modelPattern: /(?:^|[-/])gpt-5-(?:4|5)(?:$|[-/:]).*pro(?:$|[-/:])/,
-    levels: MEDIUM_TO_XHIGH,
-  },
-  {
-    providers: ["opencode"],
-    modelPattern: /(?:^|[-/])gpt-5-6-(?:luna|terra|sol)(?:$|[-/:])/,
-    levels: LOW_TO_MAX,
-  },
-  {
-    providers: ["opencode"],
-    modelPattern: /(?:^|[-/])gpt-5-(?:3-codex|4|5)(?:$|[-/:])/,
-    levels: LOW_TO_XHIGH,
-  },
-  {
-    modelPattern: /(?:^|[-/])claude-fable-5(?:$|[-/:])/,
-    levels: ["minimal", "low", "medium", "high", "xhigh", "max"],
-  },
-  {
-    modelPattern: /(?:^|[-/])claude-(?:opus-5|sonnet-5|opus-4-7|opus-4-8)(?:$|[-/:])/,
-    levels: [...STANDARD_PI_THINKING_LEVELS, "xhigh", "max"],
-  },
-  {
-    modelPattern: /(?:^|[-/])claude-(?:opus|sonnet)-4-6(?:$|[-/:])/,
-    levels: [...STANDARD_PI_THINKING_LEVELS, "max"],
-  },
+/** Flags shared by generation and model listing so both see the same models. */
+const PI_ISOLATION_FLAGS = [
+  "--no-tools",
+  "--no-extensions",
+  "--no-skills",
+  "--no-prompt-templates",
+  "--no-themes",
+  "--no-context-files",
+  "--no-session",
 ];
+
+interface PiRpcModel {
+  id?: unknown;
+  name?: unknown;
+  provider?: unknown;
+  reasoning?: unknown;
+  thinkingLevelMap?: unknown;
+}
+
+/**
+ * Supported thinking levels for a Pi model, using Pi's rule:
+ * - non-reasoning models support only "off"
+ * - a level mapped to null is unsupported
+ * - "xhigh" and "max" need an explicit mapping
+ * Pi releases before 0.72.0 omit `thinkingLevelMap`, so setup requires 0.72.0.
+ */
+export function getPiSupportedThinkingLevels(model: PiRpcModel): string[] {
+  if (model.reasoning !== true) return ["off"];
+  const map =
+    typeof model.thinkingLevelMap === "object" && model.thinkingLevelMap !== null
+      ? (model.thinkingLevelMap as Record<string, unknown>)
+      : {};
+
+  return PI_THINKING_LEVELS.filter((level) => {
+    const mapped = map[level];
+    if (mapped === null) return false;
+    if (level === "xhigh" || level === "max") return mapped !== undefined;
+    return true;
+  });
+}
+
+function buildPiOptions(baseId: string, name: string, levels: string[]): DynamicCLIModel[] {
+  if (levels.length === 1 && levels[0] === "off") {
+    return [{ id: baseId, name }];
+  }
+  return levels.map((level) => ({ id: `${baseId}#${level}`, name: `${name} (${level})` }));
+}
+
+/**
+ * Parse the `get_available_models` response from `pi --mode rpc`.
+ * Returns null while no response has arrived, and an empty list when Pi
+ * reports a failure, so the caller can fall back without waiting.
+ */
+export function parsePiRpcModels(output: string): DynamicCLIModel[] | null {
+  for (const line of output.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith("{")) continue;
+
+    let event: unknown;
+    try {
+      event = JSON.parse(trimmed);
+    } catch {
+      continue;
+    }
+
+    if (typeof event !== "object" || event === null) continue;
+    const record = event as {
+      type?: unknown;
+      command?: unknown;
+      success?: unknown;
+      data?: { models?: unknown };
+    };
+    if (record.type !== "response" || record.command !== "get_available_models") continue;
+    if (record.success !== true || !Array.isArray(record.data?.models)) return [];
+
+    return (record.data.models as PiRpcModel[]).flatMap((model) => {
+      if (typeof model.provider !== "string" || typeof model.id !== "string") return [];
+      const baseId = `${model.provider}/${model.id}`;
+      return buildPiOptions(baseId, baseId, getPiSupportedThinkingLevels(model));
+    });
+  }
+
+  return null;
+}
+
+export function parsePiVersion(output: string): number[] | null {
+  const match = output.match(/(\d+)\.(\d+)\.(\d+)/);
+  return match ? match.slice(1).map(Number) : null;
+}
+
+export function isSupportedPiVersion(version: number[]): boolean {
+  for (let index = 0; index < MINIMUM_PI_VERSION.length; index += 1) {
+    const difference = (version[index] ?? 0) - MINIMUM_PI_VERSION[index]!;
+    if (difference !== 0) return difference > 0;
+  }
+  return true;
+}
+
+function piUpgradeHint(): string {
+  const doc = PROVIDER_DOCS.pi;
+  return doc && isCLIProviderDoc(doc) ? ` Install the current release: ${doc.installCommand}` : "";
+}
+
+async function assertSupportedPiVersion(): Promise<void> {
+  const proc = Bun.spawn(["pi", "--version"], { stdout: "pipe", stderr: "pipe" });
+  const { stdout, stderr, exitCode } = await readProcessOutput(proc);
+  if (exitCode !== 0) {
+    const detail = stderr.trim() || stdout.trim() || "no output";
+    throw new Error(`\`pi --version\` failed (exit code ${exitCode}): ${detail}`);
+  }
+
+  const version = parsePiVersion(stdout || stderr);
+  if (!version) {
+    throw new Error(
+      `Could not read the Pi version from \`pi --version\`: ${(stdout || stderr).trim() || "no output"}`,
+    );
+  }
+
+  if (!isSupportedPiVersion(version)) {
+    throw new Error(
+      `Pi ${MINIMUM_PI_VERSION.join(".")} or newer is required to list models with their thinking levels. Found ${version.join(".")}.${piUpgradeHint()}`,
+    );
+  }
+}
+
+async function listPiModelsViaRpc(): Promise<DynamicCLIModel[] | null> {
+  const proc = Bun.spawn(["pi", "--mode", "rpc", ...PI_ISOLATION_FLAGS], {
+    stdin: "pipe",
+    stdout: "pipe",
+    stderr: "ignore",
+  });
+
+  let timeout: Timer | undefined;
+  try {
+    proc.stdin.write(
+      `${JSON.stringify({ id: PI_RPC_REQUEST_ID, type: "get_available_models" })}\n`,
+    );
+    await proc.stdin.flush();
+
+    const read = (async () => {
+      const decoder = new TextDecoder();
+      let output = "";
+      for await (const chunk of proc.stdout) {
+        output += decoder.decode(chunk, { stream: true });
+        const models = parsePiRpcModels(output);
+        if (models) return models;
+      }
+      return parsePiRpcModels(output);
+    })();
+    const timedOut = new Promise<null>((resolve) => {
+      timeout = setTimeout(() => resolve(null), PI_RPC_TIMEOUT_MS);
+    });
+
+    return await Promise.race([read, timedOut]);
+  } catch {
+    return null;
+  } finally {
+    if (timeout) clearTimeout(timeout);
+    try {
+      await proc.stdin.end();
+    } catch {
+      // Process already exited.
+    }
+    proc.kill();
+  }
+}
 
 function splitTableRow(line: string): string[] {
   const trimmed = line.trim();
@@ -108,33 +206,6 @@ function isSeparatorLine(line: string): boolean {
   return /^[\s─━\-+|│┌┐└┘├┤┬┴┼]+$/.test(line);
 }
 
-export function getPiThinkingLevels(baseModelId: string): readonly PiThinkingLevel[] {
-  const parts = baseModelId.toLowerCase().split("/");
-  const provider = parts.length > 1 ? (parts[0] ?? "") : "";
-  const modelId = (parts.length > 1 ? parts.slice(1).join("/") : (parts[0] ?? "")).replace(
-    /[._]/g,
-    "-",
-  );
-
-  return (
-    PI_MODEL_THINKING_LEVELS.find(
-      (capability) =>
-        (!capability.providers || capability.providers.includes(provider)) &&
-        capability.modelPattern.test(modelId),
-    )?.levels ?? STANDARD_PI_THINKING_LEVELS
-  );
-}
-
-function buildPiModelOptions(provider: string, model: string, thinking: string): DynamicCLIModel[] {
-  const baseId = `${provider}/${model}`;
-  if (thinking.toLowerCase() !== "yes") {
-    return [{ id: baseId, name: baseId }];
-  }
-
-  const levels = getPiThinkingLevels(baseId);
-  return levels.map((level) => ({ id: `${baseId}#${level}`, name: `${baseId} (${level})` }));
-}
-
 export function parsePiModelsTable(output: string): DynamicCLIModel[] {
   const rows = output
     .split(/\r?\n/)
@@ -159,6 +230,7 @@ export function parsePiModelsTable(output: string): DynamicCLIModel[] {
     dataStartIndex = headerIndex + 1;
   }
 
+  // The table has no per-model thinking levels, so offer each model at Pi's default level.
   const models: DynamicCLIModel[] = [];
   for (const { cells } of rows.slice(dataStartIndex)) {
     const provider = cells[providerIndex];
@@ -167,7 +239,8 @@ export function parsePiModelsTable(output: string): DynamicCLIModel[] {
       thinkingIndex >= 0 ? cells[thinkingIndex] : cells.find((cell) => /^(yes|no)$/i.test(cell));
 
     if (!provider || !model || !thinking) continue;
-    models.push(...buildPiModelOptions(provider, model, thinking));
+    const baseId = `${provider}/${model}`;
+    models.push({ id: baseId, name: baseId });
   }
 
   return models;
@@ -186,19 +259,7 @@ export const piAdapter: CLIProviderAdapter = {
       args.push("--thinking", variant);
     }
 
-    args.push(
-      "--system-prompt",
-      system,
-      "--no-tools",
-      "--no-extensions",
-      "--no-skills",
-      "--no-prompt-templates",
-      "--no-themes",
-      "--no-context-files",
-      "--no-session",
-      "-p",
-      prompt,
-    );
+    args.push("--system-prompt", system, ...PI_ISOLATION_FLAGS, "-p", prompt);
 
     const proc = Bun.spawn(args, {
       stdout: "pipe",
@@ -219,6 +280,13 @@ export const piAdapter: CLIProviderAdapter = {
   },
 
   async fetchModels(): Promise<DynamicCLIModel[]> {
+    await assertSupportedPiVersion();
+
+    // RPC mode reports each model's supported thinking levels.
+    const rpcModels = await listPiModelsViaRpc();
+    if (rpcModels && rpcModels.length > 0) return rpcModels;
+
+    // RPC failed: fall back to the --list-models table.
     const proc = Bun.spawn(["pi", "--list-models"], {
       stdout: "pipe",
       stderr: "pipe",

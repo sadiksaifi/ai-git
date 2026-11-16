@@ -1,8 +1,6 @@
 import { log } from "@clack/prompts";
 import pc from "picocolors";
 import type { UserConfig } from "../config.ts";
-import { selectAntigravityMigrationModel } from "../providers/cli/antigravity.ts";
-import type { APIModelDefinition } from "../providers/types.ts";
 
 // ─── MIGRATION REGISTRY ──────────────────────────────────────────────
 
@@ -64,26 +62,6 @@ export const migrations: ConfigMigration[] = [
       if ("mode" in config) {
         delete config.mode;
         return "Removed legacy 'mode' property";
-      }
-      return null;
-    },
-  },
-  {
-    id: "claude-effort-model-defaults",
-    description: "Migrate plain claude-code model IDs to effort defaults",
-    migrate(config) {
-      const MODEL_MAP: Record<string, string> = {
-        sonnet: "sonnet-low",
-        opus: "opus-low",
-      };
-      if (
-        config.provider === "claude-code" &&
-        typeof config.model === "string" &&
-        config.model in MODEL_MAP
-      ) {
-        const old = config.model;
-        config.model = MODEL_MAP[config.model];
-        return `Migrated model '${old}' → '${config.model}'`;
       }
       return null;
     },
@@ -158,31 +136,6 @@ export function migrateConfig(raw: Record<string, unknown>): MigrationResult {
     if (change !== null) changes.push(change);
   }
   return { config: config as UserConfig, changed: changes.length > 0, changes };
-}
-
-export async function migrateLegacyGeminiCliConfig(
-  config: UserConfig,
-  loadModels: () => Promise<APIModelDefinition[]>,
-): Promise<MigrationResult> {
-  if (config.provider !== "gemini-cli" || typeof config.model !== "string") {
-    return { config, changed: false, changes: [] };
-  }
-
-  const models = await loadModels();
-  const migratedModel = selectAntigravityMigrationModel(config.model, models);
-  if (!migratedModel) {
-    throw new Error(
-      `Cannot migrate unsupported Gemini CLI model '${config.model}'. Run \`ai-git configure\` to select an Antigravity model.`,
-    );
-  }
-
-  return {
-    config: { ...config, provider: "antigravity-cli", model: migratedModel },
-    changed: true,
-    changes: [
-      `Migrated provider 'gemini-cli' → 'antigravity-cli' and model '${config.model}' → '${migratedModel}'`,
-    ],
-  };
 }
 
 // ─── UTILITIES ────────────────────────────────────────────────────────

@@ -3,11 +3,12 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { anthropicAdapter } from "./anthropic.ts";
-import { openAIAdapter } from "./openai.ts";
+import { getModelDisplayName, isReasoningModel, openAIAdapter } from "./openai.ts";
 import { googleAiStudioAdapter } from "./google-ai-studio.ts";
 import { openRouterAdapter } from "./openrouter.ts";
-import { cerebrasAdapter } from "./cerebras.ts";
+import { cerebrasAdapter, getModelDisplayName as getCerebrasModelName } from "./cerebras.ts";
 import { clearModelCatalogForTests } from "./models/index.ts";
+import { createCatalogFromRaw } from "./models/models-dev-client.ts";
 
 const originalFetch = globalThis.fetch;
 const originalCatalogOverride = process.env.AI_GIT_MODEL_CATALOG_OVERRIDE;
@@ -143,7 +144,8 @@ describe("API adapters use shared model ranking", () => {
 
     const models = await openAIAdapter.fetchModels("test-key");
 
-    expect(models.map((m) => m.id)).toEqual(["gpt-5", "gpt-4o", "gpt-5-mini"]);
+    // gpt-4o predates the legacy cutoff, so it is hidden.
+    expect(models.map((m) => m.id)).toEqual(["gpt-5", "gpt-5-mini"]);
   });
 
   it("anthropic adapter removes deprecated models and orders defaults first", async () => {
@@ -212,9 +214,9 @@ describe("API adapters use shared model ranking", () => {
 
     const models = await openRouterAdapter.fetchModels("test-key");
 
+    // gpt-4o predates the legacy cutoff, so it is hidden.
     expect(models.map((m) => m.id)).toEqual([
       "anthropic/claude-sonnet-4-5",
-      "openai/gpt-4o",
       "google/gemini-2.5-pro",
     ]);
   });
@@ -279,5 +281,57 @@ describe("API adapters use shared model ranking", () => {
       const content = fs.readFileSync(path.resolve(import.meta.dir, file), "utf8");
       expect(content.includes("MODEL_PRIORITY")).toBe(false);
     }
+  });
+});
+
+describe("OpenAI model metadata", () => {
+  const catalog = createCatalogFromRaw(
+    {
+      openai: {
+        models: {
+          "gpt-6.1-sol": { name: "GPT-6.1 Sol", reasoning: true },
+          "gpt-4.1": { name: "GPT-4.1", reasoning: false },
+        },
+      },
+    },
+    "snapshot",
+  );
+
+  it("uses the catalog reasoning flag when the catalog lists the model", () => {
+    expect(isReasoningModel("gpt-6.1-sol", catalog)).toBe(true);
+    expect(isReasoningModel("gpt-4.1", catalog)).toBe(false);
+  });
+
+  it("treats o-series and GPT-5 or later as reasoning models without catalog data", () => {
+    expect(isReasoningModel("gpt-7-nova", null)).toBe(true);
+    expect(isReasoningModel("gpt-10", null)).toBe(true);
+    expect(isReasoningModel("o5-mini", null)).toBe(true);
+    expect(isReasoningModel("gpt-4o", null)).toBe(false);
+    expect(isReasoningModel("gpt-5-chat-latest", null)).toBe(false);
+  });
+
+  it("uses catalog names and formats unknown IDs", () => {
+    expect(getModelDisplayName("gpt-6.1-sol", catalog)).toBe("GPT-6.1 Sol");
+    expect(getModelDisplayName("gpt-7-nova", catalog)).toBe("GPT 7 Nova");
+  });
+});
+
+describe("Cerebras model metadata", () => {
+  it("formats names from IDs without a fixed model list", () => {
+    expect(getCerebrasModelName("gpt-oss-120b")).toBe("GPT OSS 120B");
+    expect(getCerebrasModelName("qwen-3.8-27b")).toBe("Qwen 3.8 27B");
+  });
+
+  it("accepts model families it has not seen before", async () => {
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({
+          data: [{ id: "nova-9-400b", object: "model", created: 1, owned_by: "cerebras" }],
+        }),
+        { status: 200 },
+      )) as unknown as typeof fetch;
+
+    const models = await cerebrasAdapter.fetchModels("test-key");
+    expect(models.map((model) => model.id)).toEqual(["nova-9-400b"]);
   });
 });

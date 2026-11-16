@@ -4,7 +4,13 @@ import * as path from "node:path";
 import * as os from "node:os";
 import { clearModelCatalogForTests, getModelCatalog } from "./index.ts";
 import { getModelsDevCacheFilePath } from "../../../lib/paths.ts";
-import { createCatalogFromRaw } from "./models-dev-client.ts";
+import {
+  createCatalogFromRaw,
+  loadCatalogCache,
+  MODELS_DEV_CACHE_VERSION,
+  saveCatalogCache,
+} from "./models-dev-client.ts";
+import { MODEL_CATALOG_SNAPSHOT } from "./snapshot.ts";
 
 const originalFetch = globalThis.fetch;
 const originalCacheFile = process.env.AI_GIT_MODELS_DEV_CACHE_FILE;
@@ -104,7 +110,10 @@ describe("models-dev catalog client", () => {
     stale.fetchedAt = "2020-01-01T00:00:00.000Z";
 
     fs.mkdirSync(path.dirname(cacheFile), { recursive: true });
-    fs.writeFileSync(cacheFile, JSON.stringify(stale, null, 2));
+    fs.writeFileSync(
+      cacheFile,
+      JSON.stringify({ ...stale, cacheVersion: MODELS_DEV_CACHE_VERSION }, null, 2),
+    );
 
     globalThis.fetch = (async () => {
       throw new Error("network down");
@@ -127,12 +136,84 @@ describe("models-dev catalog client", () => {
     const catalog = await getModelCatalog({ forceRefresh: true });
 
     expect(catalog.source).toBe("snapshot");
-    expect(Object.keys(catalog.providers.anthropic.models)).toHaveLength(13);
-    expect(Object.keys(catalog.providers.openai.models)).toHaveLength(47);
-    expect(Object.keys(catalog.providers.google.models)).toHaveLength(39);
+    for (const providerId of ["anthropic", "openai", "google"] as const) {
+      expect(Object.keys(catalog.providers[providerId].models)).toEqual(
+        Object.keys(MODEL_CATALOG_SNAPSHOT[providerId].models),
+      );
+      expect(Object.keys(catalog.providers[providerId].models).length).toBeGreaterThan(0);
+    }
     expect(catalog.providers.anthropic.models["claude-fable-5"]).toBeDefined();
     expect(catalog.providers.openai.models["gpt-5.6-luna"]).toBeDefined();
     expect(catalog.providers.google.models["gemini-3.7-flash"]).toBeDefined();
     expect(catalog.providers.anthropic.models["claude-3-7-sonnet-latest"]).toBeUndefined();
+  });
+});
+
+describe("createCatalogFromRaw", () => {
+  it("keeps family, effort values, and cost from models.dev", () => {
+    const catalog = createCatalogFromRaw(
+      {
+        anthropic: {
+          models: {
+            "claude-haiku-5-5": {
+              name: "Claude Haiku 5.5",
+              family: "claude-haiku",
+              reasoning_options: [
+                { type: "toggle" },
+                { type: "effort", values: ["low", "medium", "high"] },
+              ],
+              cost: { input: 0.1, output: 0.5, cache_read: 0.01 },
+            },
+            "claude-haiku-4-5": {
+              name: "Claude Haiku 4.5",
+              reasoning_options: [{ type: "budget_tokens", min: 1024 }],
+            },
+          },
+        },
+      },
+      "network",
+    );
+
+    expect(catalog.providers.anthropic.models["claude-haiku-5-5"]).toMatchObject({
+      family: "claude-haiku",
+      reasoningEfforts: ["low", "medium", "high"],
+      cost: { input: 0.1, output: 0.5 },
+    });
+    const older = catalog.providers.anthropic.models["claude-haiku-4-5"]!;
+    expect(older.reasoningEfforts).toBeUndefined();
+    expect(older.family).toBeUndefined();
+    expect(older.cost).toBeUndefined();
+  });
+});
+
+describe("models.dev catalog cache", () => {
+  const originalCacheFile = process.env.AI_GIT_MODELS_DEV_CACHE_FILE;
+  let tempDir = "";
+
+  beforeEach(() => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "ai-git-catalog-cache-"));
+    process.env.AI_GIT_MODELS_DEV_CACHE_FILE = path.join(tempDir, "catalog.json");
+  });
+
+  afterEach(() => {
+    if (originalCacheFile === undefined) delete process.env.AI_GIT_MODELS_DEV_CACHE_FILE;
+    else process.env.AI_GIT_MODELS_DEV_CACHE_FILE = originalCacheFile;
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it("reads back a cache it wrote", async () => {
+    const catalog = createCatalogFromRaw(
+      { openai: { models: { "gpt-image-2": { modalities: { output: ["image"] } } } } },
+      "network",
+    );
+    await saveCatalogCache(catalog);
+    const loaded = await loadCatalogCache();
+    expect(loaded?.providers.openai.models["gpt-image-2"]?.outputModalities).toEqual(["image"]);
+  });
+
+  it("ignores caches written before the current cache version", async () => {
+    const catalog = createCatalogFromRaw({ openai: { models: { "gpt-4o": {} } } }, "network");
+    fs.writeFileSync(process.env.AI_GIT_MODELS_DEV_CACHE_FILE!, JSON.stringify(catalog));
+    expect(await loadCatalogCache()).toBeNull();
   });
 });

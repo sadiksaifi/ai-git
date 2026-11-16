@@ -199,64 +199,43 @@ async function setupCLIFlow(
     return { config: null, completed: false, restart: true };
   }
 
-  let model: string;
-  let models: CachedModel[] | null = null;
+  let models: CachedModel[];
+  const s = spinner();
+  s.start(`Fetching ${providerDef.name} models...`);
 
-  if (providerDef.dynamicModels) {
-    const s = spinner();
-    s.start(`Fetching ${providerDef.name} models...`);
+  try {
+    models = await loadDynamicCLIModelsForSetup(providerId, { providerName: providerDef.name });
+    s.stop(pc.green(`Found ${models.length} models`));
+  } catch (error) {
+    s.error("Error fetching models");
+    log.error("");
+    log.error(pc.red(error instanceof Error ? error.message : "Model listing failed."));
+    log.error("");
+    log.error(pc.dim("Check your CLI authentication/configuration and try again."));
 
-    try {
-      models = await loadDynamicCLIModelsForSetup(providerId, { providerName: providerDef.name });
-      s.stop(pc.green(`Found ${models.length} models`));
-    } catch (error) {
-      s.error("Error fetching models");
-      log.error("");
-      log.error(pc.red(error instanceof Error ? error.message : "Model listing failed."));
-      log.error("");
-      log.error(pc.dim("Check your CLI authentication/configuration and try again."));
-
-      const retry = await select({
-        message: "What would you like to do?",
-        options: [
-          { value: "retry", label: "Retry model listing" },
-          { value: "provider", label: "Choose a different provider" },
-          { value: "exit", label: "Exit setup" },
-        ],
-      });
-
-      if (retry === "retry") {
-        return await setupCLIFlow(ctx, providerId, availabilityMap);
-      }
-      if (retry === "provider") {
-        return { config: null, completed: false, restart: true };
-      }
-      return { config: null, completed: false };
-    }
-
-    const selectedModel = await selectModel(models, providerId, defaults?.model, {
-      showRecommended: getDynamicRecommendation(models) !== undefined,
-    });
-    if (!selectedModel) {
-      return { config: null, completed: false };
-    }
-    model = selectedModel;
-  } else {
-    const modelResult = await select({
-      message: "Select model:",
-      options: sortRecommendedFirst(providerDef.models).map((m) => ({
-        value: m.id,
-        label: m.name,
-        hint: m.isRecommended ? "recommended" : undefined,
-      })),
-      initialValue: defaults?.model ?? providerDef.models.find((m) => m.isRecommended)?.id,
+    const retry = await select({
+      message: "What would you like to do?",
+      options: [
+        { value: "retry", label: "Retry model listing" },
+        { value: "provider", label: "Choose a different provider" },
+        { value: "exit", label: "Exit setup" },
+      ],
     });
 
-    if (isCancel(modelResult)) {
-      return { config: null, completed: false };
+    if (retry === "retry") {
+      return await setupCLIFlow(ctx, providerId, availabilityMap);
     }
+    if (retry === "provider") {
+      return { config: null, completed: false, restart: true };
+    }
+    return { config: null, completed: false };
+  }
 
-    model = modelResult as string;
+  const model = await selectModel(models, providerId, defaults?.model, {
+    showRecommended: getDynamicRecommendation(models) !== undefined,
+  });
+  if (!model) {
+    return { config: null, completed: false };
   }
 
   // Save configuration (without mode)
@@ -272,10 +251,7 @@ async function setupCLIFlow(
   }
 
   // Minimal success message
-  const modelName =
-    models?.find((m) => m.id === model)?.name ??
-    providerDef.models.find((m) => m.id === model)?.name ??
-    model;
+  const modelName = models.find((m) => m.id === model)?.name ?? model;
   log.success(`${pc.cyan(providerDef.name)} → ${pc.cyan(modelName)}`);
   log.info(SPEED_HINT);
 
