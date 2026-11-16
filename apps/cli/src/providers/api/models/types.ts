@@ -21,6 +21,12 @@ export interface CatalogModelDefinition {
   lastUpdated?: string;
   reasoning: boolean;
   toolCall: boolean;
+  /** Model family from models.dev (e.g. "claude-haiku", "gpt-luna") */
+  family?: string;
+  /** Effort values the model accepts. Absent when models.dev lists no effort option. */
+  reasoningEfforts?: string[];
+  /** USD per million tokens */
+  cost?: { input?: number; output?: number };
 }
 
 export interface ProviderModelCatalog {
