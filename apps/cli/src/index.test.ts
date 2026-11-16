@@ -261,11 +261,12 @@ describe("ai-git CLI", () => {
     expect(result.exitCode).toBe(1);
   });
 
-  it("should auto-migrate legacy claude-code config and run dry-run", async () => {
-    // Create a config with the old plain "sonnet" model ID
+  it("should auto-migrate a legacy config on disk and run dry-run", async () => {
+    // Create a config with the legacy 'mode' property
     const homeDir = createTestHome({
       provider: "claude-code",
       model: "sonnet",
+      mode: "cli",
     });
     const noProviderPath = await createPathWithoutProviderCLI();
     const repoDir = createGitRepo();
@@ -278,14 +279,15 @@ describe("ai-git CLI", () => {
       pathEnv: noProviderPath,
     });
 
-    // Should work (migration converts "sonnet" → "sonnet-low")
+    // Should work (migration strips 'mode' and keeps the bare alias)
     expect(result.stdout).toContain("DRY RUN: SYSTEM PROMPT");
     expect(result.exitCode).toBe(0);
 
     // Verify config was migrated on disk
     const configPath = path.join(homeDir, ".config", "ai-git", "config.json");
     const migratedConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
-    expect(migratedConfig.model).toBe("sonnet-low");
+    expect(migratedConfig.model).toBe("sonnet");
+    expect(migratedConfig.mode).toBeUndefined();
 
     // Verify backup file was created
     const configDir = path.dirname(configPath);
@@ -295,7 +297,7 @@ describe("ai-git CLI", () => {
       .find((f) => f.startsWith(`${configBase}.`) && f.endsWith(".bak"));
     expect(backupFile).toBeDefined();
     const backupConfig = JSON.parse(fs.readFileSync(path.join(configDir, backupFile!), "utf8"));
-    expect(backupConfig.model).toBe("sonnet");
+    expect(backupConfig.mode).toBe("cli");
   });
 
   it("migrates a retired Codex config on disk before dry-run", async () => {

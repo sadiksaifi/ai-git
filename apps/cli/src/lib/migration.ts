@@ -67,26 +67,6 @@ export const migrations: ConfigMigration[] = [
     },
   },
   {
-    id: "claude-effort-model-defaults",
-    description: "Migrate plain claude-code model IDs to effort defaults",
-    migrate(config) {
-      const MODEL_MAP: Record<string, string> = {
-        sonnet: "sonnet-low",
-        opus: "opus-low",
-      };
-      if (
-        config.provider === "claude-code" &&
-        typeof config.model === "string" &&
-        config.model in MODEL_MAP
-      ) {
-        const old = config.model;
-        config.model = MODEL_MAP[config.model];
-        return `Migrated model '${old}' → '${config.model}'`;
-      }
-      return null;
-    },
-  },
-  {
     id: "codex-current-model-families",
     description: "Migrate retired Codex model IDs to supported model families",
     migrate(config) {
