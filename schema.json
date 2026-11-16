@@ -23,6 +23,7 @@
         "claude-code",
         "antigravity-cli",
         "codex",
+        "opencode",
         "pi",
         "openrouter",
         "openai",
@@ -35,6 +36,7 @@
         "claude-code",
         "antigravity-cli",
         "codex",
+        "opencode",
         "pi",
         "openrouter",
         "openai",
@@ -190,6 +192,23 @@
           "model": {
             "description": "Codex model: '<model>#<effort>' (e.g., 'gpt-6.1-terra#low'). Models are fetched dynamically from `codex debug models`.",
             "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider": {
+            "const": "opencode"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "OpenCode model ID fetched dynamically from `opencode api model.list`. Variant selections use '<provider/model>#<variant>'."
           }
         }
       }

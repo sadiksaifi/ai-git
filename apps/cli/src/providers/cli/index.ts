@@ -2,6 +2,7 @@ import type { CLIProviderAdapter } from "../types.ts";
 import { antigravityAdapter } from "./antigravity.ts";
 import { claudeCodeAdapter } from "./claude-code.ts";
 import { codexAdapter } from "./codex.ts";
+import { opencodeAdapter } from "./opencode.ts";
 import { piAdapter } from "./pi.ts";
 
 // ==============================================================================
@@ -11,13 +12,12 @@ import { piAdapter } from "./pi.ts";
 /**
  * Registry of all CLI mode provider adapters.
  * Add new CLI adapters here when adding support for new CLI tools.
- * The OpenCode adapter (./opencode.ts) is not registered while OpenCode is in
- * DISABLED_PROVIDERS; see https://github.com/sadiksaifi/ai-git/issues/141.
  */
 const cliAdapters: Map<string, CLIProviderAdapter> = new Map([
   [antigravityAdapter.providerId, antigravityAdapter],
   [claudeCodeAdapter.providerId, claudeCodeAdapter],
   [codexAdapter.providerId, codexAdapter],
+  [opencodeAdapter.providerId, opencodeAdapter],
   [piAdapter.providerId, piAdapter],
 ]);
 
@@ -55,4 +55,5 @@ export function getCLIProviderIds(): string[] {
 export { antigravityAdapter } from "./antigravity.ts";
 export { claudeCodeAdapter } from "./claude-code.ts";
 export { codexAdapter } from "./codex.ts";
+export { opencodeAdapter } from "./opencode.ts";
 export { piAdapter } from "./pi.ts";
