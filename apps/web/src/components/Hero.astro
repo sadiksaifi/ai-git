@@ -32,11 +32,6 @@ const heroBody = renderTerminalLines(heroLines)
 
 <section class="hero">
   <div class="container">
-    <span class="hero-kicker">
-      <span class="dot" aria-hidden="true"></span>
-      <span>Conventional commits. Spec 1.0.0.</span>
-    </span>
-
     <div class="hero-grid">
       <div class="hero-copy">
         <h1>
@@ -100,31 +95,11 @@ const heroBody = renderTerminalLines(heroLines)
     flex-direction: column;
     align-items: center;
   }
-  .hero-kicker {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--color-fg-dim);
-    padding: 5px 10px 5px 8px;
-    border: 1px solid var(--color-border);
-    border-radius: 999px;
-    background: var(--color-bg-elev);
-  }
-  .hero-kicker .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--color-added);
-    box-shadow: 0 0 10px var(--color-added);
-  }
   .hero-grid {
     display: grid;
     grid-template-columns: 1fr;
     justify-items: center;
     gap: clamp(2.5rem, 5vw, 4rem);
-    margin-top: var(--space-8);
     width: 100%;
   }
   .hero-copy {
