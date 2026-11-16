@@ -85,7 +85,9 @@ export const openAIAdapter: APIProviderAdapter = {
       ...(reasoning ? {} : { temperature: 0 }),
       providerOptions: {
         openai: {
-          ...(reasoning ? { reasoningEffort: "low" as const } : {}),
+          // The SDK's own reasoning-model check lags new families (e.g. GPT-6),
+          // and it drops reasoningEffort for models it does not recognize.
+          ...(reasoning ? { forceReasoning: true, reasoningEffort: "low" as const } : {}),
           store: false,
         },
       },
