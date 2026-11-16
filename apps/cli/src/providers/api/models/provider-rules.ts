@@ -216,12 +216,8 @@ export const PROVIDER_MODEL_RULES: Record<SupportedAPIProviderId, ProviderModelR
     resolveProviderRank: getProviderRankForOpenRouter,
   },
   cerebras: {
-    includePatterns: [
-      /^llama[\d.-]/i, // llama3.1-8b, llama-3.3-70b
-      /^qwen-/i, // qwen-3-32b, qwen-3-235b-...
-      /^gpt-oss-/i, // gpt-oss-120b
-      /^zai-glm-/i, // zai-glm-4.6, zai-glm-4.7
-    ],
+    // The Cerebras models endpoint lists only models it serves, so accept every family.
+    includePatterns: [/./],
     excludePatterns: [/embedding/i, /moderation/i, /tts/i, /whisper/i, /vision/i],
     dedupeKey: (modelId: string) => {
       // Normalize Cerebras model IDs: collapse variant + date suffixes to base model

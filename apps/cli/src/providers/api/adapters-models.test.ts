@@ -6,7 +6,7 @@ import { anthropicAdapter } from "./anthropic.ts";
 import { getModelDisplayName, isReasoningModel, openAIAdapter } from "./openai.ts";
 import { googleAiStudioAdapter } from "./google-ai-studio.ts";
 import { openRouterAdapter } from "./openrouter.ts";
-import { cerebrasAdapter } from "./cerebras.ts";
+import { cerebrasAdapter, getModelDisplayName as getCerebrasModelName } from "./cerebras.ts";
 import { clearModelCatalogForTests } from "./models/index.ts";
 import { createCatalogFromRaw } from "./models/models-dev-client.ts";
 
@@ -313,5 +313,25 @@ describe("OpenAI model metadata", () => {
   it("uses catalog names and formats unknown IDs", () => {
     expect(getModelDisplayName("gpt-6.1-sol", catalog)).toBe("GPT-6.1 Sol");
     expect(getModelDisplayName("gpt-7-nova", catalog)).toBe("GPT 7 Nova");
+  });
+});
+
+describe("Cerebras model metadata", () => {
+  it("formats names from IDs without a fixed model list", () => {
+    expect(getCerebrasModelName("gpt-oss-120b")).toBe("GPT OSS 120B");
+    expect(getCerebrasModelName("qwen-3.8-27b")).toBe("Qwen 3.8 27B");
+  });
+
+  it("accepts model families it has not seen before", async () => {
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({
+          data: [{ id: "nova-9-400b", object: "model", created: 1, owned_by: "cerebras" }],
+        }),
+        { status: 200 },
+      )) as unknown as typeof fetch;
+
+    const models = await cerebrasAdapter.fetchModels("test-key");
+    expect(models.map((model) => model.id)).toEqual(["nova-9-400b"]);
   });
 });
