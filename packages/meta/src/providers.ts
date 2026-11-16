@@ -1,4 +1,4 @@
-import type { ProviderDoc, CLIProviderDoc, DisabledProviderDoc } from "./types.ts";
+import type { ProviderDoc, CLIProviderDoc } from "./types.ts";
 
 // ==============================================================================
 // @ai-git/meta — Provider Documentation
@@ -40,6 +40,16 @@ export const PROVIDERS: Record<string, ProviderDoc | CLIProviderDoc> = {
     installCommand: "npm install -g @openai/codex",
     docsUrl: "https://learn.chatgpt.com/docs/codex/cli",
     requirementsUrl: "https://learn.chatgpt.com/docs/codex/cli",
+    requirementsLabel: "Install CLI",
+  },
+  opencode: {
+    id: "opencode",
+    name: "OpenCode",
+    type: "cli",
+    binary: "opencode",
+    installCommand: "curl -fsSL https://opencode.ai/install | bash",
+    docsUrl: "https://opencode.ai/docs/cli/",
+    requirementsUrl: "https://opencode.ai",
     requirementsLabel: "Install CLI",
   },
   pi: {
@@ -86,19 +96,6 @@ export const PROVIDERS: Record<string, ProviderDoc | CLIProviderDoc> = {
     type: "api",
     requirementsUrl: "https://cloud.cerebras.ai/",
     requirementsLabel: "Get API Key",
-  },
-};
-
-/**
- * Providers that are switched off until their adapter is fixed. They are left
- * out of PROVIDERS, so setup, help, the schema, and the website skip them.
- */
-export const DISABLED_PROVIDERS: Record<string, DisabledProviderDoc> = {
-  opencode: {
-    id: "opencode",
-    name: "OpenCode",
-    reason: "OpenCode 2.x removed the CLI flags the adapter uses.",
-    issueUrl: "https://github.com/sadiksaifi/ai-git/issues/141",
   },
 };
 

@@ -73,7 +73,7 @@ Reusable `fromPromise()` actors with factory pattern for test dependency injecti
 
 Two modes with unified adapter interface:
 
-- **CLI Mode** (`cli/`): Spawns installed binaries (`claude`, `agy`, `codex`, `pi`). The OpenCode adapter is disabled (issue #141)
+- **CLI Mode** (`cli/`): Spawns installed binaries (`claude`, `agy`, `codex`, `opencode`, `pi`)
 - **API Mode** (`api/`): HTTP APIs via Vercel AI SDK (OpenRouter, OpenAI, Anthropic, Google AI Studio)
 
 `registry.ts` derives the provider list from `@ai-git/meta` and marks recommended providers.
@@ -81,6 +81,17 @@ No provider has a hardcoded model list. CLI providers list models during `config
 
 - Codex: `codex debug models` (falls back to `--bundled`)
 - Claude Code: models.dev Anthropic families plus the `--effort` levels from `claude --help`
+- OpenCode: `opencode api model.list --standalone`; requires 2.2.6 or newer (oldest release
+  verified). OpenCode 1.x ignores the `agents` config, so generation checks the version too.
+  Generation runs `opencode serve --stdio` and drives the session API (create, archive, prompt,
+  poll the newest `idle` message, read the newest assistant message, delete), so no session stays
+  in the user's OpenCode database. While a generation runs, SIGINT, SIGTERM, SIGHUP, and
+  `process.exit` (the spinner exits on Ctrl-C without a signal) first delete the session and kill
+  the server; a later run deletes sessions left by a killed run. The system prompt's `{` is written as `\u007b` because OpenCode substitutes
+  `{env:...}` and `{file:...}` in config text. Requests use `node:http` with `agent: false`, which ignores HTTP_PROXY even with
+  NODE_USE_ENV_PROXY. The user's OPENCODE_CONFIG_CONTENT (JSONC) is merged, and ai-git's policies
+  and plugin directives go after the user's, because the last matching rule in a document wins. Both calls run in
+  one stable work directory under the ai-git cache, because OpenCode records a project per directory.
 - Pi: `get_available_models` over `pi --mode rpc` (falls back to `pi --list-models`)
 - Pi: requires 0.72.0 or newer for setup (first release with `thinkingLevelMap`)
 - Antigravity CLI: its own listing command

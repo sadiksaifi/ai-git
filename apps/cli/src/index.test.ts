@@ -374,34 +374,6 @@ describe("ai-git CLI", () => {
     expect(result.exitCode).toBe(1);
   });
 
-  it("explains that a configured OpenCode provider is disabled", async () => {
-    const homeDir = createTestHome({ provider: "opencode", model: "opencode/big-pickle" });
-    const noProviderPath = await createPathWithoutProviderCLI();
-    const repoDir = createGitRepo();
-
-    const result = await runCLI([], { cwd: repoDir, homeDir, pathEnv: noProviderPath });
-
-    expect(result.stderr).toContain("OpenCode support is disabled");
-    expect(result.stderr).toContain("https://github.com/sadiksaifi/ai-git/issues/141");
-    expect(result.stderr).toContain("ai-git configure");
-    expect(result.exitCode).toBe(1);
-  });
-
-  it("explains that an OpenCode --provider override is disabled", async () => {
-    const homeDir = createTestHome({ provider: "claude-code", model: "haiku#low" });
-    const noProviderPath = await createPathWithoutProviderCLI();
-    const repoDir = createGitRepo();
-
-    const result = await runCLI(["--provider", "opencode", "--model", "x", "--dry-run", "-A"], {
-      cwd: repoDir,
-      homeDir,
-      pathEnv: noProviderPath,
-    });
-
-    expect(result.stderr).toContain("OpenCode support is disabled");
-    expect(result.exitCode).toBe(1);
-  });
-
   it("should work with effort-based model IDs in dry-run", async () => {
     const homeDir = createTestHome({
       provider: "claude-code",
