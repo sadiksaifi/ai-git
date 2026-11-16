@@ -64,7 +64,8 @@ function buildPiOptions(baseId: string, name: string, levels: string[]): Dynamic
 
 /**
  * Parse the `get_available_models` response from `pi --mode rpc`.
- * Returns null when the output has no successful response.
+ * Returns null while no response has arrived, and an empty list when Pi
+ * reports a failure, so the caller can fall back without waiting.
  */
 export function parsePiRpcModels(output: string): DynamicCLIModel[] | null {
   for (const line of output.split(/\r?\n/)) {
@@ -86,7 +87,7 @@ export function parsePiRpcModels(output: string): DynamicCLIModel[] | null {
       data?: { models?: unknown };
     };
     if (record.type !== "response" || record.command !== "get_available_models") continue;
-    if (record.success !== true || !Array.isArray(record.data?.models)) return null;
+    if (record.success !== true || !Array.isArray(record.data?.models)) return [];
 
     return (record.data.models as PiRpcModel[]).flatMap((model) => {
       if (typeof model.provider !== "string" || typeof model.id !== "string") return [];
@@ -119,11 +120,21 @@ function piUpgradeHint(): string {
 async function assertSupportedPiVersion(): Promise<void> {
   const proc = Bun.spawn(["pi", "--version"], { stdout: "pipe", stderr: "pipe" });
   const { stdout, stderr, exitCode } = await readProcessOutput(proc);
-  const version = parsePiVersion(stdout || stderr);
+  if (exitCode !== 0) {
+    const detail = stderr.trim() || stdout.trim() || "no output";
+    throw new Error(`\`pi --version\` failed (exit code ${exitCode}): ${detail}`);
+  }
 
-  if (exitCode !== 0 || !version || !isSupportedPiVersion(version)) {
+  const version = parsePiVersion(stdout || stderr);
+  if (!version) {
     throw new Error(
-      `Pi ${MINIMUM_PI_VERSION.join(".")} or newer is required to list models with their thinking levels.${piUpgradeHint()}`,
+      `Could not read the Pi version from \`pi --version\`: ${(stdout || stderr).trim() || "no output"}`,
+    );
+  }
+
+  if (!isSupportedPiVersion(version)) {
+    throw new Error(
+      `Pi ${MINIMUM_PI_VERSION.join(".")} or newer is required to list models with their thinking levels. Found ${version.join(".")}.${piUpgradeHint()}`,
     );
   }
 }

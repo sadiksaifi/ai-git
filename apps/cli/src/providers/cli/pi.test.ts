@@ -80,13 +80,16 @@ describe("parsePiRpcModels", () => {
     ]);
   });
 
-  it("returns null without a successful response", () => {
+  it("returns null while no response has arrived", () => {
     expect(parsePiRpcModels("")).toBeNull();
+  });
+
+  it("returns an empty list for a failed response so setup falls back without waiting", () => {
     expect(
       parsePiRpcModels(
         JSON.stringify({ type: "response", command: "get_available_models", success: false }),
       ),
-    ).toBeNull();
+    ).toEqual([]);
   });
 });
 
@@ -277,31 +280,39 @@ describe("piAdapter.fetchModels version gate", () => {
     (Bun as any).spawn = originalSpawn;
   });
 
-  it("asks users of Pi before 0.72.0 to install the current package", async () => {
+  function stubVersion(stdout: string, exitCode: number, stderr = "") {
     const spawned: string[][] = [];
+    const stream = (text: string) =>
+      new ReadableStream({
+        start(controller) {
+          if (text) controller.enqueue(new TextEncoder().encode(text));
+          controller.close();
+        },
+      });
     (Bun as any).spawn = (cmd: string[]) => {
       spawned.push(cmd);
-      return {
-        stdout: new ReadableStream({
-          start(controller) {
-            controller.enqueue(new TextEncoder().encode("0.60.0\n"));
-            controller.close();
-          },
-        }),
-        stderr: new ReadableStream({
-          start(controller) {
-            controller.close();
-          },
-        }),
-        exited: Promise.resolve(0),
-      };
+      return { stdout: stream(stdout), stderr: stream(stderr), exited: Promise.resolve(exitCode) };
     };
+    return spawned;
+  }
+
+  it("asks users of Pi before 0.72.0 to install the current package", async () => {
+    const spawned = stubVersion("0.60.0\n", 0);
 
     const { piAdapter } = await import("./pi.ts");
     await expect(piAdapter.fetchModels!()).rejects.toThrow(
-      "Pi 0.72.0 or newer is required to list models with their thinking levels. Install the current release: npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
+      "Pi 0.72.0 or newer is required to list models with their thinking levels. Found 0.60.0. Install the current release: npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
     );
     expect(spawned).toEqual([["pi", "--version"]]);
+  });
+
+  it("reports the real error when `pi --version` fails", async () => {
+    stubVersion("", 127, "env: node: No such file or directory");
+
+    const { piAdapter } = await import("./pi.ts");
+    await expect(piAdapter.fetchModels!()).rejects.toThrow(
+      "`pi --version` failed (exit code 127): env: node: No such file or directory",
+    );
   });
 });
 
