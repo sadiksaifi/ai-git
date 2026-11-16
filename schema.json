@@ -49,15 +49,15 @@
       "type": "string",
       "description": "Model ID to use for the selected provider.",
       "examples": [
-        "gpt-5.6-luna-low",
-        "haiku",
-        "gemini-3.7-flash-low",
-        "opencode/gpt-5-nano#minimal",
-        "openai-codex/gpt-5.6-luna#low",
-        "openai/gpt-5.6",
-        "gpt-5.6",
-        "gemini-3.7-flash",
-        "claude-opus-5"
+        "gpt-6.1-terra#low",
+        "haiku#low",
+        "gemini-3.8-flash-low",
+        "openai/gpt-6.1-terra#low",
+        "openai-codex/gpt-6.1-terra#low",
+        "openai/gpt-6.1-terra",
+        "gpt-6.1-terra",
+        "gemini-4-hydrogen",
+        "claude-fable-5-2"
       ]
     },
     "defaults": {
@@ -157,25 +157,8 @@
       "then": {
         "properties": {
           "model": {
-            "enum": [
-              "haiku",
-              "fable-low",
-              "fable-medium",
-              "fable-high",
-              "fable-xhigh",
-              "fable-max",
-              "sonnet-low",
-              "sonnet-medium",
-              "sonnet-high",
-              "sonnet-xhigh",
-              "sonnet-max",
-              "opus-low",
-              "opus-medium",
-              "opus-high",
-              "opus-xhigh",
-              "opus-max"
-            ],
-            "description": "Claude Code virtual model ID. Fable, Sonnet, and Opus support low, medium, high, xhigh, and max. Haiku has no effort level and is recommended for this latency-sensitive workload."
+            "description": "Claude Code model: '<alias>#<effort>' (e.g., 'haiku#low'). Aliases and effort levels come from models.dev and `claude --help` during `ai-git configure`.",
+            "type": "string"
           }
         }
       }
@@ -192,7 +175,7 @@
         "properties": {
           "model": {
             "type": "string",
-            "description": "Antigravity CLI model ID (e.g., 'gemini-3.7-flash-low'). Models are fetched dynamically."
+            "description": "Antigravity CLI model ID (e.g., 'gemini-3.8-flash-low'). Models are fetched dynamically."
           }
         }
       }
@@ -208,32 +191,8 @@
       "then": {
         "properties": {
           "model": {
-            "enum": [
-              "gpt-5.6-luna-low",
-              "gpt-5.6-luna-medium",
-              "gpt-5.6-luna-high",
-              "gpt-5.6-luna-xhigh",
-              "gpt-5.6-luna-max",
-              "gpt-5.6-terra-low",
-              "gpt-5.6-terra-medium",
-              "gpt-5.6-terra-high",
-              "gpt-5.6-terra-xhigh",
-              "gpt-5.6-terra-max",
-              "gpt-5.6-sol-low",
-              "gpt-5.6-sol-medium",
-              "gpt-5.6-sol-high",
-              "gpt-5.6-sol-xhigh",
-              "gpt-5.6-sol-max",
-              "gpt-5.5-low",
-              "gpt-5.5-medium",
-              "gpt-5.5-high",
-              "gpt-5.5-xhigh",
-              "gpt-5.3-codex-spark-low",
-              "gpt-5.3-codex-spark-medium",
-              "gpt-5.3-codex-spark-high",
-              "gpt-5.3-codex-spark-xhigh"
-            ],
-            "description": "Codex CLI virtual model ID: '<base-model>-<effort>'. Supported effort levels depend on the model and include low, medium, high, xhigh, and max. Default: 'gpt-5.6-luna-low'. Ultra is not a model effort and is not supported."
+            "description": "Codex model: '<model>#<effort>' (e.g., 'gpt-6.1-terra#low'). Models are fetched dynamically from `codex debug models`.",
+            "type": "string"
           }
         }
       }
@@ -267,7 +226,7 @@
         "properties": {
           "model": {
             "type": "string",
-            "description": "Pi model ID fetched dynamically from `pi --list-models`. Thinking selections use '<provider/model>#<thinking>'."
+            "description": "Pi model ID fetched dynamically from Pi's RPC mode. Thinking selections use '<provider/model>#<thinking>'."
           }
         }
       }
@@ -284,7 +243,7 @@
         "properties": {
           "model": {
             "type": "string",
-            "description": "OpenRouter model ID (e.g., 'openai/gpt-5.6'). Models are fetched dynamically."
+            "description": "OpenRouter model ID (e.g., 'openai/gpt-6.1-terra'). Models are fetched dynamically."
           }
         }
       }
@@ -301,7 +260,7 @@
         "properties": {
           "model": {
             "type": "string",
-            "description": "OpenAI model ID (e.g., 'gpt-5.6'). Models are fetched dynamically."
+            "description": "OpenAI model ID (e.g., 'gpt-6.1-terra'). Models are fetched dynamically."
           }
         }
       }
@@ -318,7 +277,7 @@
         "properties": {
           "model": {
             "type": "string",
-            "description": "Google AI Studio model ID (e.g., 'gemini-3.7-flash'). Models are fetched dynamically."
+            "description": "Google AI Studio model ID (e.g., 'gemini-4-hydrogen'). Models are fetched dynamically."
           }
         }
       }
@@ -335,7 +294,7 @@
         "properties": {
           "model": {
             "type": "string",
-            "description": "Anthropic API model ID (e.g., 'claude-opus-5'). Models are fetched dynamically."
+            "description": "Anthropic API model ID (e.g., 'claude-fable-5-2'). Models are fetched dynamically."
           }
         }
       }
