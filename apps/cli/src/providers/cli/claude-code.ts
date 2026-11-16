@@ -39,12 +39,13 @@ export function parseClaudeModelId(virtualId: string): {
 
 /**
  * Read the `--effort` levels from `claude --help` output.
- * Returns null when the help text does not list them.
+ * - No `--effort` option (older Claude Code): returns [], so no effort is offered.
+ * - `--effort` without a parseable level list: returns null, so the catalog decides.
  */
 export function parseClaudeEffortLevels(helpText: string): string[] | null {
   const lines = helpText.split(/\r?\n/);
   const start = lines.findIndex((line) => /^\s*--effort\b/.test(line));
-  if (start < 0) return null;
+  if (start < 0) return [];
 
   const block = [lines[start] ?? ""];
   for (const line of lines.slice(start + 1)) {
@@ -84,7 +85,8 @@ function capitalize(value: string): string {
  * model in that family, so one option per current family and effort is enough.
  * - Families come from models.dev `family` (fallback: parsed from the model ID).
  * - Efforts come from the newest model's models.dev effort values, limited to the
- *   levels the installed CLI accepts when those are known.
+ *   levels the installed CLI accepts when those are known. An empty CLI list means
+ *   the CLI has no `--effort` flag, so each family is offered as a bare alias.
  * - Families sort by price (cheapest first). The cheapest family at its lowest
  *   effort is recommended.
  */

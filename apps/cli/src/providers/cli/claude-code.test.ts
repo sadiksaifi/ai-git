@@ -205,8 +205,11 @@ describe("parseClaudeEffortLevels", () => {
     expect(parseClaudeEffortLevels(help)).toEqual(EFFORTS);
   });
 
-  it("returns null when --effort is missing or has no list", () => {
-    expect(parseClaudeEffortLevels("  --model <model>  Model for the session")).toBeNull();
+  it("returns an empty list when the CLI has no --effort option", () => {
+    expect(parseClaudeEffortLevels("  --model <model>  Model for the session")).toEqual([]);
+  });
+
+  it("returns null when --effort has no level list", () => {
     expect(parseClaudeEffortLevels("  --effort <level>  Effort level\n  --foo  bar")).toBeNull();
   });
 });
@@ -271,6 +274,14 @@ describe("buildClaudeCodeModels", () => {
       "opus#low",
       "opus#medium",
       "opus#high",
+    ]);
+  });
+
+  it("offers bare aliases when the installed CLI has no --effort option", () => {
+    expect(buildClaudeCodeModels(catalog, []).map((option) => option.id)).toEqual([
+      "haiku",
+      "sonnet",
+      "opus",
     ]);
   });
 

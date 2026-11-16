@@ -37,6 +37,8 @@ interface PiRpcModel {
  * - non-reasoning models support only "off"
  * - a level mapped to null is unsupported
  * - "xhigh" and "max" need an explicit mapping
+ * Pi releases before 1.x omit `thinkingLevelMap` from RPC output, so their
+ * reasoning models get the standard levels only; upgrading Pi restores the rest.
  */
 export function getPiSupportedThinkingLevels(model: PiRpcModel): string[] {
   if (model.reasoning !== true) return ["off"];
