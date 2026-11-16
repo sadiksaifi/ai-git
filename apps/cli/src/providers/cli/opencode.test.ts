@@ -5,10 +5,13 @@ import { join } from "node:path";
 import { getProviderById } from "../registry.ts";
 import {
   buildOpenCodeConfig,
+  buildOpenCodeConfigContent,
+  findStaleOpenCodeSessions,
   getOpenCodeWorkDirectory,
   isSupportedOpenCodeVersion,
   opencodeAdapter,
-  parseOpenCodeMessages,
+  parseOpenCodeAssistantText,
+  parseOpenCodeIdle,
   parseOpenCodeModelList,
   parseOpenCodeVersion,
   toOpenCodeSessionModel,
@@ -71,12 +74,31 @@ describe("parseOpenCodeModelList", () => {
   });
 });
 
-describe("parseOpenCodeMessages", () => {
-  it("returns the last assistant text once the session is idle", () => {
+describe("parseOpenCodeIdle", () => {
+  it("is null while the run is still going", () => {
+    expect(parseOpenCodeIdle({ data: [] })).toBeNull();
+  });
+
+  it("reports success and failure", () => {
+    expect(parseOpenCodeIdle({ data: [{ type: "idle", outcome: "succeeded" }] })).toEqual({});
+    expect(
+      parseOpenCodeIdle({
+        data: [
+          {
+            type: "idle",
+            outcome: "failed",
+            error: { type: "provider.no-route", message: "Model unavailable: mock/nope" },
+          },
+        ],
+      }),
+    ).toEqual({ error: "Model unavailable: mock/nope" });
+  });
+});
+
+describe("parseOpenCodeAssistantText", () => {
+  it("joins the text parts of the newest assistant message", () => {
     const response = {
       data: [
-        { type: "user", text: "diff" },
-        { type: "assistant", content: [{ type: "tool", tool: "shell" }] },
         {
           type: "assistant",
           content: [
@@ -85,36 +107,38 @@ describe("parseOpenCodeMessages", () => {
             { type: "text", text: " provider" },
           ],
         },
-        { type: "idle", outcome: "succeeded" },
       ],
     };
 
-    expect(parseOpenCodeMessages(response)).toEqual({ done: true, text: "feat: add provider" });
+    expect(parseOpenCodeAssistantText(response)).toBe("feat: add provider");
+    expect(parseOpenCodeAssistantText({ data: [] })).toBe("");
+  });
+});
+
+describe("findStaleOpenCodeSessions", () => {
+  const directory = "/home/u/.cache/ai-git/opencode-workdir";
+  const now = 1_000_000_000;
+  const session = (id: string, overrides: Record<string, unknown> = {}) => ({
+    id,
+    title: "ai-git",
+    agent: "ai-git",
+    location: { directory },
+    time: { created: now - 11 * 60_000 },
+    ...overrides,
   });
 
-  it("is not done while the idle item is missing", () => {
-    expect(parseOpenCodeMessages({ data: [{ type: "user", text: "diff" }] })).toEqual({
-      done: false,
-      text: "",
-    });
-  });
-
-  it("reports the error of a failed run", () => {
+  it("returns ai-git sessions in the work directory older than ten minutes", () => {
     const response = {
       data: [
-        {
-          type: "idle",
-          outcome: "failed",
-          error: { type: "provider.no-route", message: "Model unavailable: mock/nope" },
-        },
+        session("ses_old"),
+        session("ses_running", { time: { created: now - 60_000 } }),
+        session("ses_user", { agent: "build" }),
+        session("ses_titled", { title: "Greeting" }),
+        session("ses_elsewhere", { location: { directory: "/home/u/project" } }),
       ],
     };
 
-    expect(parseOpenCodeMessages(response)).toEqual({
-      done: true,
-      text: "",
-      error: "Model unavailable: mock/nope",
-    });
+    expect(findStaleOpenCodeSessions(response, directory, now)).toEqual(["ses_old"]);
   });
 });
 
@@ -183,6 +207,39 @@ describe("buildOpenCodeConfig", () => {
   });
 });
 
+describe("buildOpenCodeConfigContent", () => {
+  it("keeps {file:...} and {env:...} in the system prompt literal", () => {
+    const system = "Use {file:~/.ssh/id_ed25519} and {env:HOME} as context";
+    const content = buildOpenCodeConfigContent(system, undefined);
+
+    // OpenCode substitutes these patterns in the raw text before parsing.
+    expect(content).not.toContain("{file:");
+    expect(content).not.toContain("{env:");
+    expect(JSON.parse(content)).toEqual(buildOpenCodeConfig(system));
+  });
+
+  it("merges the user's OPENCODE_CONFIG_CONTENT and replaces its policies and plugins", () => {
+    const user = JSON.stringify({
+      providers: { local: { name: "local" } },
+      policies: [{ action: "plugin.use", resource: "*", effect: "allow" }],
+      plugins: ["acme.reviewer"],
+      agents: { reviewer: { system: "review" } },
+    });
+    const config = JSON.parse(buildOpenCodeConfigContent("rules", user));
+
+    expect(config.providers).toEqual({ local: { name: "local" } });
+    expect(config.policies).toEqual(buildOpenCodeConfig().policies);
+    expect(config.plugins).toEqual(buildOpenCodeConfig().plugins);
+    expect(Object.keys(config.agents)).toEqual(["reviewer", "ai-git"]);
+  });
+
+  it("ignores user content that is not a JSON object", () => {
+    expect(JSON.parse(buildOpenCodeConfigContent(undefined, "{ // jsonc"))).toEqual(
+      buildOpenCodeConfig(),
+    );
+  });
+});
+
 interface SpawnCall {
   cmd: string[];
   opts: { cwd?: string; env?: Record<string, string> };
@@ -230,7 +287,7 @@ function mockServerProcess(firstLine: string) {
     }),
     stderr: stream(""),
     exited,
-    kill() {
+    kill(_signal?: string) {
       resolveExit(1);
     },
   };
@@ -248,6 +305,7 @@ describe("opencodeAdapter", () => {
   let version = "opencode v2.3.0\n";
   let idle: Record<string, unknown> = { type: "idle", outcome: "succeeded" };
   let pollsBeforeIdle = 0;
+  let sessionList: unknown[] = [];
 
   beforeEach(() => {
     spawnCalls = [];
@@ -256,6 +314,7 @@ describe("opencodeAdapter", () => {
     version = "opencode v2.3.0\n";
     idle = { type: "idle", outcome: "succeeded" };
     pollsBeforeIdle = 1;
+    sessionList = [];
     originalCacheHome = process.env.XDG_CACHE_HOME;
     cacheHome = mkdtempSync(join(tmpdir(), "ai-git-opencode-test-"));
     process.env.XDG_CACHE_HOME = cacheHome;
@@ -275,16 +334,20 @@ describe("opencodeAdapter", () => {
         if (request.method === "POST" && url.pathname === "/api/session") {
           return Response.json({ data: { id: "ses_test" } });
         }
-        if (request.method === "GET" && url.pathname.endsWith("/message")) {
-          const assistant = {
-            type: "assistant",
-            content: [{ type: "text", text: "feat: opencode" }],
-          };
+        if (request.method === "GET" && url.pathname === "/api/session") {
+          return Response.json({ data: sessionList });
+        }
+        if (request.method === "GET" && url.searchParams.get("type") === "idle") {
           if (pollsBeforeIdle > 0) {
             pollsBeforeIdle -= 1;
-            return Response.json({ data: [{ type: "user", text: "diff" }] });
+            return Response.json({ data: [] });
           }
-          return Response.json({ data: [{ type: "user", text: "diff" }, assistant, idle] });
+          return Response.json({ data: [idle] });
+        }
+        if (request.method === "GET" && url.searchParams.get("type") === "assistant") {
+          return Response.json({
+            data: [{ type: "assistant", content: [{ type: "text", text: "feat: opencode" }] }],
+          });
         }
         return new Response(null, { status: 204 });
       },
@@ -333,6 +396,8 @@ describe("opencodeAdapter", () => {
       buildOpenCodeConfig("rules"),
     );
     expect(serve.opts.env!.OPENCODE_PASSWORD!.length).toBeGreaterThan(20);
+    // Its own process group, so Ctrl-C reaches ai-git first and the session gets deleted.
+    expect((serve.opts as { detached?: boolean }).detached).toBe(process.platform !== "win32");
     expect(serverProcess!.stdinEnded).toBe(true);
   });
 
@@ -346,22 +411,24 @@ describe("opencodeAdapter", () => {
     expect(result).toBe("feat: opencode");
     const directory = getOpenCodeWorkDirectory();
     expect(apiRequests.map((request) => `${request.method} ${request.path}`)).toEqual([
+      `GET /api/session?archived=true&limit=50&directory=${encodeURIComponent(directory)}`,
       "POST /api/session",
       "PATCH /api/session/ses_test",
       "POST /api/session/ses_test/prompt",
-      "GET /api/session/ses_test/message?order=asc",
-      "GET /api/session/ses_test/message?order=asc",
+      "GET /api/session/ses_test/message?type=idle&order=desc&limit=1",
+      "GET /api/session/ses_test/message?type=idle&order=desc&limit=1",
+      "GET /api/session/ses_test/message?type=assistant&order=desc&limit=1",
       "DELETE /api/session/ses_test",
     ]);
-    expect(apiRequests[0]!.body).toEqual({
+    expect(apiRequests[1]!.body).toEqual({
       title: "ai-git",
       agent: "ai-git",
       model: { providerID: "openai", id: "gpt-6-luna", variant: "low" },
       permissions: [{ action: "*", resource: "*", effect: "deny" }],
       location: { directory },
     });
-    expect(apiRequests[1]!.body).toEqual({ archived: true });
-    expect(apiRequests[2]!.body).toEqual({ text: "--diff context", delivery: "steer" });
+    expect(apiRequests[2]!.body).toEqual({ archived: true });
+    expect(apiRequests[3]!.body).toEqual({ text: "--diff context", delivery: "steer" });
 
     const password = spawnCalls[1]!.opts.env!.OPENCODE_PASSWORD!;
     for (const request of apiRequests) {
@@ -370,6 +437,56 @@ describe("opencodeAdapter", () => {
       );
       expect(request.headers.get("x-opencode-directory")).toBe(encodeURIComponent(directory));
     }
+  });
+
+  it("deletes sessions left by a killed run before starting a new one", async () => {
+    const directory = getOpenCodeWorkDirectory();
+    sessionList = [
+      {
+        id: "ses_left",
+        title: "ai-git",
+        agent: "ai-git",
+        location: { directory },
+        time: { created: Date.now() - 60 * 60_000 },
+      },
+      {
+        id: "ses_other_terminal",
+        title: "ai-git",
+        agent: "ai-git",
+        location: { directory },
+        time: { created: Date.now() - 30_000 },
+      },
+    ];
+
+    await opencodeAdapter.invoke({ model: "opencode/big-pickle", system: "s", prompt: "p" });
+
+    const deletes = apiRequests.filter((request) => request.method === "DELETE");
+    expect(deletes.map((request) => request.path)).toEqual([
+      "/api/session/ses_left",
+      "/api/session/ses_test",
+    ]);
+  });
+
+  it("bypasses HTTP_PROXY for requests to the private server", async () => {
+    const saved = { HTTP_PROXY: process.env.HTTP_PROXY, http_proxy: process.env.http_proxy };
+    process.env.HTTP_PROXY = "http://127.0.0.1:9";
+    process.env.http_proxy = "http://127.0.0.1:9";
+    try {
+      expect(
+        await opencodeAdapter.invoke({ model: "opencode/big-pickle", system: "s", prompt: "p" }),
+      ).toBe("feat: opencode");
+    } finally {
+      for (const [key, value] of Object.entries(saved)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    }
+  });
+
+  it("removes its Ctrl-C handlers when generation ends", async () => {
+    const before = process.listenerCount("SIGINT");
+    await opencodeAdapter.invoke({ model: "opencode/big-pickle", system: "s", prompt: "p" });
+    expect(process.listenerCount("SIGINT")).toBe(before);
   });
 
   it("reports a failed run and still deletes the session", async () => {

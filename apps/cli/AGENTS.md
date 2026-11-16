@@ -84,7 +84,10 @@ No provider has a hardcoded model list. CLI providers list models during `config
 - OpenCode: `opencode api model.list --standalone`; requires 2.2.6 or newer (oldest release
   verified). OpenCode 1.x ignores the `agents` config, so generation checks the version too.
   Generation runs `opencode serve --stdio` and drives the session API (create, archive, prompt,
-  poll messages, delete), so no session stays in the user's OpenCode database. Both calls run in
+  poll the newest `idle` message, read the newest assistant message, delete), so no session stays
+  in the user's OpenCode database. Ctrl-C deletes the session; a later run deletes sessions left by
+  a killed run. The system prompt's `{` is written as `\u007b` because OpenCode substitutes
+  `{env:...}` and `{file:...}` in config text. Requests use `node:http`, which ignores HTTP_PROXY. Both calls run in
   one stable work directory under the ai-git cache, because OpenCode records a project per directory.
 - Pi: `get_available_models` over `pi --mode rpc` (falls back to `pi --list-models`)
 - Pi: requires 0.72.0 or newer for setup (first release with `thinkingLevelMap`)

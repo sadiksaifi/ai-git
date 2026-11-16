@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { mkdir } from "node:fs/promises";
+import { request as httpRequest } from "node:http";
 import { join } from "node:path";
 import { PROVIDERS as PROVIDER_DOCS, isCLIProviderDoc } from "@ai-git/meta";
 import { resolveCacheDir } from "../../lib/paths.ts";
@@ -51,16 +52,24 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 /**
  * Config passed through OPENCODE_CONFIG_CONTENT. OpenCode reads it only in the
  * process that loads config, so every call starts a private server instead of
- * using the shared background service.
+ * using the shared background service. `base` is the user's own
+ * OPENCODE_CONFIG_CONTENT, kept so providers defined there still work; its
+ * policies and plugin directives are replaced by ai-git's.
  */
-export function buildOpenCodeConfig(system?: string): Record<string, unknown> {
+export function buildOpenCodeConfig(
+  system?: string,
+  base: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const baseAgents = isPlainObject(base.agents) ? base.agents : {};
   return {
+    ...base,
     policies: OPENCODE_POLICIES,
     plugins: OPENCODE_PLUGINS,
     ...(system === undefined
       ? {}
       : {
           agents: {
+            ...baseAgents,
             [OPENCODE_AGENT]: {
               system,
               mode: "primary",
@@ -72,6 +81,39 @@ export function buildOpenCodeConfig(system?: string): Record<string, unknown> {
   };
 }
 
+function parseUserConfigContent(content: string | undefined): Record<string, unknown> {
+  if (!content) return {};
+  try {
+    const parsed = JSON.parse(content) as unknown;
+    return isPlainObject(parsed) ? parsed : {};
+  } catch {
+    // JSONC or invalid content cannot be merged; OpenCode would reject it too.
+    return {};
+  }
+}
+
+const SYSTEM_PLACEHOLDER = "__AI_GIT_SYSTEM_PROMPT__";
+
+/**
+ * Serialize the config for OPENCODE_CONFIG_CONTENT. OpenCode replaces
+ * `{env:VAR}` and `{file:path}` in the raw config text before it parses it, so
+ * a system prompt containing `{file:~/.ssh/id_ed25519}` (for example from a
+ * repository's `.ai-git.json`) would send that file to the model. Writing every
+ * `{` in the system prompt as `\u007b` keeps it literal: the JSON parser still
+ * reads `{`, but the raw text no longer matches.
+ */
+export function buildOpenCodeConfigContent(
+  system?: string,
+  userContent: string | undefined = process.env.OPENCODE_CONFIG_CONTENT,
+): string {
+  const base = parseUserConfigContent(userContent);
+  if (system === undefined) return JSON.stringify(buildOpenCodeConfig(undefined, base));
+
+  const json = JSON.stringify(buildOpenCodeConfig(SYSTEM_PLACEHOLDER, base));
+  const escapedSystem = JSON.stringify(system).replaceAll("{", "\\u007b");
+  return json.replace(JSON.stringify(SYSTEM_PLACEHOLDER), () => escapedSystem);
+}
+
 /**
  * OpenCode takes its working directory from PWD when it is set, so PWD must
  * point at the spawn directory. An inherited PWD would put the session in the
@@ -81,7 +123,7 @@ export function buildOpenCodeEnv(cwd: string, system?: string): Record<string, s
   return {
     ...process.env,
     PWD: cwd,
-    OPENCODE_CONFIG_CONTENT: JSON.stringify(buildOpenCodeConfig(system)),
+    OPENCODE_CONFIG_CONTENT: buildOpenCodeConfigContent(system),
     OPENCODE_DISABLE_PROJECT_CONFIG: "1",
   };
 }
@@ -146,46 +188,41 @@ export function parseOpenCodeModelList(output: string): DynamicCLIModel[] {
   return models;
 }
 
-export interface OpenCodeReply {
-  /** True once the session has gone idle after the prompt. */
-  done: boolean;
-  /** Text of the last assistant message. */
-  text: string;
-  /** Error message when the run failed. */
-  error?: string;
+function readItems(response: unknown): Record<string, unknown>[] {
+  const items = isPlainObject(response) && Array.isArray(response.data) ? response.data : [];
+  return items.filter(isPlainObject);
 }
 
 /**
- * Read `GET /api/session/{id}/message?order=asc`. A run ends with an `idle`
- * item whose `outcome` is "succeeded" or "failed". A tool round trip produces
- * more than one assistant message, so the reply is the last one.
+ * Read `GET /api/session/{id}/message?type=idle&order=desc&limit=1`. A run ends
+ * with an `idle` item whose `outcome` is "succeeded" or "failed". Returns null
+ * while the run is still going.
  */
-export function parseOpenCodeMessages(response: unknown): OpenCodeReply {
-  const items = isPlainObject(response) && Array.isArray(response.data) ? response.data : [];
-  let text = "";
-  let done = false;
-  let error: string | undefined;
+export function parseOpenCodeIdle(response: unknown): { error?: string } | null {
+  const idle = readItems(response).find((item) => item.type === "idle");
+  if (!idle) return null;
+  if (idle.outcome === "succeeded") return {};
+  const message = isPlainObject(idle.error) ? idle.error.message : undefined;
+  return {
+    error:
+      typeof message === "string" && message
+        ? message
+        : `OpenCode run ended with outcome ${JSON.stringify(idle.outcome ?? null)}`,
+  };
+}
 
-  for (const item of items) {
-    if (!isPlainObject(item)) continue;
-    if (item.type === "assistant" && Array.isArray(item.content)) {
-      text = item.content
-        .map((part) => (isPlainObject(part) && part.type === "text" ? part.text : undefined))
-        .filter((part): part is string => typeof part === "string")
-        .join("");
-    } else if (item.type === "idle") {
-      done = true;
-      if (item.outcome !== "succeeded") {
-        const message = isPlainObject(item.error) ? item.error.message : undefined;
-        error =
-          typeof message === "string" && message
-            ? message
-            : `OpenCode run ended with outcome ${JSON.stringify(item.outcome ?? null)}`;
-      }
-    }
-  }
-
-  return { done, text, ...(error ? { error } : {}) };
+/**
+ * Read `GET /api/session/{id}/message?type=assistant&order=desc&limit=1`: the
+ * text of the newest assistant message. A tool round trip produces more than
+ * one assistant message, and the reply is the last one.
+ */
+export function parseOpenCodeAssistantText(response: unknown): string {
+  const assistant = readItems(response).find((item) => item.type === "assistant");
+  if (!assistant || !Array.isArray(assistant.content)) return "";
+  return assistant.content
+    .map((part) => (isPlainObject(part) && part.type === "text" ? part.text : undefined))
+    .filter((part): part is string => typeof part === "string")
+    .join("");
 }
 
 export function parseOpenCodeVersion(output: string): number[] | null {
@@ -238,40 +275,104 @@ const SERVER_START_TIMEOUT_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 30_000;
 /** How long a generation may run before ai-git gives up. */
 const GENERATION_TIMEOUT_MS = 5 * 60_000;
+/**
+ * Sessions of this age in the work directory belong to an ai-git run that was
+ * killed before it could delete them. Younger ones may belong to a run in
+ * another terminal.
+ */
+const STALE_SESSION_MS = GENERATION_TIMEOUT_MS + 5 * 60_000;
+/** How long cleanup after Ctrl-C may take before ai-git exits anyway. */
+const INTERRUPT_CLEANUP_MS = 3_000;
 const POLL_INTERVAL_MS = 100;
 
 interface OpenCodeServer {
-  request(method: string, path: string, body?: unknown): Promise<unknown>;
+  request(method: string, path: string, body?: unknown, timeoutMs?: number): Promise<unknown>;
   stop(): Promise<void>;
 }
 
 /**
  * Read a stream to the end in the background so the child never blocks on a
- * full pipe. Works on a stream that was already partly read.
+ * full pipe. Works on a stream that was already partly read. `sink.text` holds
+ * everything read so far.
  */
-async function drain(stream: ReadableStream<Uint8Array>): Promise<string> {
+async function drain(stream: ReadableStream<Uint8Array>, sink = { text: "" }): Promise<string> {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
-  let text = "";
   try {
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
-      text += decoder.decode(value, { stream: true });
+      sink.text += decoder.decode(value, { stream: true });
     }
   } catch {
     // The stream closed with the process.
   } finally {
     reader.releaseLock();
   }
-  return text;
+  return sink.text;
+}
+
+/**
+ * Send one request with node:http. Bun's fetch sends even loopback requests
+ * through HTTP_PROXY, which would hand the server password and the prompt to
+ * the proxy.
+ */
+function sendRequest(
+  url: URL,
+  method: string,
+  headers: Record<string, string>,
+  body: string | undefined,
+  timeoutMs: number,
+): Promise<{ status: number; text: string }> {
+  return new Promise((resolve, reject) => {
+    const req = httpRequest(
+      url,
+      {
+        method,
+        headers:
+          body === undefined
+            ? headers
+            : { ...headers, "content-length": `${Buffer.byteLength(body)}` },
+        timeout: timeoutMs,
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk: Buffer) => chunks.push(chunk));
+        res.on("end", () =>
+          resolve({ status: res.statusCode ?? 0, text: Buffer.concat(chunks).toString("utf8") }),
+        );
+        res.on("error", reject);
+      },
+    );
+    req.on("timeout", () => req.destroy(new Error(`timed out after ${timeoutMs / 1000} seconds`)));
+    req.on("error", reject);
+    if (body !== undefined) req.write(body);
+    req.end();
+  });
+}
+
+function readErrorDetail(text: string): string {
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    const message = isPlainObject(parsed)
+      ? isPlainObject(parsed.error)
+        ? parsed.error.message
+        : parsed.message
+      : undefined;
+    if (typeof message === "string" && message) return message;
+  } catch {
+    // Keep the raw body.
+  }
+  return text.trim() || "no body";
 }
 
 /**
  * Start a private OpenCode server for one call. `serve --stdio` is the mode
  * OpenCode's own `--standalone` flag uses: it prints `{"url": ...}` on the first
- * stdout line and stops when stdin closes. The random password keeps other local
- * processes off the port.
+ * stdout line and stops when stdin closes, which also happens if ai-git dies.
+ * The random password keeps other local processes off the port. On macOS and
+ * Linux the server gets its own process group, so Ctrl-C reaches only ai-git,
+ * which then deletes the session before stopping the server.
  */
 async function startOpenCodeServer(directory: string, system: string): Promise<OpenCodeServer> {
   const password = randomBytes(32).toString("base64url");
@@ -292,27 +393,36 @@ async function startOpenCodeServer(directory: string, system: string): Promise<O
       stdin: "pipe",
       stdout: "pipe",
       stderr: "pipe",
+      detached: process.platform !== "win32",
       env: { ...buildOpenCodeEnv(directory, system), OPENCODE_PASSWORD: password },
     },
   );
-  const stderr = drain(proc.stderr);
+  const stderr = { text: "" };
+  const stderrDone = drain(proc.stderr, stderr);
+  let exitCode: number | undefined;
+  void proc.exited.then((code) => {
+    exitCode = code;
+  });
 
-  const stop = async () => {
-    try {
-      await proc.stdin.end();
-    } catch {
-      // The server already exited.
-    }
-    const exited = await Promise.race([
-      proc.exited.then(() => true),
-      Bun.sleep(2_000).then(() => false),
-    ]);
-    if (!exited) proc.kill();
-  };
+  const waitForExit = (ms: number) =>
+    Promise.race([proc.exited.then(() => true), Bun.sleep(ms).then(() => false)]);
+  let stopping: Promise<void> | undefined;
+  const stop = () =>
+    (stopping ??= (async () => {
+      try {
+        await proc.stdin.end();
+      } catch {
+        // The server already exited.
+      }
+      if (await waitForExit(2_000)) return;
+      proc.kill("SIGTERM");
+      if (await waitForExit(2_000)) return;
+      proc.kill("SIGKILL");
+    })());
 
   let url: string;
   try {
-    url = await readServerUrl(proc.stdout, proc.exited, stderr);
+    url = await readServerUrl(proc.stdout, proc.exited, stderrDone);
   } catch (error) {
     await stop();
     throw error;
@@ -325,30 +435,30 @@ async function startOpenCodeServer(directory: string, system: string): Promise<O
   };
 
   return {
-    async request(method, path, body) {
-      const response = await fetch(new URL(path, url), {
-        method,
-        headers,
-        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      });
-      const text = await response.text();
-      if (!response.ok) {
-        let detail = text.trim();
-        try {
-          const parsed = JSON.parse(text) as unknown;
-          const message = isPlainObject(parsed)
-            ? isPlainObject(parsed.error)
-              ? parsed.error.message
-              : parsed.message
-            : undefined;
-          if (typeof message === "string" && message) detail = message;
-        } catch {
-          // Keep the raw body.
-        }
-        throw new Error(`${method} ${path} returned ${response.status}: ${detail || "no body"}`);
+    async request(method, path, body, timeoutMs = REQUEST_TIMEOUT_MS) {
+      let response: { status: number; text: string };
+      try {
+        response = await sendRequest(
+          new URL(path, url),
+          method,
+          headers,
+          body === undefined ? undefined : JSON.stringify(body),
+          timeoutMs,
+        );
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        const server =
+          exitCode === undefined
+            ? ""
+            : ` The OpenCode server exited with code ${exitCode}: ${stderr.text.trim() || "no output"}`;
+        throw new Error(`${method} ${path} failed: ${reason}.${server}`);
       }
-      return text ? (JSON.parse(text) as unknown) : undefined;
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error(
+          `${method} ${path} returned ${response.status}: ${readErrorDetail(response.text)}`,
+        );
+      }
+      return response.text ? (JSON.parse(response.text) as unknown) : undefined;
     },
     stop,
   };
@@ -392,7 +502,12 @@ async function readServerUrl(
 
   try {
     const line = await Promise.race([firstLine, timedOut]);
-    const parsed = JSON.parse(line) as unknown;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(line);
+    } catch {
+      parsed = undefined;
+    }
     if (!isPlainObject(parsed) || typeof parsed.url !== "string") {
       throw new Error(`Unexpected first line from \`opencode serve\`: ${line}`);
     }
@@ -437,55 +552,79 @@ function readSessionId(response: unknown): string {
 }
 
 /**
- * Run one prompt through the session API and delete the session afterwards,
- * so nothing stays in the user's OpenCode database. This is the code path
- * `opencode run` uses, so the system prompt, variants, provider logins, and
- * permissions behave the same.
+ * IDs of sessions in the work directory left by an ai-git run that was killed
+ * before its delete ran, from `GET /api/session?archived=true&directory=...`.
  */
-async function generateWithOpenCodeSession(
-  server: OpenCodeServer,
+export function findStaleOpenCodeSessions(
+  response: unknown,
   directory: string,
-  { model, prompt }: Pick<InvokeOptions, "model" | "prompt">,
-): Promise<string> {
-  const deny = [{ action: "*", resource: "*", effect: "deny" }];
-  const sessionId = readSessionId(
-    await server.request("POST", "/api/session", {
-      // A title skips the extra model call OpenCode makes to name a session.
-      title: "ai-git",
-      agent: OPENCODE_AGENT,
-      model: toOpenCodeSessionModel(model),
-      permissions: deny,
-      location: { directory },
-    }),
-  );
+  now: number,
+): string[] {
+  return readItems(response).flatMap((session) => {
+    const location = isPlainObject(session.location) ? session.location.directory : undefined;
+    const created = isPlainObject(session.time) ? session.time.created : undefined;
+    if (session.agent !== OPENCODE_AGENT || session.title !== OPENCODE_AGENT) return [];
+    if (location !== directory || typeof created !== "number") return [];
+    if (now - created < STALE_SESSION_MS || typeof session.id !== "string") return [];
+    return [session.id];
+  });
+}
 
+async function deleteStaleSessions(server: OpenCodeServer, directory: string): Promise<void> {
   try {
-    // Archived sessions stay out of the TUI if ai-git is killed before the delete.
-    await server.request("PATCH", `/api/session/${sessionId}`, { archived: true });
-    await server.request("POST", `/api/session/${sessionId}/prompt`, {
-      text: prompt,
-      delivery: "steer",
-    });
-
-    const deadline = Date.now() + GENERATION_TIMEOUT_MS;
-    while (true) {
-      const reply = parseOpenCodeMessages(
-        await server.request("GET", `/api/session/${sessionId}/message?order=asc`),
-      );
-      if (reply.done) {
-        if (reply.error) throw new Error(`OpenCode CLI error:\n${reply.error}`);
-        return reply.text;
-      }
-      if (Date.now() > deadline) {
-        throw new Error(
-          `OpenCode did not finish within ${GENERATION_TIMEOUT_MS / 60_000} minutes.`,
-        );
-      }
-      await Bun.sleep(POLL_INTERVAL_MS);
+    const response = await server.request(
+      "GET",
+      `/api/session?archived=true&limit=50&directory=${encodeURIComponent(directory)}`,
+    );
+    for (const id of findStaleOpenCodeSessions(response, directory, Date.now())) {
+      await server.request("DELETE", `/api/session/${id}`).catch(() => {});
     }
-  } finally {
-    await server.request("DELETE", `/api/session/${sessionId}`).catch(() => {});
+  } catch {
+    // Best effort: a leftover session must not block generation.
   }
+}
+
+async function waitForReply(server: OpenCodeServer, sessionId: string): Promise<string> {
+  const deadline = Date.now() + GENERATION_TIMEOUT_MS;
+  while (true) {
+    const idle = parseOpenCodeIdle(
+      await server.request("GET", `/api/session/${sessionId}/message?type=idle&order=desc&limit=1`),
+    );
+    if (idle) {
+      if (idle.error) throw new Error(`OpenCode CLI error:\n${idle.error}`);
+      return parseOpenCodeAssistantText(
+        await server.request(
+          "GET",
+          `/api/session/${sessionId}/message?type=assistant&order=desc&limit=1`,
+        ),
+      );
+    }
+    if (Date.now() > deadline) {
+      throw new Error(`OpenCode did not finish within ${GENERATION_TIMEOUT_MS / 60_000} minutes.`);
+    }
+    await Bun.sleep(POLL_INTERVAL_MS);
+  }
+}
+
+/**
+ * Delete the session and stop the server when ai-git gets SIGINT or SIGTERM,
+ * then exit. Returns the function that removes the handlers.
+ */
+function onInterrupt(cleanup: () => Promise<void>): () => void {
+  let interrupted = false;
+  const handler = (signal: NodeJS.Signals) => {
+    if (interrupted) process.exit(signal === "SIGINT" ? 130 : 143);
+    interrupted = true;
+    void Promise.race([cleanup(), Bun.sleep(INTERRUPT_CLEANUP_MS)]).finally(() =>
+      process.exit(signal === "SIGINT" ? 130 : 143),
+    );
+  };
+  process.on("SIGINT", handler);
+  process.on("SIGTERM", handler);
+  return () => {
+    process.off("SIGINT", handler);
+    process.off("SIGTERM", handler);
+  };
 }
 
 export const opencodeAdapter: CLIProviderAdapter = {
@@ -493,17 +632,54 @@ export const opencodeAdapter: CLIProviderAdapter = {
   mode: "cli",
   binary: "opencode",
 
-  async invoke(options: InvokeOptions): Promise<string> {
+  /**
+   * Run one prompt through the session API and delete the session afterwards,
+   * so nothing stays in the user's OpenCode database. This is the code path
+   * `opencode run` uses, so the system prompt, variants, provider logins, and
+   * permissions behave the same.
+   */
+  async invoke({ model, system, prompt }: InvokeOptions): Promise<string> {
     await assertSupportedOpenCodeVersion();
     // Fail on a malformed model ID before starting a server.
-    toOpenCodeSessionModel(options.model);
+    const sessionModel = toOpenCodeSessionModel(model);
 
     const directory = await ensureOpenCodeWorkDirectory();
-    const server = await startOpenCodeServer(directory, options.system);
+    const server = await startOpenCodeServer(directory, system);
+    let sessionId: string | undefined;
+    let cleaning: Promise<void> | undefined;
+    const cleanup = () =>
+      (cleaning ??= (async () => {
+        if (sessionId) {
+          await server
+            .request("DELETE", `/api/session/${sessionId}`, undefined, 2_000)
+            .catch(() => {});
+        }
+        await server.stop();
+      })());
+    const removeInterruptHandlers = onInterrupt(cleanup);
+
     try {
-      return await generateWithOpenCodeSession(server, directory, options);
+      await deleteStaleSessions(server, directory);
+      sessionId = readSessionId(
+        await server.request("POST", "/api/session", {
+          // A title skips the extra model call OpenCode makes to name a session.
+          title: OPENCODE_AGENT,
+          agent: OPENCODE_AGENT,
+          model: sessionModel,
+          permissions: [{ action: "*", resource: "*", effect: "deny" }],
+          location: { directory },
+        }),
+      );
+      // Archived sessions stay out of the TUI if ai-git is killed before the delete.
+      await server.request("PATCH", `/api/session/${sessionId}`, { archived: true });
+      await server.request("POST", `/api/session/${sessionId}/prompt`, {
+        text: prompt,
+        delivery: "steer",
+      });
+      return await waitForReply(server, sessionId);
     } finally {
-      await server.stop();
+      await cleanup();
+      removeInterruptHandlers();
     }
   },
 
