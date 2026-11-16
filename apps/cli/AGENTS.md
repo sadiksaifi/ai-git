@@ -73,7 +73,7 @@ Reusable `fromPromise()` actors with factory pattern for test dependency injecti
 
 Two modes with unified adapter interface:
 
-- **CLI Mode** (`cli/`): Spawns installed binaries (`claude`, `agy`, `codex`, `opencode`, `pi`)
+- **CLI Mode** (`cli/`): Spawns installed binaries (`claude`, `agy`, `codex`, `pi`). The OpenCode adapter is disabled (issue #141)
 - **API Mode** (`api/`): HTTP APIs via Vercel AI SDK (OpenRouter, OpenAI, Anthropic, Google AI Studio)
 
 `registry.ts` derives the provider list from `@ai-git/meta` and marks recommended providers.
@@ -82,7 +82,8 @@ No provider has a hardcoded model list. CLI providers list models during `config
 - Codex: `codex debug models` (falls back to `--bundled`)
 - Claude Code: models.dev Anthropic families plus the `--effort` levels from `claude --help`
 - Pi: `get_available_models` over `pi --mode rpc` (falls back to `pi --list-models`)
-- Antigravity CLI and OpenCode: their own listing commands
+- Pi: requires 0.72.0 or newer for setup (first release with `thinkingLevelMap`)
+- Antigravity CLI: its own listing command
 
 Model IDs with an effort or variant use `<model>#<effort>`. Codex and Claude Code still parse the
 legacy `<model>-<effort>` IDs that older releases wrote. Generation never re-validates CLI model IDs;

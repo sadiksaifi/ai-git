@@ -9,7 +9,7 @@ A CLI tool that leverages AI to automatically generate semantically correct, con
 - 🤖 **AI-Powered** - Analyzes diffs and understands the _intent_ of your changes
 - 📝 **Conventional Commits** - Strictly adheres to [v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification
 - 🎨 **Interactive TUI** - Beautiful prompts for staging, editing, and confirming
-- 🔌 **Multiple Providers** - Claude Code, Antigravity CLI, Codex, OpenCode, Pi, OpenRouter, OpenAI, Anthropic, Google AI Studio, Cerebras
+- 🔌 **Multiple Providers** - Claude Code, Antigravity CLI, Codex, Pi, OpenRouter, OpenAI, Anthropic, Google AI Studio, Cerebras
 - 🔐 **Secure** - API keys stored in keychain, never in config files
 
 ## Installation
@@ -106,9 +106,6 @@ ai-git --provider codex --model gpt-6.1-sol#low
 # Use Claude Code with an effort level
 ai-git --provider claude-code --model haiku#low
 
-# Use OpenCode with a runtime variant
-ai-git --provider opencode --model opencode/gpt-5-nano#minimal
-
 # Use Pi with a thinking level
 ai-git --provider pi --model openai-codex/gpt-6.1-sol#low
 
@@ -129,15 +126,14 @@ ai-git --dry-run -A
 
 | Provider         | ID                  | Type | Requirements                                                                            |
 | :--------------- | :------------------ | :--- | :-------------------------------------------------------------------------------------- |
-| Claude Code      | `claude-code`       | CLI  | [Install CLI](https://claude.com/claude-code)                                           |
+| Claude Code      | `claude-code`       | CLI  | [Install CLI](https://claude.com/product/claude-code)                                           |
 | Antigravity CLI  | `antigravity-cli`   | CLI  | [Install CLI](https://antigravity.google/docs/cli/install)                              |
-| Codex            | `codex`             | CLI  | [Install CLI](https://developers.openai.com/codex/cli)                                  |
-| OpenCode         | `opencode`          | CLI  | [Install CLI](https://opencode.ai)                                                       |
+| Codex            | `codex`             | CLI  | [Install CLI](https://learn.chatgpt.com/docs/codex/cli)                                  |
 | Pi               | `pi`                | CLI  | [Install CLI](https://pi.dev)                                                            |
 | OpenRouter       | `openrouter`        | API  | [Get API Key](https://openrouter.ai/keys)                                               |
 | OpenAI           | `openai`            | API  | [Get API Key](https://platform.openai.com/api-keys)                                     |
 | Google AI Studio | `google-ai-studio`  | API  | [Get API Key](https://aistudio.google.com/app/apikey)                                   |
-| Anthropic        | `anthropic`         | API  | [Get API Key](https://console.anthropic.com/settings/keys)                              |
+| Anthropic        | `anthropic`         | API  | [Get API Key](https://platform.claude.com/settings/keys)                              |
 | Cerebras         | `cerebras`          | API  | [Get API Key](https://cloud.cerebras.ai/)                                               |
 
 Configure with `ai-git configure`
@@ -152,7 +148,10 @@ what it can run right now, so new models show up without an AI Git release:
   (`haiku`, `sonnet`, and so on) for each effort level that `claude --help` accepts. It recommends
   the cheapest family at its lowest effort.
 - **Pi** reports each model's thinking levels through its RPC mode.
-- **Antigravity CLI**, **OpenCode**, and the API providers list models from the CLI or API.
+- **Antigravity CLI** and the API providers list models from the CLI or API.
+
+OpenCode support is disabled until the adapter supports OpenCode 2.x
+([#141](https://github.com/sadiksaifi/ai-git/issues/141)).
 
 Model IDs with an effort or variant use `<model>#<effort>`. Older Codex and Claude Code IDs such as
 `gpt-5.6-luna-low` and `sonnet-high` keep working. Existing Gemini CLI configurations are migrated

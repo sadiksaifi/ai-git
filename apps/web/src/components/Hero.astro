@@ -1,6 +1,9 @@
 ---
 import { renderTerminalLines } from "../lib/terminal.ts"
 import InstallCommand from "./InstallCommand.astro"
+import { PROVIDERS } from "@ai-git/meta"
+
+const providerCount = Object.keys(PROVIDERS).length
 
 const heroLines: readonly string[] = [
   '<span class="prompt">$</span> <span class="cmd">ai-git -A</span>',
@@ -69,7 +72,7 @@ const heroBody = renderTerminalLines(heroLines)
           <li><code>~/.config/ai-git</code></li>
           <li>MIT</li>
           <li>macOS · Linux · Windows</li>
-          <li>10 providers</li>
+          <li>{providerCount} providers</li>
         </ul>
       </div>
 
