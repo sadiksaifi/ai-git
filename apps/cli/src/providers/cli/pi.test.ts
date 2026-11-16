@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { getProviderById } from "../registry.ts";
-import { getPiSupportedThinkingLevels, parsePiModelsTable, parsePiRpcModels } from "./pi.ts";
+import {
+  getPiSupportedThinkingLevels,
+  isSupportedPiVersion,
+  parsePiModelsTable,
+  parsePiRpcModels,
+  parsePiVersion,
+} from "./pi.ts";
 
 const table = `provider        model                 thinking
 openai-codex    gpt-5.6-luna          yes
@@ -81,6 +87,20 @@ describe("parsePiRpcModels", () => {
         JSON.stringify({ type: "response", command: "get_available_models", success: false }),
       ),
     ).toBeNull();
+  });
+});
+
+describe("Pi version gate", () => {
+  it("parses the version from `pi --version` output", () => {
+    expect(parsePiVersion("1.5.2\n")).toEqual([1, 5, 2]);
+    expect(parsePiVersion("pi v0.72.0")).toEqual([0, 72, 0]);
+    expect(parsePiVersion("unknown")).toBeNull();
+  });
+
+  it("requires 0.72.0, the first release with thinkingLevelMap", () => {
+    expect(isSupportedPiVersion([0, 71, 1])).toBe(false);
+    expect(isSupportedPiVersion([0, 72, 0])).toBe(true);
+    expect(isSupportedPiVersion([1, 5, 2])).toBe(true);
   });
 });
 
@@ -203,14 +223,15 @@ describe("piAdapter.invoke", () => {
     );
     (Bun as any).spawn = (cmd: string[], opts: unknown) => {
       spawnCalls.push({ cmd, opts });
-      return rpc.process;
+      return cmd.includes("--version") ? mockProcess("1.5.2\n").process : rpc.process;
     };
 
     const { piAdapter } = await import("./pi.ts");
     const models = await piAdapter.fetchModels!();
 
-    expect(spawnCalls).toHaveLength(1);
-    expect(spawnCalls[0]!.cmd).toEqual([
+    expect(spawnCalls).toHaveLength(2);
+    expect(spawnCalls[0]!.cmd).toEqual(["pi", "--version"]);
+    expect(spawnCalls[1]!.cmd).toEqual([
       "pi",
       "--mode",
       "rpc",
@@ -235,17 +256,55 @@ describe("piAdapter.invoke", () => {
   it("falls back to the --list-models table, read from stderr, when RPC fails", async () => {
     (Bun as any).spawn = (cmd: string[], opts: unknown) => {
       spawnCalls.push({ cmd, opts });
+      if (cmd.includes("--version")) return mockProcess("1.5.2\n").process;
       return cmd.includes("rpc") ? mockProcess("").process : mockProcess("", table).process;
     };
 
     const { piAdapter } = await import("./pi.ts");
     const models = await piAdapter.fetchModels!();
 
-    expect(spawnCalls[1]!.cmd).toEqual(["pi", "--list-models"]);
+    expect(spawnCalls[2]!.cmd).toEqual(["pi", "--list-models"]);
     expect(models[0]).toEqual({
       id: "openai-codex/gpt-5.6-luna#off",
       name: "openai-codex/gpt-5.6-luna (off)",
     });
+  });
+});
+
+describe("piAdapter.fetchModels version gate", () => {
+  let originalSpawn: typeof Bun.spawn;
+  beforeEach(() => {
+    originalSpawn = Bun.spawn;
+  });
+  afterEach(() => {
+    (Bun as any).spawn = originalSpawn;
+  });
+
+  it("asks users of Pi before 0.72.0 to install the current package", async () => {
+    const spawned: string[][] = [];
+    (Bun as any).spawn = (cmd: string[]) => {
+      spawned.push(cmd);
+      return {
+        stdout: new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode("0.60.0\n"));
+            controller.close();
+          },
+        }),
+        stderr: new ReadableStream({
+          start(controller) {
+            controller.close();
+          },
+        }),
+        exited: Promise.resolve(0),
+      };
+    };
+
+    const { piAdapter } = await import("./pi.ts");
+    await expect(piAdapter.fetchModels!()).rejects.toThrow(
+      "Pi 0.72.0 or newer is required to list models with their thinking levels. Install the current release: npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
+    );
+    expect(spawned).toEqual([["pi", "--version"]]);
   });
 });
 

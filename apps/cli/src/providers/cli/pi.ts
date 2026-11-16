@@ -1,3 +1,4 @@
+import { PROVIDERS as PROVIDER_DOCS, isCLIProviderDoc } from "@ai-git/meta";
 import type { CLIProviderAdapter, InvokeOptions } from "../types.ts";
 import { parseDynamicVariantModel, readProcessOutput, type DynamicCLIModel } from "./dynamic.ts";
 
@@ -11,6 +12,9 @@ const PI_THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh", 
 const STANDARD_PI_THINKING_LEVELS = ["off", "minimal", "low", "medium", "high"];
 
 const PI_RPC_TIMEOUT_MS = 15_000;
+
+/** First Pi release whose RPC model records carry `thinkingLevelMap`. */
+const MINIMUM_PI_VERSION = [0, 72, 0] as const;
 const PI_RPC_REQUEST_ID = "ai-git-models";
 
 /** Flags shared by generation and model listing so both see the same models. */
@@ -37,8 +41,7 @@ interface PiRpcModel {
  * - non-reasoning models support only "off"
  * - a level mapped to null is unsupported
  * - "xhigh" and "max" need an explicit mapping
- * Pi releases before 1.x omit `thinkingLevelMap` from RPC output, so their
- * reasoning models get the standard levels only; upgrading Pi restores the rest.
+ * Pi releases before 0.72.0 omit `thinkingLevelMap`, so setup requires 0.72.0.
  */
 export function getPiSupportedThinkingLevels(model: PiRpcModel): string[] {
   if (model.reasoning !== true) return ["off"];
@@ -96,6 +99,36 @@ export function parsePiRpcModels(output: string): DynamicCLIModel[] | null {
   }
 
   return null;
+}
+
+export function parsePiVersion(output: string): number[] | null {
+  const match = output.match(/(\d+)\.(\d+)\.(\d+)/);
+  return match ? match.slice(1).map(Number) : null;
+}
+
+export function isSupportedPiVersion(version: number[]): boolean {
+  for (let index = 0; index < MINIMUM_PI_VERSION.length; index += 1) {
+    const difference = (version[index] ?? 0) - MINIMUM_PI_VERSION[index]!;
+    if (difference !== 0) return difference > 0;
+  }
+  return true;
+}
+
+function piUpgradeHint(): string {
+  const doc = PROVIDER_DOCS.pi;
+  return doc && isCLIProviderDoc(doc) ? ` Install the current release: ${doc.installCommand}` : "";
+}
+
+async function assertSupportedPiVersion(): Promise<void> {
+  const proc = Bun.spawn(["pi", "--version"], { stdout: "pipe", stderr: "pipe" });
+  const { stdout, stderr, exitCode } = await readProcessOutput(proc);
+  const version = parsePiVersion(stdout || stderr);
+
+  if (exitCode !== 0 || !version || !isSupportedPiVersion(version)) {
+    throw new Error(
+      `Pi ${MINIMUM_PI_VERSION.join(".")} or newer is required to list models with their thinking levels.${piUpgradeHint()}`,
+    );
+  }
 }
 
 async function listPiModelsViaRpc(): Promise<DynamicCLIModel[] | null> {
@@ -246,11 +279,13 @@ export const piAdapter: CLIProviderAdapter = {
   },
 
   async fetchModels(): Promise<DynamicCLIModel[]> {
+    await assertSupportedPiVersion();
+
     // RPC mode reports each model's supported thinking levels.
     const rpcModels = await listPiModelsViaRpc();
     if (rpcModels && rpcModels.length > 0) return rpcModels;
 
-    // Older Pi releases: fall back to the --list-models table.
+    // RPC failed: fall back to the --list-models table.
     const proc = Bun.spawn(["pi", "--list-models"], {
       stdout: "pipe",
       stderr: "pipe",
