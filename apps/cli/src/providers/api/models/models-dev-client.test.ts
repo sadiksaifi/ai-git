@@ -4,7 +4,12 @@ import * as path from "node:path";
 import * as os from "node:os";
 import { clearModelCatalogForTests, getModelCatalog } from "./index.ts";
 import { getModelsDevCacheFilePath } from "../../../lib/paths.ts";
-import { createCatalogFromRaw } from "./models-dev-client.ts";
+import {
+  createCatalogFromRaw,
+  loadCatalogCache,
+  MODELS_DEV_CACHE_VERSION,
+  saveCatalogCache,
+} from "./models-dev-client.ts";
 import { MODEL_CATALOG_SNAPSHOT } from "./snapshot.ts";
 
 const originalFetch = globalThis.fetch;
@@ -105,7 +110,10 @@ describe("models-dev catalog client", () => {
     stale.fetchedAt = "2020-01-01T00:00:00.000Z";
 
     fs.mkdirSync(path.dirname(cacheFile), { recursive: true });
-    fs.writeFileSync(cacheFile, JSON.stringify(stale, null, 2));
+    fs.writeFileSync(
+      cacheFile,
+      JSON.stringify({ ...stale, cacheVersion: MODELS_DEV_CACHE_VERSION }, null, 2),
+    );
 
     globalThis.fetch = (async () => {
       throw new Error("network down");
@@ -175,5 +183,37 @@ describe("createCatalogFromRaw", () => {
     expect(older.reasoningEfforts).toBeUndefined();
     expect(older.family).toBeUndefined();
     expect(older.cost).toBeUndefined();
+  });
+});
+
+describe("models.dev catalog cache", () => {
+  const originalCacheFile = process.env.AI_GIT_MODELS_DEV_CACHE_FILE;
+  let tempDir = "";
+
+  beforeEach(() => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "ai-git-catalog-cache-"));
+    process.env.AI_GIT_MODELS_DEV_CACHE_FILE = path.join(tempDir, "catalog.json");
+  });
+
+  afterEach(() => {
+    if (originalCacheFile === undefined) delete process.env.AI_GIT_MODELS_DEV_CACHE_FILE;
+    else process.env.AI_GIT_MODELS_DEV_CACHE_FILE = originalCacheFile;
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it("reads back a cache it wrote", async () => {
+    const catalog = createCatalogFromRaw(
+      { openai: { models: { "gpt-image-2": { modalities: { output: ["image"] } } } } },
+      "network",
+    );
+    await saveCatalogCache(catalog);
+    const loaded = await loadCatalogCache();
+    expect(loaded?.providers.openai.models["gpt-image-2"]?.outputModalities).toEqual(["image"]);
+  });
+
+  it("ignores caches written before the current cache version", async () => {
+    const catalog = createCatalogFromRaw({ openai: { models: { "gpt-4o": {} } } }, "network");
+    fs.writeFileSync(process.env.AI_GIT_MODELS_DEV_CACHE_FILE!, JSON.stringify(catalog));
+    expect(await loadCatalogCache()).toBeNull();
   });
 });

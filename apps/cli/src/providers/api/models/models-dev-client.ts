@@ -11,6 +11,12 @@ import type {
 export const MODELS_DEV_API_URL = "https://models.dev/api.json";
 export const MODELS_DEV_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Bump when the cached catalog gains fields that filtering depends on, so caches
+ * written by older versions are ignored instead of read with those fields missing.
+ */
+export const MODELS_DEV_CACHE_VERSION = 2;
+
 const MODELS_DEV_PROVIDER_IDS: CatalogProviderId[] = ["anthropic", "openai", "google"];
 
 export interface ModelsDevRawModel {
@@ -163,19 +169,24 @@ export async function fetchModelsDevCatalog(signal?: AbortSignal): Promise<Model
 export async function saveCatalogCache(catalog: ModelCatalog): Promise<void> {
   const cacheFile = getModelsDevCacheFilePath();
   await mkdir(path.dirname(cacheFile), { recursive: true });
-  await writeFile(cacheFile, JSON.stringify(catalog, null, 2), "utf8");
+  await writeFile(
+    cacheFile,
+    JSON.stringify({ ...catalog, cacheVersion: MODELS_DEV_CACHE_VERSION }, null, 2),
+    "utf8",
+  );
 }
 
 export async function loadCatalogCache(): Promise<ModelCatalog | null> {
   try {
     const content = await readFile(getModelsDevCacheFilePath(), "utf8");
-    const parsed = JSON.parse(content) as ModelCatalog;
+    const parsed = JSON.parse(content) as ModelCatalog & { cacheVersion?: unknown };
 
-    if (!parsed || !parsed.providers) {
+    if (!parsed || !parsed.providers || parsed.cacheVersion !== MODELS_DEV_CACHE_VERSION) {
       return null;
     }
 
-    return parsed;
+    const { cacheVersion: _cacheVersion, ...catalog } = parsed;
+    return catalog;
   } catch {
     return null;
   }
