@@ -307,6 +307,7 @@ describe("OpenAI model metadata", () => {
     expect(isReasoningModel("gpt-10", null)).toBe(true);
     expect(isReasoningModel("o5-mini", null)).toBe(true);
     expect(isReasoningModel("gpt-4o", null)).toBe(false);
+    expect(isReasoningModel("gpt-5-chat-latest", null)).toBe(false);
   });
 
   it("uses catalog names and formats unknown IDs", () => {

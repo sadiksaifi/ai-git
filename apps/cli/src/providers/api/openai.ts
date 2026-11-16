@@ -45,12 +45,13 @@ export function getModelDisplayName(modelId: string, catalog: ModelCatalog): str
 /**
  * Check if a model ID is a reasoning model that doesn't support temperature.
  * Uses the models.dev `reasoning` flag when the catalog lists the model;
- * otherwise treats o-series and GPT-5 or later as reasoning models.
+ * otherwise treats o-series and GPT-5 or later, except chat variants, as reasoning models.
  */
 export function isReasoningModel(modelId: string, catalog: ModelCatalog | null): boolean {
   const metadata = catalog?.providers.openai.models[modelId];
   if (metadata) return metadata.reasoning;
-  return /^(?:o\d|gpt-(?:[5-9]|\d{2,}))/.test(modelId);
+  // Chat variants such as gpt-5-chat-latest are not reasoning models.
+  return /^(?:o\d|gpt-(?:[5-9]|\d{2,}))/.test(modelId) && !/-chat(?:-|$)/.test(modelId);
 }
 
 async function loadCatalogForInvoke(): Promise<ModelCatalog | null> {
