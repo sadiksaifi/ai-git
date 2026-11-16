@@ -162,8 +162,9 @@ slash-command expansion, validates structured output, and removes the temporary 
 afterward.
 
 OpenCode generation runs `opencode run --standalone` in an empty temporary directory. AI Git passes
-an agent that denies every tool, turns off your OpenCode plugins, project config, and `AGENTS.md`
-instructions, and archives the session so it stays out of your session list.
+an agent that denies every tool and policies that stop your OpenCode plugins, MCP servers, and skills
+from loading. Project config and `AGENTS.md` instructions are turned off, and the session is archived
+so it stays out of your session list.
 
 ## Configuration
 

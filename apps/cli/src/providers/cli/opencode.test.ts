@@ -109,9 +109,14 @@ describe("OpenCode version gate", () => {
 });
 
 describe("buildOpenCodeConfig", () => {
-  it("turns off user plugins and instruction files and denies every tool", () => {
+  it("blocks user plugins, MCP servers, skills, and instruction files and denies every tool", () => {
     expect(buildOpenCodeConfig("system rules")).toEqual({
-      plugins: ["-*", "opencode.*", "-opencode.config.instruction"],
+      policies: [
+        { action: "plugin.use", resource: "*", effect: "deny" },
+        { action: "mcp.use", resource: "*", effect: "deny" },
+        { action: "skill.use", resource: "*", effect: "deny" },
+      ],
+      plugins: ["-opencode.config.instruction", "-opencode.config.mcp"],
       agents: {
         "ai-git": {
           system: "system rules",
@@ -125,7 +130,12 @@ describe("buildOpenCodeConfig", () => {
 
   it("omits the agent when only listing models", () => {
     expect(buildOpenCodeConfig()).toEqual({
-      plugins: ["-*", "opencode.*", "-opencode.config.instruction"],
+      policies: [
+        { action: "plugin.use", resource: "*", effect: "deny" },
+        { action: "mcp.use", resource: "*", effect: "deny" },
+        { action: "skill.use", resource: "*", effect: "deny" },
+      ],
+      plugins: ["-opencode.config.instruction", "-opencode.config.mcp"],
     });
   });
 });

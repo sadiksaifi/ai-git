@@ -11,12 +11,23 @@ const OPENCODE_AGENT = "ai-git";
 const MINIMUM_OPENCODE_VERSION = [2, 2, 6] as const;
 
 /**
- * Plugin directives for every OpenCode call. `-*` turns off all plugins,
- * `opencode.*` turns the built-in plugins back on (providers, config loading),
- * and `-opencode.config.instruction` keeps AGENTS.md and other instruction
- * files out of the prompt. User plugins stay off.
+ * Policies for every OpenCode call. Policies are checked before OpenCode
+ * imports a plugin module or starts an MCP server, so user plugins, MCP
+ * servers, and skills never load. Plugin directives alone run too late: OpenCode
+ * imports a plugin module before it applies later removal directives.
  */
-const OPENCODE_PLUGINS = ["-*", "opencode.*", "-opencode.config.instruction"];
+const OPENCODE_POLICIES = [
+  { action: "plugin.use", resource: "*", effect: "deny" },
+  { action: "mcp.use", resource: "*", effect: "deny" },
+  { action: "skill.use", resource: "*", effect: "deny" },
+];
+
+/**
+ * Built-in plugins to turn off. `opencode.config.instruction` adds AGENTS.md
+ * and other instruction files to the prompt, and `opencode.config.mcp`
+ * registers the user's MCP servers.
+ */
+const OPENCODE_PLUGINS = ["-opencode.config.instruction", "-opencode.config.mcp"];
 
 interface OpenCodeModelRecord {
   id?: unknown;
@@ -39,6 +50,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  */
 export function buildOpenCodeConfig(system?: string): Record<string, unknown> {
   return {
+    policies: OPENCODE_POLICIES,
     plugins: OPENCODE_PLUGINS,
     ...(system === undefined
       ? {}
