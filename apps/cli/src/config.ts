@@ -97,10 +97,6 @@ export async function getProjectConfigPath(): Promise<string> {
 /** Pending migration notice to display after the welcome screen. */
 let pendingMigrationNotice: MigrationNotice | null = null;
 
-export function queueMigrationNotice(notice: MigrationNotice): void {
-  pendingMigrationNotice = notice;
-}
-
 /**
  * Show any pending migration notice and clear it.
  * Call this after the welcome screen renders so the fresh viewport doesn't hide it.
