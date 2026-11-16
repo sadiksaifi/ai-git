@@ -63,17 +63,6 @@ export interface CLIProviderDoc extends ProviderDoc {
 }
 
 /**
- * A provider that is temporarily switched off. Configs that still name it get
- * this reason instead of a generic "unknown provider" error.
- */
-export interface DisabledProviderDoc {
-  id: string;
-  name: string;
-  reason: string;
-  issueUrl: string;
-}
-
-/**
  * Error message template.
  */
 export interface ErrorTemplate {

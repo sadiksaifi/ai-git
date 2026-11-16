@@ -9,7 +9,7 @@
 import { fromPromise } from "xstate";
 import pc from "picocolors";
 import { log, spinner } from "@clack/prompts";
-import { DISABLED_PROVIDERS, ERROR_TEMPLATES } from "@ai-git/meta";
+import { ERROR_TEMPLATES } from "@ai-git/meta";
 import {
   cliMachine,
   type ConfigResolutionResult,
@@ -61,17 +61,9 @@ import type { SupportedAPIProviderId } from "../providers/api/models/types.ts";
 
 /**
  * Print guidance for a provider ID that is not in the registry and return the
- * error to throw. Disabled providers get their reason and tracking issue.
+ * error to throw.
  */
 function reportUnknownProvider(providerId: string): Error {
-  const disabled = DISABLED_PROVIDERS[providerId];
-  if (disabled) {
-    console.error(pc.red(`Error: ${disabled.name} support is disabled. ${disabled.reason}`));
-    console.error(pc.dim(`Tracking: ${disabled.issueUrl}`));
-    console.error(pc.dim("Run `ai-git configure` to choose another provider."));
-    return new Error(`${disabled.name} support is disabled`);
-  }
-
   const validProviders = PROVIDERS.map((p) => p.id).join(", ");
   console.error(pc.red(`Error: Unknown provider '${providerId}'.`));
   console.error(pc.dim(`Supported providers: ${validProviders}`));
