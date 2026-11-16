@@ -1,3 +1,4 @@
+import { DISABLED_PROVIDERS } from "@ai-git/meta";
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { getProviderById } from "../registry.ts";
 
@@ -117,12 +118,8 @@ describe("opencodeAdapter.invoke", () => {
 });
 
 describe("opencode registry", () => {
-  it("registers OpenCode as a live-model CLI provider", () => {
-    expect(getProviderById("opencode")).toMatchObject({
-      id: "opencode",
-      name: "OpenCode",
-      mode: "cli",
-      binary: "opencode",
-    });
+  it("keeps OpenCode disabled until the adapter supports OpenCode 2.x", () => {
+    expect(getProviderById("opencode")).toBeUndefined();
+    expect(DISABLED_PROVIDERS.opencode?.issueUrl).toContain("/issues/141");
   });
 });

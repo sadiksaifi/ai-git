@@ -23,7 +23,6 @@
         "claude-code",
         "antigravity-cli",
         "codex",
-        "opencode",
         "pi",
         "openrouter",
         "openai",
@@ -36,7 +35,6 @@
         "claude-code",
         "antigravity-cli",
         "codex",
-        "opencode",
         "pi",
         "openrouter",
         "openai",
@@ -52,7 +50,6 @@
         "gpt-6.1-terra#low",
         "haiku#low",
         "gemini-3.8-flash-low",
-        "openai/gpt-6.1-terra#low",
         "openai-codex/gpt-6.1-terra#low",
         "openai/gpt-6.1-terra",
         "gpt-6.1-terra",
@@ -193,23 +190,6 @@
           "model": {
             "description": "Codex model: '<model>#<effort>' (e.g., 'gpt-6.1-terra#low'). Models are fetched dynamically from `codex debug models`.",
             "type": "string"
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "provider": {
-            "const": "opencode"
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "model": {
-            "type": "string",
-            "description": "OpenCode model ID fetched dynamically from `opencode models --verbose`. Variant selections use '<base-model>#<variant>'."
           }
         }
       }

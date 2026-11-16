@@ -150,8 +150,6 @@ const CLI_MODEL_DESCRIPTIONS: Record<string, (example: string) => string> = {
     `Antigravity CLI model ID (e.g., '${example}'). Models are fetched dynamically.`,
   codex: (example) =>
     `Codex model: '<model>#<effort>' (e.g., '${example}'). Models are fetched dynamically from \`codex debug models\`.`,
-  opencode: () =>
-    "OpenCode model ID fetched dynamically from `opencode models --verbose`. Variant selections use '<base-model>#<variant>'.",
   pi: () =>
     "Pi model ID fetched dynamically from Pi's RPC mode. Thinking selections use '<provider/model>#<thinking>'.",
 };
@@ -186,6 +184,12 @@ function updateProviderEnum(schema: Record<string, any>): void {
   const ids = PROVIDERS.map((provider) => provider.id);
   schema.properties.provider.enum = ids;
   schema.properties.provider.examples = ids;
+
+  // Drop per-provider model rules for providers that are no longer registered.
+  schema.allOf = (schema.allOf as Array<Record<string, any>>).filter((entry) => {
+    const providerId = entry.if?.properties?.provider?.const;
+    return typeof providerId !== "string" || ids.includes(providerId);
+  });
 }
 
 function pickClaudeCodeExample(payload: ModelsDevPayload): string {
@@ -218,7 +222,6 @@ export function updateSchemaModels(
     codex: `${openAIExample}#low`,
     "claude-code": pickClaudeCodeExample(payload),
     "antigravity-cli": `${googleFlashExample}-low`,
-    opencode: `openai/${openAIExample}#low`,
     pi: `openai-codex/${openAIExample}#low`,
   };
 

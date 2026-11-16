@@ -9,7 +9,7 @@
 import { fromPromise } from "xstate";
 import pc from "picocolors";
 import { log, spinner } from "@clack/prompts";
-import { ERROR_TEMPLATES } from "@ai-git/meta";
+import { DISABLED_PROVIDERS, ERROR_TEMPLATES } from "@ai-git/meta";
 import {
   cliMachine,
   type ConfigResolutionResult,
@@ -67,6 +67,26 @@ import { startUpdateCheck, showUpdateNotification } from "../lib/update-check.ts
 import { assertConfiguredModelAllowed } from "../providers/api/models/index.ts";
 import type { SupportedAPIProviderId } from "../providers/api/models/types.ts";
 
+/**
+ * Print guidance for a provider ID that is not in the registry and return the
+ * error to throw. Disabled providers get their reason and tracking issue.
+ */
+function reportUnknownProvider(providerId: string): Error {
+  const disabled = DISABLED_PROVIDERS[providerId];
+  if (disabled) {
+    console.error(pc.red(`Error: ${disabled.name} support is disabled. ${disabled.reason}`));
+    console.error(pc.dim(`Tracking: ${disabled.issueUrl}`));
+    console.error(pc.dim("Run `ai-git configure` to choose another provider."));
+    return new Error(`${disabled.name} support is disabled`);
+  }
+
+  const validProviders = PROVIDERS.map((p) => p.id).join(", ");
+  console.error(pc.red(`Error: Unknown provider '${providerId}'.`));
+  console.error(pc.dim(`Supported providers: ${validProviders}`));
+  console.error(pc.dim("Run `ai-git configure` to select a valid provider."));
+  return new Error(`Unknown provider '${providerId}'`);
+}
+
 // ── Helper: resolve config into a ConfigResolutionResult ─────────────
 
 async function resolveFullConfig(
@@ -85,10 +105,7 @@ async function resolveFullConfig(
   // Validate provider (Bug #2 fix: use dynamic PROVIDERS list)
   const providerDef = getProviderById(resolvedConfig.provider);
   if (!providerDef) {
-    const validProviders = PROVIDERS.map((p) => p.id).join(", ");
-    console.error(pc.red(`Error: Unknown provider '${resolvedConfig.provider}'.`));
-    console.error(pc.dim(`Supported providers: ${validProviders}`));
-    throw new Error(`Unknown provider '${resolvedConfig.provider}'`);
+    throw reportUnknownProvider(resolvedConfig.provider);
   }
 
   // Get adapter
@@ -254,11 +271,7 @@ export const wiredCliMachine = cliMachine.provide({
           const bestConfig = existingProjectConfig ?? existingConfig;
           if (bestConfig?.provider && bestConfig?.model && !getProviderById(bestConfig.provider)) {
             // Scenario 1: Fail loudly instead of silently re-running setup.
-            const validProviders = PROVIDERS.map((p) => p.id).join(", ");
-            console.error(pc.red(`Error: Unknown provider '${bestConfig.provider}'.`));
-            console.error(pc.dim(`Supported providers: ${validProviders}`));
-            console.error(pc.dim("Run `ai-git configure` to select a valid provider."));
-            throw new Error(`Unknown provider '${bestConfig.provider}'`);
+            throw reportUnknownProvider(bestConfig.provider);
           }
 
           return {
