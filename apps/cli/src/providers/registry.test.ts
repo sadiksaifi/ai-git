@@ -62,13 +62,12 @@ describe("provider registry", () => {
 });
 
 describe("configuration schema parity", () => {
-  test("offers Antigravity and removes Gemini CLI", () => {
+  test("offers Antigravity CLI through the agy binary", () => {
     expect(PROVIDERS.find((provider) => provider.id === "antigravity-cli")).toMatchObject({
       name: "Antigravity CLI",
       mode: "cli",
       binary: "agy",
     });
-    expect(PROVIDERS.find((provider) => provider.id === "gemini-cli")).toBeUndefined();
   });
 
   test("the schema provider enum matches the runtime registry", async () => {

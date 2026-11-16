@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { migrateConfig, migrateLegacyGeminiCliConfig, migrations } from "./migration.ts";
+import { migrateConfig, migrations } from "./migration.ts";
 
 describe("migrations registry", () => {
   it("should have unique IDs", () => {
@@ -20,9 +20,9 @@ describe("migrations registry", () => {
 
 describe("migrateConfig", () => {
   it("should strip legacy 'mode' property", () => {
-    const raw = { provider: "gemini-cli", model: "gemini-3-flash-preview", mode: "cli" };
+    const raw = { provider: "antigravity-cli", model: "gemini-3.8-flash-low", mode: "cli" };
     const result = migrateConfig(raw);
-    expect(result.config).toEqual({ provider: "gemini-cli", model: "gemini-3-flash-preview" });
+    expect(result.config).toEqual({ provider: "antigravity-cli", model: "gemini-3.8-flash-low" });
     expect(result.changed).toBe(true);
     expect(result.changes).toHaveLength(1);
     expect(result.changes[0]).toContain("mode");
@@ -150,30 +150,10 @@ describe("migrateConfig", () => {
   });
 
   it("should return unchanged for a fully valid config", () => {
-    const raw = { provider: "gemini-cli", model: "gemini-3-flash-preview" };
+    const raw = { provider: "antigravity-cli", model: "gemini-3.8-flash-low" };
     const result = migrateConfig(raw);
     expect(result.config).toEqual(raw);
     expect(result.changed).toBe(false);
     expect(result.changes).toHaveLength(0);
-  });
-});
-
-describe("migrateLegacyGeminiCliConfig", () => {
-  it("updates the provider and model together from the live Antigravity catalog", async () => {
-    const result = await migrateLegacyGeminiCliConfig(
-      { provider: "gemini-cli", model: "gemini-3.1-pro-preview" },
-      async () => [
-        { id: "gemini-3.7-flash-low", name: "Gemini 3.7 Flash (Low)" },
-        { id: "gemini-3.1-pro-low", name: "Gemini 3.1 Pro (Low)" },
-      ],
-    );
-
-    expect(result).toEqual({
-      config: { provider: "antigravity-cli", model: "gemini-3.1-pro-low" },
-      changed: true,
-      changes: [
-        "Migrated provider 'gemini-cli' → 'antigravity-cli' and model 'gemini-3.1-pro-preview' → 'gemini-3.1-pro-low'",
-      ],
-    });
   });
 });

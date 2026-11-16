@@ -175,41 +175,6 @@ describe("antigravityAdapter.fetchModels", () => {
   });
 });
 
-describe("selectAntigravityMigrationModel", () => {
-  it("maps every former Gemini CLI model to matching live Flash or Pro intent", async () => {
-    const { selectAntigravityMigrationModel } = await import("./antigravity.ts");
-    const models = [
-      { id: "gemini-3.8-flash-low", name: "Gemini 3.8 Flash (Low)" },
-      { id: "gemini-3.7-pro-low", name: "Gemini 3.7 Pro (Low)" },
-    ];
-
-    for (const legacyModel of [
-      "gemini-3-flash-preview",
-      "gemini-2.5-flash",
-      "gemini-2.5-flash-lite",
-    ]) {
-      expect(selectAntigravityMigrationModel(legacyModel, models)).toBe("gemini-3.8-flash-low");
-    }
-    for (const legacyModel of [
-      "gemini-3.1-pro-preview",
-      "gemini-3-pro-preview",
-      "gemini-2.5-pro",
-    ]) {
-      expect(selectAntigravityMigrationModel(legacyModel, models)).toBe("gemini-3.7-pro-low");
-    }
-  });
-
-  it("preserves provider order for the final account-compatible fallback", async () => {
-    const { selectAntigravityMigrationModel } = await import("./antigravity.ts");
-    const models = [
-      { id: "vendor-first", name: "Provider First" },
-      { id: "gemini-4.0-pro-high", name: "Gemini 4.0 Pro (High)" },
-    ];
-
-    expect(selectAntigravityMigrationModel("gemini-3-flash-preview", models)).toBe("vendor-first");
-  });
-});
-
 describe("seedAntigravityAuthentication", () => {
   it("links file-backed authentication into the isolated profile without copying it", async () => {
     const home = mkdtempSync(join(tmpdir(), "ai-git-antigravity-auth-home-"));

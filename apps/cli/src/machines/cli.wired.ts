@@ -18,23 +18,15 @@ import {
 import { stagingMachine } from "./staging.machine.ts";
 import type { ResolvedConfig, UserConfig } from "../config.ts";
 import {
-  CONFIG_FILE,
   loadUserConfig,
   loadProjectConfig,
   isConfigComplete,
-  queueMigrationNotice,
   resolveConfigAsync,
-  saveProjectConfig,
-  saveUserConfig,
-  getProjectConfigPath,
   getProviderById,
   flushMigrationNotice,
 } from "../config.ts";
-import { backupConfigFile, migrateLegacyGeminiCliConfig } from "../lib/migration.ts";
 import { PROVIDERS } from "../providers/registry.ts";
 import { getAdapter } from "../providers/index.ts";
-import { antigravityAdapter } from "../providers/cli/antigravity.ts";
-import { extractErrorMessage } from "../lib/errors.ts";
 import {
   checkGitInstalled,
   checkInsideRepo,
@@ -147,79 +139,6 @@ async function resolveFullConfig(
   };
 }
 
-async function migrateLoadedLegacyConfigs(
-  userConfig: UserConfig | undefined,
-  projectConfig: UserConfig | undefined,
-  overrides: { provider?: string; model?: string },
-): Promise<{ userConfig?: UserConfig; projectConfig?: UserConfig }> {
-  const hasCompleteOverride = Boolean(overrides.provider && overrides.model);
-  const effectiveProvider = projectConfig?.provider ?? userConfig?.provider;
-  const effectiveModel = projectConfig?.model ?? userConfig?.model;
-  const projectDefinesProviderOrModel = Boolean(
-    projectConfig?.provider !== undefined || projectConfig?.model !== undefined,
-  );
-  const hasEffectiveLegacyConfig =
-    !hasCompleteOverride &&
-    effectiveProvider === "gemini-cli" &&
-    typeof effectiveModel === "string";
-  const migrateProject = hasEffectiveLegacyConfig && projectDefinesProviderOrModel;
-  const migrateUser = hasEffectiveLegacyConfig && !migrateProject;
-  const hasLegacyConfig = migrateUser || migrateProject;
-  if (!hasLegacyConfig) return { userConfig, projectConfig };
-
-  if (!(await antigravityAdapter.checkAvailable())) {
-    throw new Error(
-      "Antigravity CLI is required to migrate the existing configuration. Install it with: curl -fsSL https://antigravity.google/cli/install.sh | bash",
-    );
-  }
-
-  const models = await antigravityAdapter.fetchModels!();
-  const migrate = (config: UserConfig | undefined) =>
-    config
-      ? migrateLegacyGeminiCliConfig(
-          { ...config, provider: effectiveProvider, model: effectiveModel },
-          async () => models,
-        )
-      : Promise.resolve({ config: undefined, changed: false, changes: [] });
-  const [userResult, projectResult] = await Promise.all([
-    migrateUser
-      ? migrate(userConfig)
-      : Promise.resolve({ config: userConfig, changed: false, changes: [] }),
-    migrateProject
-      ? migrate(projectConfig)
-      : Promise.resolve({ config: projectConfig, changed: false, changes: [] }),
-  ]);
-
-  let backupPath: string | undefined;
-  if (userResult.changed && userResult.config) {
-    try {
-      backupPath = await backupConfigFile(CONFIG_FILE);
-    } catch {
-      // Best effort. Migration remains atomic because provider and model save together below.
-    }
-    await saveUserConfig(userResult.config);
-  }
-  if (projectResult.changed && projectResult.config) {
-    const projectConfigPath = await getProjectConfigPath();
-    try {
-      backupPath = await backupConfigFile(projectConfigPath);
-    } catch {
-      // Best effort. Migration remains atomic because provider and model save together below.
-    }
-    await saveProjectConfig(projectResult.config);
-  }
-
-  const changes = [...userResult.changes, ...projectResult.changes];
-  if (changes.length > 0) {
-    queueMigrationNotice({ changes, backupPath });
-  }
-
-  return {
-    userConfig: userResult.config,
-    projectConfig: projectResult.config,
-  };
-}
-
 // ── Wired machine ────────────────────────────────────────────────────
 
 export const wiredCliMachine = cliMachine.provide({
@@ -242,19 +161,8 @@ export const wiredCliMachine = cliMachine.provide({
               })
             : startUpdateCheck(options.version);
 
-        let loaded: { userConfig?: UserConfig; projectConfig?: UserConfig };
-        try {
-          loaded = await migrateLoadedLegacyConfigs(
-            await loadUserConfig(),
-            await loadProjectConfig(),
-            options.options,
-          );
-        } catch (error) {
-          console.error(pc.red(`Error: ${extractErrorMessage(error)}`));
-          throw error;
-        }
-        const existingConfig = loaded.userConfig;
-        const existingProjectConfig = loaded.projectConfig;
+        const existingConfig = await loadUserConfig();
+        const existingProjectConfig = await loadProjectConfig();
 
         const isGlobalComplete = isConfigComplete(existingConfig);
         const isProjectComplete = isConfigComplete(existingProjectConfig);
@@ -294,7 +202,7 @@ export const wiredCliMachine = cliMachine.provide({
             model: options.options.model,
           },
           options.version,
-          loaded,
+          { userConfig: existingConfig, projectConfig: existingProjectConfig },
         );
         return result;
       },

@@ -154,8 +154,7 @@ OpenCode support is disabled until the adapter supports OpenCode 2.x
 ([#141](https://github.com/sadiksaifi/ai-git/issues/141)).
 
 Model IDs with an effort or variant use `<model>#<effort>`. Older Codex and Claude Code IDs such as
-`gpt-5.6-luna-low` and `sonnet-high` keep working. Existing Gemini CLI configurations are migrated
-to Antigravity CLI with a live, account-compatible model.
+`gpt-5.6-luna-low` and `sonnet-high` keep working.
 
 Antigravity generation runs with `--sandbox` in an empty workspace and an isolated temporary
 profile. AI Git installs deny-all permissions and a deny-all tool hook for the invocation, disables
