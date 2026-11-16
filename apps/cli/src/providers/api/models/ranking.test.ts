@@ -121,6 +121,29 @@ describe("provider model ranking", () => {
     expect(ranked.map((m) => m.id)).toEqual(["gpt-5"]);
   });
 
+  it("drops models that cannot output text before choosing what replaces legacy models", () => {
+    const catalog = createCatalogFromRaw(
+      {
+        openai: {
+          models: {
+            "gpt-4o": { last_updated: "2024-08-06", modalities: { output: ["text"] } },
+            "gpt-image-2": { last_updated: "2026-04-21", modalities: { output: ["image"] } },
+          },
+        },
+      },
+      "snapshot",
+    );
+    const ranked = rankProviderModels(
+      "openai",
+      [
+        { id: "gpt-4o", name: "GPT-4o" },
+        { id: "gpt-image-2", name: "GPT Image 2" },
+      ],
+      catalog,
+    );
+    expect(ranked.map((m) => m.id)).toEqual(["gpt-4o"]);
+  });
+
   it("keeps legacy models when the provider returns nothing newer", () => {
     const catalog = testCatalog();
     const ranked = rankProviderModels("openai", [{ id: "gpt-4", name: "GPT-4" }], catalog);

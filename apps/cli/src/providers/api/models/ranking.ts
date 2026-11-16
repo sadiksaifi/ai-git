@@ -1,5 +1,5 @@
 import type { APIModelDefinition } from "../../types.ts";
-import { getCatalogModelMetadata, isDeprecatedModel } from "./catalog.ts";
+import { getCatalogModelMetadata, isDeprecatedModel, isNonTextModel } from "./catalog.ts";
 import { MODEL_TIER_ORDER, PROVIDER_MODEL_RULES, matchesProviderRules } from "./provider-rules.ts";
 import type { ModelCatalog, ModelTier, RankedModel, SupportedAPIProviderId } from "./types.ts";
 
@@ -28,10 +28,12 @@ function rankModelsDetailed(
         providerRank,
         knownInCatalog: metadata !== null,
         deprecated: isDeprecatedModel(metadata),
+        nonText: isNonTextModel(metadata),
         updatedAt,
       };
     })
-    .filter((model) => !model.deprecated);
+    // Commit messages need text output; drop deprecated and image-only models.
+    .filter((model) => !model.deprecated && !model.nonText);
 
   // Hide legacy models unless the provider returns nothing newer.
   const current = ranked.some((model) => model.tier !== "legacy")

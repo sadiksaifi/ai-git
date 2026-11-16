@@ -27,6 +27,8 @@ export interface CatalogModelDefinition {
   reasoningEfforts?: string[];
   /** USD per million tokens */
   cost?: { input?: number; output?: number };
+  /** Output modalities from models.dev (e.g. ["text"], ["image"]) */
+  outputModalities?: string[];
 }
 
 export interface ProviderModelCatalog {

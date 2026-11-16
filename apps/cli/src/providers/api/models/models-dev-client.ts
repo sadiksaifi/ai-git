@@ -23,6 +23,7 @@ export interface ModelsDevRawModel {
   family?: string;
   reasoning_options?: Array<{ type?: string; values?: unknown }>;
   cost?: { input?: number; output?: number };
+  modalities?: { input?: unknown; output?: unknown };
 }
 
 interface ModelsDevRawProvider {
@@ -66,6 +67,9 @@ export function toCatalogModelDefinition(
 ): CatalogModelDefinition {
   const reasoningEfforts = extractReasoningEfforts(model.reasoning_options);
   const cost = extractCost(model.cost);
+  const outputModalities = Array.isArray(model.modalities?.output)
+    ? model.modalities.output.filter((value): value is string => typeof value === "string")
+    : undefined;
 
   return {
     id,
@@ -78,6 +82,7 @@ export function toCatalogModelDefinition(
     ...(typeof model.family === "string" && model.family ? { family: model.family } : {}),
     ...(reasoningEfforts ? { reasoningEfforts } : {}),
     ...(cost ? { cost } : {}),
+    ...(outputModalities?.length ? { outputModalities } : {}),
   };
 }
 

@@ -225,6 +225,11 @@ export function isDeprecatedModel(metadata: CatalogModelDefinition | null): bool
   return metadata?.status === "deprecated";
 }
 
+/** True when models.dev says the model cannot output text, e.g. image-only models. */
+export function isNonTextModel(metadata: CatalogModelDefinition | null): boolean {
+  return Boolean(metadata?.outputModalities && !metadata.outputModalities.includes("text"));
+}
+
 export function clearModelCatalogForTests(): void {
   inMemoryCatalog = null;
   inFlightCatalog = null;

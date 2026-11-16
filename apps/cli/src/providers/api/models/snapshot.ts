@@ -20,6 +20,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 10,
           output: 50,
         },
+        outputModalities: ["text"],
       },
       "claude-fable-5-1": {
         id: "claude-fable-5-1",
@@ -34,6 +35,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 10,
           output: 50,
         },
+        outputModalities: ["text"],
       },
       "claude-fable-5-2": {
         id: "claude-fable-5-2",
@@ -48,6 +50,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 8,
           output: 40,
         },
+        outputModalities: ["text"],
       },
       "claude-haiku-4-5": {
         id: "claude-haiku-4-5",
@@ -61,6 +64,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1,
           output: 5,
         },
+        outputModalities: ["text"],
       },
       "claude-haiku-4-5-20251001": {
         id: "claude-haiku-4-5-20251001",
@@ -74,6 +78,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1,
           output: 5,
         },
+        outputModalities: ["text"],
       },
       "claude-haiku-5-5": {
         id: "claude-haiku-5-5",
@@ -88,6 +93,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.1,
           output: 0.5,
         },
+        outputModalities: ["text"],
       },
       "claude-opus-4-5": {
         id: "claude-opus-4-5",
@@ -102,6 +108,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 5,
           output: 25,
         },
+        outputModalities: ["text"],
       },
       "claude-opus-4-5-20251101": {
         id: "claude-opus-4-5-20251101",
@@ -116,6 +123,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 5,
           output: 25,
         },
+        outputModalities: ["text"],
       },
       "claude-opus-4-6": {
         id: "claude-opus-4-6",
@@ -130,6 +138,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 5,
           output: 25,
         },
+        outputModalities: ["text"],
       },
       "claude-opus-4-7": {
         id: "claude-opus-4-7",
@@ -144,6 +153,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 5,
           output: 25,
         },
+        outputModalities: ["text"],
       },
       "claude-opus-4-8": {
         id: "claude-opus-4-8",
@@ -158,6 +168,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 5,
           output: 25,
         },
+        outputModalities: ["text"],
       },
       "claude-opus-5": {
         id: "claude-opus-5",
@@ -172,6 +183,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 5,
           output: 25,
         },
+        outputModalities: ["text"],
       },
       "claude-opus-5-5": {
         id: "claude-opus-5-5",
@@ -186,6 +198,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 4,
           output: 20,
         },
+        outputModalities: ["text"],
       },
       "claude-sonnet-4-5": {
         id: "claude-sonnet-4-5",
@@ -200,6 +213,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 3,
           output: 15,
         },
+        outputModalities: ["text"],
       },
       "claude-sonnet-4-5-20250929": {
         id: "claude-sonnet-4-5-20250929",
@@ -214,6 +228,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 3,
           output: 15,
         },
+        outputModalities: ["text"],
       },
       "claude-sonnet-4-6": {
         id: "claude-sonnet-4-6",
@@ -228,6 +243,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 3,
           output: 15,
         },
+        outputModalities: ["text"],
       },
       "claude-sonnet-5": {
         id: "claude-sonnet-5",
@@ -242,6 +258,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2,
           output: 10,
         },
+        outputModalities: ["text"],
       },
       "claude-sonnet-5-5": {
         id: "claude-sonnet-5-5",
@@ -256,6 +273,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2,
           output: 10,
         },
+        outputModalities: ["text"],
       },
     },
   },
@@ -274,6 +292,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 5,
           output: 10,
         },
+        outputModalities: ["text", "image"],
       },
       "gpt-3.5-turbo": {
         id: "gpt-3.5-turbo",
@@ -288,6 +307,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.5,
           output: 1.5,
         },
+        outputModalities: ["text"],
       },
       "gpt-4": {
         id: "gpt-4",
@@ -302,6 +322,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 30,
           output: 60,
         },
+        outputModalities: ["text"],
       },
       "gpt-4-turbo": {
         id: "gpt-4-turbo",
@@ -316,6 +337,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 10,
           output: 30,
         },
+        outputModalities: ["text"],
       },
       "gpt-4.1": {
         id: "gpt-4.1",
@@ -329,6 +351,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2,
           output: 8,
         },
+        outputModalities: ["text"],
       },
       "gpt-4.1-mini": {
         id: "gpt-4.1-mini",
@@ -342,6 +365,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.4,
           output: 1.6,
         },
+        outputModalities: ["text"],
       },
       "gpt-4.1-nano": {
         id: "gpt-4.1-nano",
@@ -356,6 +380,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.1,
           output: 0.4,
         },
+        outputModalities: ["text"],
       },
       "gpt-4o": {
         id: "gpt-4o",
@@ -369,6 +394,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2.5,
           output: 10,
         },
+        outputModalities: ["text"],
       },
       "gpt-4o-2024-05-13": {
         id: "gpt-4o-2024-05-13",
@@ -383,6 +409,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 5,
           output: 15,
         },
+        outputModalities: ["text"],
       },
       "gpt-4o-2024-08-06": {
         id: "gpt-4o-2024-08-06",
@@ -396,6 +423,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2.5,
           output: 10,
         },
+        outputModalities: ["text"],
       },
       "gpt-4o-2024-11-20": {
         id: "gpt-4o-2024-11-20",
@@ -409,6 +437,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2.5,
           output: 10,
         },
+        outputModalities: ["text"],
       },
       "gpt-4o-mini": {
         id: "gpt-4o-mini",
@@ -422,6 +451,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.15,
           output: 0.6,
         },
+        outputModalities: ["text"],
       },
       "gpt-5": {
         id: "gpt-5",
@@ -436,6 +466,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1.25,
           output: 10,
         },
+        outputModalities: ["text"],
       },
       "gpt-5-mini": {
         id: "gpt-5-mini",
@@ -450,6 +481,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.25,
           output: 2,
         },
+        outputModalities: ["text"],
       },
       "gpt-5-nano": {
         id: "gpt-5-nano",
@@ -464,6 +496,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.05,
           output: 0.4,
         },
+        outputModalities: ["text"],
       },
       "gpt-5-pro": {
         id: "gpt-5-pro",
@@ -478,6 +511,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 15,
           output: 120,
         },
+        outputModalities: ["text"],
       },
       "gpt-5.1": {
         id: "gpt-5.1",
@@ -492,6 +526,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1.25,
           output: 10,
         },
+        outputModalities: ["text"],
       },
       "gpt-5.2": {
         id: "gpt-5.2",
@@ -506,6 +541,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1.75,
           output: 14,
         },
+        outputModalities: ["text"],
       },
       "gpt-5.2-pro": {
         id: "gpt-5.2-pro",
@@ -520,6 +556,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 21,
           output: 168,
         },
+        outputModalities: ["text"],
       },
       "gpt-5.3-codex": {
         id: "gpt-5.3-codex",
@@ -534,6 +571,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1.75,
           output: 14,
         },
+        outputModalities: ["text"],
       },
       "gpt-5.3-codex-spark": {
         id: "gpt-5.3-codex-spark",
@@ -548,6 +586,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1.75,
           output: 14,
         },
+        outputModalities: ["text"],
       },
       "gpt-5.4": {
         id: "gpt-5.4",
@@ -562,6 +601,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2.5,
           output: 15,
         },
+        outputModalities: ["text"],
       },
       "gpt-5.4-mini": {
         id: "gpt-5.4-mini",
@@ -576,6 +616,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.75,
           output: 4.5,
         },
+        outputModalities: ["text"],
       },
       "gpt-5.4-nano": {
         id: "gpt-5.4-nano",
@@ -590,6 +631,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.2,
           output: 1.25,
         },
+        outputModalities: ["text"],
       },
       "gpt-5.4-pro": {
         id: "gpt-5.4-pro",
@@ -604,6 +646,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 30,
           output: 180,
         },
+        outputModalities: ["text"],
       },
       "gpt-5.5": {
         id: "gpt-5.5",
@@ -618,6 +661,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 5,
           output: 30,
         },
+        outputModalities: ["text"],
       },
       "gpt-5.5-pro": {
         id: "gpt-5.5-pro",
@@ -632,6 +676,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 30,
           output: 180,
         },
+        outputModalities: ["text"],
       },
       "gpt-5.6": {
         id: "gpt-5.6",
@@ -646,6 +691,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 4,
           output: 20,
         },
+        outputModalities: ["text"],
       },
       "gpt-5.6-luna": {
         id: "gpt-5.6-luna",
@@ -660,6 +706,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.2,
           output: 1.2,
         },
+        outputModalities: ["text"],
       },
       "gpt-5.6-sol": {
         id: "gpt-5.6-sol",
@@ -674,6 +721,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 4,
           output: 20,
         },
+        outputModalities: ["text"],
       },
       "gpt-5.6-terra": {
         id: "gpt-5.6-terra",
@@ -688,6 +736,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2,
           output: 12,
         },
+        outputModalities: ["text"],
       },
       "gpt-6-astra": {
         id: "gpt-6-astra",
@@ -702,6 +751,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 10,
           output: 50,
         },
+        outputModalities: ["text"],
       },
       "gpt-6-luna": {
         id: "gpt-6-luna",
@@ -716,6 +766,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.1,
           output: 0.5,
         },
+        outputModalities: ["text"],
       },
       "gpt-6-sol": {
         id: "gpt-6-sol",
@@ -730,6 +781,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2,
           output: 10,
         },
+        outputModalities: ["text"],
       },
       "gpt-6.1-sol": {
         id: "gpt-6.1-sol",
@@ -744,6 +796,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2,
           output: 10,
         },
+        outputModalities: ["text"],
       },
       "gpt-6.1-terra": {
         id: "gpt-6.1-terra",
@@ -758,6 +811,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1,
           output: 5,
         },
+        outputModalities: ["text"],
       },
       "gpt-daybreak-blue-latest": {
         id: "gpt-daybreak-blue-latest",
@@ -772,6 +826,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 4,
           output: 20,
         },
+        outputModalities: ["text"],
       },
       "gpt-daybreak-red-latest": {
         id: "gpt-daybreak-red-latest",
@@ -786,6 +841,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 12.5,
           output: 75,
         },
+        outputModalities: ["text"],
       },
       "gpt-image-1-mini": {
         id: "gpt-image-1-mini",
@@ -796,6 +852,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         reasoning: false,
         toolCall: false,
         family: "gpt-image",
+        outputModalities: ["text", "image"],
       },
       "gpt-image-1.5": {
         id: "gpt-image-1.5",
@@ -810,6 +867,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 5,
           output: 10,
         },
+        outputModalities: ["text", "image"],
       },
       "gpt-image-2": {
         id: "gpt-image-2",
@@ -819,6 +877,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
         reasoning: false,
         toolCall: false,
         family: "gpt-image",
+        outputModalities: ["image"],
       },
       "gpt-realtime-2.1": {
         id: "gpt-realtime-2.1",
@@ -833,6 +892,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 4,
           output: 24,
         },
+        outputModalities: ["text", "audio"],
       },
       o1: {
         id: "o1",
@@ -848,6 +908,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 15,
           output: 60,
         },
+        outputModalities: ["text"],
       },
       "o1-pro": {
         id: "o1-pro",
@@ -863,6 +924,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 150,
           output: 600,
         },
+        outputModalities: ["text"],
       },
       o3: {
         id: "o3",
@@ -877,6 +939,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2,
           output: 8,
         },
+        outputModalities: ["text"],
       },
       "o3-mini": {
         id: "o3-mini",
@@ -892,6 +955,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1.1,
           output: 4.4,
         },
+        outputModalities: ["text"],
       },
       "o3-pro": {
         id: "o3-pro",
@@ -906,6 +970,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 20,
           output: 80,
         },
+        outputModalities: ["text"],
       },
       "o4-mini": {
         id: "o4-mini",
@@ -921,6 +986,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1.1,
           output: 4.4,
         },
+        outputModalities: ["text"],
       },
       "text-embedding-3-large": {
         id: "text-embedding-3-large",
@@ -934,6 +1000,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.13,
           output: 0,
         },
+        outputModalities: ["text"],
       },
       "text-embedding-3-small": {
         id: "text-embedding-3-small",
@@ -947,6 +1014,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.02,
           output: 0,
         },
+        outputModalities: ["text"],
       },
       "text-embedding-ada-002": {
         id: "text-embedding-ada-002",
@@ -960,6 +1028,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.1,
           output: 0,
         },
+        outputModalities: ["text"],
       },
     },
   },
@@ -977,6 +1046,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2,
           output: 12,
         },
+        outputModalities: ["text", "image"],
       },
       "deep-research-preview-04-2026": {
         id: "deep-research-preview-04-2026",
@@ -990,6 +1060,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2,
           output: 12,
         },
+        outputModalities: ["text", "image"],
       },
       "gemini-2.5-computer-use-preview-10-2025": {
         id: "gemini-2.5-computer-use-preview-10-2025",
@@ -1003,6 +1074,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1.25,
           output: 10,
         },
+        outputModalities: ["text"],
       },
       "gemini-2.5-flash": {
         id: "gemini-2.5-flash",
@@ -1016,6 +1088,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.3,
           output: 2.5,
         },
+        outputModalities: ["text"],
       },
       "gemini-2.5-flash-image": {
         id: "gemini-2.5-flash-image",
@@ -1030,6 +1103,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.3,
           output: 2.5,
         },
+        outputModalities: ["text", "image"],
       },
       "gemini-2.5-flash-lite": {
         id: "gemini-2.5-flash-lite",
@@ -1043,6 +1117,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.1,
           output: 0.4,
         },
+        outputModalities: ["text"],
       },
       "gemini-2.5-flash-preview-tts": {
         id: "gemini-2.5-flash-preview-tts",
@@ -1056,6 +1131,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.5,
           output: 10,
         },
+        outputModalities: ["audio"],
       },
       "gemini-2.5-pro": {
         id: "gemini-2.5-pro",
@@ -1069,6 +1145,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1.25,
           output: 10,
         },
+        outputModalities: ["text"],
       },
       "gemini-2.5-pro-preview-tts": {
         id: "gemini-2.5-pro-preview-tts",
@@ -1082,6 +1159,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1,
           output: 20,
         },
+        outputModalities: ["audio"],
       },
       "gemini-3-flash-preview": {
         id: "gemini-3-flash-preview",
@@ -1096,6 +1174,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.5,
           output: 3,
         },
+        outputModalities: ["text"],
       },
       "gemini-3-pro-image": {
         id: "gemini-3-pro-image",
@@ -1110,6 +1189,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2,
           output: 12,
         },
+        outputModalities: ["text", "image"],
       },
       "gemini-3.1-flash-image": {
         id: "gemini-3.1-flash-image",
@@ -1124,6 +1204,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.5,
           output: 3,
         },
+        outputModalities: ["text", "image"],
       },
       "gemini-3.1-flash-lite": {
         id: "gemini-3.1-flash-lite",
@@ -1138,6 +1219,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.25,
           output: 1.5,
         },
+        outputModalities: ["text"],
       },
       "gemini-3.1-flash-lite-image": {
         id: "gemini-3.1-flash-lite-image",
@@ -1152,6 +1234,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.25,
           output: 1.5,
         },
+        outputModalities: ["text", "image"],
       },
       "gemini-3.1-flash-lite-preview": {
         id: "gemini-3.1-flash-lite-preview",
@@ -1167,6 +1250,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.25,
           output: 1.5,
         },
+        outputModalities: ["text"],
       },
       "gemini-3.1-flash-live-preview": {
         id: "gemini-3.1-flash-live-preview",
@@ -1181,6 +1265,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.75,
           output: 4.5,
         },
+        outputModalities: ["text", "audio"],
       },
       "gemini-3.1-flash-tts-preview": {
         id: "gemini-3.1-flash-tts-preview",
@@ -1194,6 +1279,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1,
           output: 20,
         },
+        outputModalities: ["audio"],
       },
       "gemini-3.1-pro-preview": {
         id: "gemini-3.1-pro-preview",
@@ -1208,6 +1294,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2,
           output: 12,
         },
+        outputModalities: ["text"],
       },
       "gemini-3.1-pro-preview-customtools": {
         id: "gemini-3.1-pro-preview-customtools",
@@ -1222,6 +1309,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2,
           output: 12,
         },
+        outputModalities: ["text"],
       },
       "gemini-3.5-flash": {
         id: "gemini-3.5-flash",
@@ -1236,6 +1324,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1.5,
           output: 9,
         },
+        outputModalities: ["text"],
       },
       "gemini-3.5-flash-lite": {
         id: "gemini-3.5-flash-lite",
@@ -1250,6 +1339,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.3,
           output: 2.5,
         },
+        outputModalities: ["text"],
       },
       "gemini-3.5-live-translate-preview": {
         id: "gemini-3.5-live-translate-preview",
@@ -1263,6 +1353,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 3.5,
           output: 21,
         },
+        outputModalities: ["audio", "text"],
       },
       "gemini-3.6-flash": {
         id: "gemini-3.6-flash",
@@ -1277,6 +1368,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.75,
           output: 3.75,
         },
+        outputModalities: ["text"],
       },
       "gemini-3.7-flash": {
         id: "gemini-3.7-flash",
@@ -1291,6 +1383,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.75,
           output: 3.75,
         },
+        outputModalities: ["text"],
       },
       "gemini-3.8-flash": {
         id: "gemini-3.8-flash",
@@ -1305,6 +1398,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.75,
           output: 3.75,
         },
+        outputModalities: ["text"],
       },
       "gemini-4-argon": {
         id: "gemini-4-argon",
@@ -1319,6 +1413,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2,
           output: 10,
         },
+        outputModalities: ["text"],
       },
       "gemini-4-carbon": {
         id: "gemini-4-carbon",
@@ -1333,6 +1428,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2,
           output: 10,
         },
+        outputModalities: ["text"],
       },
       "gemini-4-hydrogen": {
         id: "gemini-4-hydrogen",
@@ -1347,6 +1443,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1.5,
           output: 7.5,
         },
+        outputModalities: ["text"],
       },
       "gemini-embedding-001": {
         id: "gemini-embedding-001",
@@ -1360,6 +1457,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.15,
           output: 0,
         },
+        outputModalities: ["text"],
       },
       "gemini-embedding-2": {
         id: "gemini-embedding-2",
@@ -1373,6 +1471,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.2,
           output: 0,
         },
+        outputModalities: ["text"],
       },
       "gemini-flash-latest": {
         id: "gemini-flash-latest",
@@ -1387,6 +1486,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.75,
           output: 3.75,
         },
+        outputModalities: ["text"],
       },
       "gemini-flash-lite-latest": {
         id: "gemini-flash-lite-latest",
@@ -1401,6 +1501,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0.3,
           output: 2.5,
         },
+        outputModalities: ["text"],
       },
       "gemini-omni-flash-preview": {
         id: "gemini-omni-flash-preview",
@@ -1414,6 +1515,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 1.5,
           output: 17.5,
         },
+        outputModalities: ["video"],
       },
       "gemini-pro-latest": {
         id: "gemini-pro-latest",
@@ -1428,6 +1530,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 2,
           output: 12,
         },
+        outputModalities: ["text"],
       },
       "gemma-4-26b-a4b-it": {
         id: "gemma-4-26b-a4b-it",
@@ -1441,6 +1544,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0,
           output: 0,
         },
+        outputModalities: ["text"],
       },
       "gemma-4-31b-it": {
         id: "gemma-4-31b-it",
@@ -1454,6 +1558,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0,
           output: 0,
         },
+        outputModalities: ["text"],
       },
       "lyria-3-clip-preview": {
         id: "lyria-3-clip-preview",
@@ -1467,6 +1572,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0,
           output: 0,
         },
+        outputModalities: ["text", "audio"],
       },
       "lyria-3-pro-preview": {
         id: "lyria-3-pro-preview",
@@ -1480,6 +1586,7 @@ export const MODEL_CATALOG_SNAPSHOT: Record<CatalogProviderId, SnapshotProviderD
           input: 0,
           output: 0,
         },
+        outputModalities: ["text", "audio"],
       },
     },
   },
