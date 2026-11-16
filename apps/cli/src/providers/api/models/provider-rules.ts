@@ -60,7 +60,7 @@ function baseGoogleModelId(id: string): string {
     .replace(/:(?:free|beta|alpha)$/i, "");
 }
 
-function isLegacyModel(metadata: CatalogModelDefinition | null): boolean {
+export function isLegacyModel(metadata: CatalogModelDefinition | null): boolean {
   if (!metadata?.lastUpdated) return false;
   // Stable cutoff: older catalog entries are treated as legacy in ranking.
   return metadata.lastUpdated < "2025-01-01";

@@ -31,33 +31,37 @@ function rankModelsDetailed(
         updatedAt,
       };
     })
-    .filter((model) => !model.deprecated)
-    .sort((a, b) => {
-      const tierDiff = (TIER_INDEX.get(a.tier) ?? 999) - (TIER_INDEX.get(b.tier) ?? 999);
-      if (tierDiff !== 0) return tierDiff;
+    .filter((model) => !model.deprecated);
 
-      const providerDiff = a.providerRank - b.providerRank;
-      if (providerDiff !== 0) return providerDiff;
+  // Hide legacy models unless the provider returns nothing newer.
+  const current = ranked.some((model) => model.tier !== "legacy")
+    ? ranked.filter((model) => model.tier !== "legacy")
+    : ranked;
 
-      if (a.knownInCatalog !== b.knownInCatalog) {
-        return a.knownInCatalog ? -1 : 1;
-      }
+  return current.sort((a, b) => {
+    const tierDiff = (TIER_INDEX.get(a.tier) ?? 999) - (TIER_INDEX.get(b.tier) ?? 999);
+    if (tierDiff !== 0) return tierDiff;
 
-      const updatedDiff = b.updatedAt.localeCompare(a.updatedAt);
-      if (updatedDiff !== 0) return updatedDiff;
+    const providerDiff = a.providerRank - b.providerRank;
+    if (providerDiff !== 0) return providerDiff;
 
-      // Variants of one model (e.g. dated snapshots): the canonical, shorter ID wins.
-      if (rules.dedupeKey(a.id) === rules.dedupeKey(b.id) && a.id.length !== b.id.length) {
-        return a.id.length - b.id.length;
-      }
+    if (a.knownInCatalog !== b.knownInCatalog) {
+      return a.knownInCatalog ? -1 : 1;
+    }
 
-      const nameDiff = a.name.localeCompare(b.name);
-      if (nameDiff !== 0) return nameDiff;
+    const updatedDiff = b.updatedAt.localeCompare(a.updatedAt);
+    if (updatedDiff !== 0) return updatedDiff;
 
-      return a.id.localeCompare(b.id);
-    });
+    // Variants of one model (e.g. dated snapshots): the canonical, shorter ID wins.
+    if (rules.dedupeKey(a.id) === rules.dedupeKey(b.id) && a.id.length !== b.id.length) {
+      return a.id.length - b.id.length;
+    }
 
-  return ranked;
+    const nameDiff = a.name.localeCompare(b.name);
+    if (nameDiff !== 0) return nameDiff;
+
+    return a.id.localeCompare(b.id);
+  });
 }
 
 export function rankProviderModels(

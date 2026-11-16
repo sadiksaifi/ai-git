@@ -93,7 +93,7 @@ describe("provider model ranking", () => {
     expect(ranked.map((m) => m.id)).toEqual(["gpt-5"]);
   });
 
-  it("uses deterministic tier ordering", () => {
+  it("uses deterministic tier ordering for current models", () => {
     const catalog = testCatalog();
     const models: APIModelDefinition[] = [
       { id: "o3", name: "o3" },
@@ -104,7 +104,27 @@ describe("provider model ranking", () => {
 
     const ranked = rankProviderModels("openai", models, catalog);
 
-    expect(ranked.map((m) => m.id)).toEqual(["gpt-5", "gpt-5-mini", "o3", "gpt-4"]);
+    expect(ranked.map((m) => m.id)).toEqual(["gpt-5", "gpt-5-mini", "o3"]);
+  });
+
+  it("hides legacy models", () => {
+    const catalog = testCatalog();
+    const ranked = rankProviderModels(
+      "openai",
+      [
+        { id: "gpt-4", name: "GPT-4" },
+        { id: "gpt-4o", name: "GPT-4o" },
+        { id: "gpt-5", name: "GPT-5" },
+      ],
+      catalog,
+    );
+    expect(ranked.map((m) => m.id)).toEqual(["gpt-5"]);
+  });
+
+  it("keeps legacy models when the provider returns nothing newer", () => {
+    const catalog = testCatalog();
+    const ranked = rankProviderModels("openai", [{ id: "gpt-4", name: "GPT-4" }], catalog);
+    expect(ranked.map((m) => m.id)).toEqual(["gpt-4"]);
   });
 
   it("appends unknown models alphabetically after known models", () => {

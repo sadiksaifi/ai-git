@@ -144,8 +144,8 @@ describe("API adapters use shared model ranking", () => {
 
     const models = await openAIAdapter.fetchModels("test-key");
 
-    // gpt-4o predates the legacy cutoff, so it ranks after current families.
-    expect(models.map((m) => m.id)).toEqual(["gpt-5", "gpt-5-mini", "gpt-4o"]);
+    // gpt-4o predates the legacy cutoff, so it is hidden.
+    expect(models.map((m) => m.id)).toEqual(["gpt-5", "gpt-5-mini"]);
   });
 
   it("anthropic adapter removes deprecated models and orders defaults first", async () => {
@@ -214,11 +214,10 @@ describe("API adapters use shared model ranking", () => {
 
     const models = await openRouterAdapter.fetchModels("test-key");
 
-    // gpt-4o predates the legacy cutoff, so it ranks after current families.
+    // gpt-4o predates the legacy cutoff, so it is hidden.
     expect(models.map((m) => m.id)).toEqual([
       "anthropic/claude-sonnet-4-5",
       "google/gemini-2.5-pro",
-      "openai/gpt-4o",
     ]);
   });
 

@@ -167,3 +167,41 @@ describe("rankDynamicCLIModels", () => {
     ]);
   });
 });
+
+describe("rankDynamicCLIModels outdated models", () => {
+  const catalog = createCatalogFromRaw(
+    {
+      anthropic: {
+        models: {
+          "claude-3-haiku": { last_updated: "2024-03-07" },
+          "claude-haiku-5-5": { last_updated: "2026-10-07" },
+          "claude-sonnet-4-5": { status: "deprecated", last_updated: "2025-09-29" },
+        },
+      },
+    },
+    "snapshot",
+  );
+
+  it("hides models that models.dev lists as legacy or deprecated", async () => {
+    const { rankDynamicCLIModels } = await import("./dynamic-cli-ranking.ts");
+    const ranked = rankDynamicCLIModels(
+      [
+        { id: "anthropic/claude-3-haiku", name: "old" },
+        { id: "anthropic/claude-sonnet-4-5#low", name: "deprecated" },
+        { id: "anthropic/claude-haiku-5-5#low", name: "current" },
+        { id: "custom/unknown-model", name: "unknown" },
+      ],
+      catalog,
+    );
+    expect(ranked.map((model) => model.id)).toEqual([
+      "anthropic/claude-haiku-5-5#low",
+      "custom/unknown-model",
+    ]);
+  });
+
+  it("keeps outdated models when nothing newer is available", async () => {
+    const { rankDynamicCLIModels } = await import("./dynamic-cli-ranking.ts");
+    const ranked = rankDynamicCLIModels([{ id: "anthropic/claude-3-haiku", name: "old" }], catalog);
+    expect(ranked.map((model) => model.id)).toEqual(["anthropic/claude-3-haiku"]);
+  });
+});
