@@ -9,7 +9,7 @@ A CLI tool that leverages AI to automatically generate semantically correct, con
 - 🤖 **AI-Powered** - Analyzes diffs and understands the _intent_ of your changes
 - 📝 **Conventional Commits** - Strictly adheres to [v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification
 - 🎨 **Interactive TUI** - Beautiful prompts for staging, editing, and confirming
-- 🔌 **Multiple Providers** - Claude Code, Antigravity CLI, Codex, Pi, OpenRouter, OpenAI, Anthropic, Google AI Studio, Cerebras
+- 🔌 **Multiple Providers** - Claude Code, Antigravity CLI, Codex, OpenCode, Pi, OpenRouter, OpenAI, Anthropic, Google AI Studio, Cerebras
 - 🔐 **Secure** - API keys stored in keychain, never in config files
 
 ## Installation
@@ -129,6 +129,7 @@ ai-git --dry-run -A
 | Claude Code      | `claude-code`       | CLI  | [Install CLI](https://claude.com/product/claude-code)                                           |
 | Antigravity CLI  | `antigravity-cli`   | CLI  | [Install CLI](https://antigravity.google/docs/cli/install)                              |
 | Codex            | `codex`             | CLI  | [Install CLI](https://learn.chatgpt.com/docs/codex/cli)                                  |
+| OpenCode         | `opencode`          | CLI  | [Install CLI](https://opencode.ai)                                                       |
 | Pi               | `pi`                | CLI  | [Install CLI](https://pi.dev)                                                            |
 | OpenRouter       | `openrouter`        | API  | [Get API Key](https://openrouter.ai/keys)                                               |
 | OpenAI           | `openai`            | API  | [Get API Key](https://platform.openai.com/api-keys)                                     |
@@ -147,11 +148,10 @@ what it can run right now, so new models show up without an AI Git release:
   [models.dev](https://models.dev) Anthropic catalog: one entry per current family alias
   (`haiku`, `sonnet`, and so on) for each effort level that `claude --help` accepts. It recommends
   the cheapest family at its lowest effort.
+- **OpenCode** lists each model's variants through `opencode api model.list`. It needs
+  OpenCode 2.2.6 or newer.
 - **Pi** reports each model's thinking levels through its RPC mode.
 - **Antigravity CLI** and the API providers list models from the CLI or API.
-
-OpenCode support is disabled until the adapter supports OpenCode 2.x
-([#141](https://github.com/sadiksaifi/ai-git/issues/141)).
 
 Model IDs with an effort or variant use `<model>#<effort>`. Older Codex and Claude Code IDs such as
 `gpt-5.6-luna-low` and `sonnet-high` keep working.
@@ -160,6 +160,10 @@ Antigravity generation runs with `--sandbox` in an empty workspace and an isolat
 profile. AI Git installs deny-all permissions and a deny-all tool hook for the invocation, disables
 slash-command expansion, validates structured output, and removes the temporary conversation data
 afterward.
+
+OpenCode generation runs `opencode run --standalone` in an empty temporary directory. AI Git passes
+an agent that denies every tool, turns off your OpenCode plugins, project config, and `AGENTS.md`
+instructions, and archives the session so it stays out of your session list.
 
 ## Configuration
 
