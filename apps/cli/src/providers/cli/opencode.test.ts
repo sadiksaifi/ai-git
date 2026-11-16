@@ -208,11 +208,14 @@ describe("opencodeAdapter", () => {
     expect(run.opts.env!.OPENCODE_DISABLE_PROJECT_CONFIG).toBe("1");
   });
 
-  it("runs in an empty temporary directory that is removed afterwards", async () => {
+  it("runs in an empty temporary directory, with PWD set to it, that is removed afterwards", async () => {
     await opencodeAdapter.invoke({ model: "opencode/big-pickle", system: "s", prompt: "p" });
 
     const cwd = spawnCalls[1]!.opts.cwd!;
     expect(cwd).not.toBe(process.cwd());
+    // OpenCode reads its working directory from PWD, so an inherited PWD would
+    // put the session in the user's repository.
+    expect(spawnCalls[1]!.opts.env!.PWD).toBe(cwd);
     expect(cwdExistedDuringRun).toBe(true);
     expect(existsSync(cwd)).toBe(false);
   });
@@ -239,6 +242,7 @@ describe("opencodeAdapter", () => {
 
     const list = spawnCalls[1]!;
     expect(list.cmd).toEqual(["opencode", "api", "model.list", "--standalone"]);
+    expect(list.opts.env!.PWD).toBe(list.opts.cwd);
     expect(JSON.parse(list.opts.env!.OPENCODE_CONFIG_CONTENT!)).toEqual(buildOpenCodeConfig());
     expect(list.opts.env!.OPENCODE_DISABLE_PROJECT_CONFIG).toBe("1");
     expect(models[0]).toEqual({

@@ -55,9 +55,15 @@ export function buildOpenCodeConfig(system?: string): Record<string, unknown> {
   };
 }
 
-function buildOpenCodeEnv(system?: string): Record<string, string | undefined> {
+/**
+ * OpenCode takes its working directory from PWD when it is set, so PWD must
+ * point at the spawn directory. An inherited PWD would put the session in the
+ * user's repository.
+ */
+export function buildOpenCodeEnv(cwd: string, system?: string): Record<string, string | undefined> {
   return {
     ...process.env,
+    PWD: cwd,
     OPENCODE_CONFIG_CONTENT: JSON.stringify(buildOpenCodeConfig(system)),
     OPENCODE_DISABLE_PROJECT_CONFIG: "1",
   };
@@ -230,7 +236,7 @@ export const opencodeAdapter: CLIProviderAdapter = {
         stdin: new Blob([prompt]),
         stdout: "pipe",
         stderr: "pipe",
-        env: buildOpenCodeEnv(system),
+        env: buildOpenCodeEnv(cwd, system),
       });
       return readProcessOutput(proc);
     });
@@ -259,7 +265,7 @@ export const opencodeAdapter: CLIProviderAdapter = {
         stdin: "ignore",
         stdout: "pipe",
         stderr: "pipe",
-        env: buildOpenCodeEnv(),
+        env: buildOpenCodeEnv(cwd),
       });
       return readProcessOutput(proc);
     });
