@@ -1,6 +1,7 @@
 export interface DynamicCLIModel {
   id: string;
   name: string;
+  isRecommended?: boolean;
 }
 
 export interface ParsedVariantModel {
