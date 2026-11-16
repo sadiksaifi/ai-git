@@ -105,12 +105,9 @@ describe("Pi version gate", () => {
 });
 
 describe("parsePiModelsTable", () => {
-  it("offers the standard levels for thinking models and none otherwise", () => {
+  it("offers bare model IDs because the table has no per-model thinking levels", () => {
     expect(parsePiModelsTable(table)).toEqual([
-      ...STANDARD_LEVELS.map((level) => ({
-        id: `openai-codex/gpt-5.6-luna#${level}`,
-        name: `openai-codex/gpt-5.6-luna (${level})`,
-      })),
+      { id: "openai-codex/gpt-5.6-luna", name: "openai-codex/gpt-5.6-luna" },
       { id: "anthropic/claude-haiku-4-5", name: "anthropic/claude-haiku-4-5" },
     ]);
   });
@@ -265,8 +262,8 @@ describe("piAdapter.invoke", () => {
 
     expect(spawnCalls[2]!.cmd).toEqual(["pi", "--list-models"]);
     expect(models[0]).toEqual({
-      id: "openai-codex/gpt-5.6-luna#off",
-      name: "openai-codex/gpt-5.6-luna (off)",
+      id: "openai-codex/gpt-5.6-luna",
+      name: "openai-codex/gpt-5.6-luna",
     });
   });
 });

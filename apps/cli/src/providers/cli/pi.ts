@@ -8,9 +8,6 @@ import { parseDynamicVariantModel, readProcessOutput, type DynamicCLIModel } fro
  */
 const PI_THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
 
-/** Levels Pi enables for any reasoning model unless its map disables them. */
-const STANDARD_PI_THINKING_LEVELS = ["off", "minimal", "low", "medium", "high"];
-
 const PI_RPC_TIMEOUT_MS = 15_000;
 
 /** First Pi release whose RPC model records carry `thinkingLevelMap`. */
@@ -198,15 +195,6 @@ function isSeparatorLine(line: string): boolean {
   return /^[\s─━\-+|│┌┐└┘├┤┬┴┼]+$/.test(line);
 }
 
-function buildPiTableOptions(provider: string, model: string, thinking: string): DynamicCLIModel[] {
-  const baseId = `${provider}/${model}`;
-  if (thinking.toLowerCase() !== "yes") {
-    return [{ id: baseId, name: baseId }];
-  }
-  // The table has no per-model level data; offer the levels Pi enables by default.
-  return buildPiOptions(baseId, baseId, STANDARD_PI_THINKING_LEVELS);
-}
-
 export function parsePiModelsTable(output: string): DynamicCLIModel[] {
   const rows = output
     .split(/\r?\n/)
@@ -231,6 +219,7 @@ export function parsePiModelsTable(output: string): DynamicCLIModel[] {
     dataStartIndex = headerIndex + 1;
   }
 
+  // The table has no per-model thinking levels, so offer each model at Pi's default level.
   const models: DynamicCLIModel[] = [];
   for (const { cells } of rows.slice(dataStartIndex)) {
     const provider = cells[providerIndex];
@@ -239,7 +228,8 @@ export function parsePiModelsTable(output: string): DynamicCLIModel[] {
       thinkingIndex >= 0 ? cells[thinkingIndex] : cells.find((cell) => /^(yes|no)$/i.test(cell));
 
     if (!provider || !model || !thinking) continue;
-    models.push(...buildPiTableOptions(provider, model, thinking));
+    const baseId = `${provider}/${model}`;
+    models.push({ id: baseId, name: baseId });
   }
 
   return models;
