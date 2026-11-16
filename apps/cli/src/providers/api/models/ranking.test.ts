@@ -144,6 +144,32 @@ describe("provider model ranking", () => {
     expect(ranked.map((m) => m.id)).toEqual(["gpt-4o"]);
   });
 
+  it("drops non-text models only on a direct catalog match", () => {
+    const catalog = createCatalogFromRaw(
+      {
+        google: {
+          models: {
+            "gemini-2.5-pro-preview-tts": {
+              last_updated: "2026-05-01",
+              modalities: { output: ["audio"] },
+            },
+            "gemini-2.5-pro": { last_updated: "2026-05-01", modalities: { output: ["text"] } },
+          },
+        },
+      },
+      "snapshot",
+    );
+    const ranked = rankProviderModels(
+      "openrouter",
+      [
+        { id: "google/gemini-2.5-pro-preview", name: "Gemini 2.5 Pro Preview" },
+        { id: "google/gemini-2.5-pro-preview-tts", name: "Gemini 2.5 Pro Preview TTS" },
+      ],
+      catalog,
+    );
+    expect(ranked.map((m) => m.id)).toEqual(["google/gemini-2.5-pro-preview"]);
+  });
+
   it("keeps legacy models when the provider returns nothing newer", () => {
     const catalog = testCatalog();
     const ranked = rankProviderModels("openai", [{ id: "gpt-4", name: "GPT-4" }], catalog);

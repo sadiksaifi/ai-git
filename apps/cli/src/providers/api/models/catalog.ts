@@ -206,11 +206,20 @@ function findCatalogModelId(provider: ProviderModelCatalog, modelId: string): st
   return bestMatch;
 }
 
-export function getCatalogModelMetadata(
+export interface CatalogModelMatch {
+  metadata: CatalogModelDefinition;
+  /**
+   * True when the catalog entry is the model itself or a base the model extends,
+   * such as a dated snapshot. False for looser substring matches.
+   */
+  direct: boolean;
+}
+
+export function getCatalogModelMatch(
   providerId: SupportedAPIProviderId,
   model: APIModelDefinition,
   catalog: ModelCatalog,
-): CatalogModelDefinition | null {
+): CatalogModelMatch | null {
   const resolved = resolveCatalogProvider(providerId, model);
   if (!resolved) return null;
 
@@ -218,7 +227,20 @@ export function getCatalogModelMetadata(
   const modelCatalogId = findCatalogModelId(providerCatalog, resolved.modelId);
   if (!modelCatalogId) return null;
 
-  return providerCatalog.models[modelCatalogId] || null;
+  const metadata = providerCatalog.models[modelCatalogId];
+  if (!metadata) return null;
+
+  const normalizedModel = normalizeModelKey(resolved.modelId);
+  const normalizedCatalog = normalizeModelKey(modelCatalogId);
+  return { metadata, direct: normalizedModel.startsWith(normalizedCatalog) };
+}
+
+export function getCatalogModelMetadata(
+  providerId: SupportedAPIProviderId,
+  model: APIModelDefinition,
+  catalog: ModelCatalog,
+): CatalogModelDefinition | null {
+  return getCatalogModelMatch(providerId, model, catalog)?.metadata ?? null;
 }
 
 export function isDeprecatedModel(metadata: CatalogModelDefinition | null): boolean {

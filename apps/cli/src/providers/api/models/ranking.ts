@@ -1,5 +1,5 @@
 import type { APIModelDefinition } from "../../types.ts";
-import { getCatalogModelMetadata, isDeprecatedModel, isNonTextModel } from "./catalog.ts";
+import { getCatalogModelMatch, isDeprecatedModel, isNonTextModel } from "./catalog.ts";
 import { MODEL_TIER_ORDER, PROVIDER_MODEL_RULES, matchesProviderRules } from "./provider-rules.ts";
 import type { ModelCatalog, ModelTier, RankedModel, SupportedAPIProviderId } from "./types.ts";
 
@@ -17,7 +17,8 @@ function rankModelsDetailed(
   const ranked = models
     .filter((model) => matchesProviderRules(providerId, model.id))
     .map((model) => {
-      const metadata = getCatalogModelMetadata(providerId, model, catalog);
+      const match = getCatalogModelMatch(providerId, model, catalog);
+      const metadata = match?.metadata ?? null;
       const tier = rules.resolveTier({ providerId, model, metadata });
       const providerRank = rules.resolveProviderRank?.(model) ?? 0;
       const updatedAt = metadata?.lastUpdated || metadata?.releaseDate || "";
@@ -28,7 +29,8 @@ function rankModelsDetailed(
         providerRank,
         knownInCatalog: metadata !== null,
         deprecated: isDeprecatedModel(metadata),
-        nonText: isNonTextModel(metadata),
+        // A loose match can point at a sibling such as a "-tts" variant, so only trust direct matches.
+        nonText: Boolean(match?.direct) && isNonTextModel(metadata),
         updatedAt,
       };
     })
