@@ -85,9 +85,12 @@ No provider has a hardcoded model list. CLI providers list models during `config
   verified). OpenCode 1.x ignores the `agents` config, so generation checks the version too.
   Generation runs `opencode serve --stdio` and drives the session API (create, archive, prompt,
   poll the newest `idle` message, read the newest assistant message, delete), so no session stays
-  in the user's OpenCode database. Ctrl-C deletes the session; a later run deletes sessions left by
-  a killed run. The system prompt's `{` is written as `\u007b` because OpenCode substitutes
-  `{env:...}` and `{file:...}` in config text. Requests use `node:http`, which ignores HTTP_PROXY. Both calls run in
+  in the user's OpenCode database. While a generation runs, SIGINT, SIGTERM, SIGHUP, and
+  `process.exit` (the spinner exits on Ctrl-C without a signal) first delete the session and kill
+  the server; a later run deletes sessions left by a killed run. The system prompt's `{` is written as `\u007b` because OpenCode substitutes
+  `{env:...}` and `{file:...}` in config text. Requests use `node:http` with `agent: false`, which ignores HTTP_PROXY even with
+  NODE_USE_ENV_PROXY. The user's OPENCODE_CONFIG_CONTENT (JSONC) is merged, and ai-git's policies
+  and plugin directives go after the user's, because the last matching rule in a document wins. Both calls run in
   one stable work directory under the ai-git cache, because OpenCode records a project per directory.
 - Pi: `get_available_models` over `pi --mode rpc` (falls back to `pi --list-models`)
 - Pi: requires 0.72.0 or newer for setup (first release with `thinkingLevelMap`)

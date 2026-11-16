@@ -183,7 +183,11 @@ describe("buildOpenCodeConfig", () => {
         { action: "mcp.use", resource: "*", effect: "deny" },
         { action: "skill.use", resource: "*", effect: "deny" },
       ],
-      plugins: ["-opencode.config.instruction", "-opencode.config.mcp"],
+      plugins: [
+        "-opencode.config.instruction",
+        "-opencode.config.reference",
+        "-opencode.config.mcp",
+      ],
       agents: {
         "ai-git": {
           system: "system rules",
@@ -202,7 +206,11 @@ describe("buildOpenCodeConfig", () => {
         { action: "mcp.use", resource: "*", effect: "deny" },
         { action: "skill.use", resource: "*", effect: "deny" },
       ],
-      plugins: ["-opencode.config.instruction", "-opencode.config.mcp"],
+      plugins: [
+        "-opencode.config.instruction",
+        "-opencode.config.reference",
+        "-opencode.config.mcp",
+      ],
     });
   });
 });
@@ -218,18 +226,30 @@ describe("buildOpenCodeConfigContent", () => {
     expect(JSON.parse(content)).toEqual(buildOpenCodeConfig(system));
   });
 
-  it("merges the user's OPENCODE_CONFIG_CONTENT and replaces its policies and plugins", () => {
-    const user = JSON.stringify({
-      providers: { local: { name: "local" } },
-      policies: [{ action: "plugin.use", resource: "*", effect: "allow" }],
-      plugins: ["acme.reviewer"],
-      agents: { reviewer: { system: "review" } },
-    });
+  it("keeps the user's OPENCODE_CONFIG_CONTENT rules and puts ai-git's last", () => {
+    const providerLimit = { action: "provider.use", resource: "work", effect: "deny" };
+    const pluginAllow = { action: "plugin.use", resource: "*", effect: "allow" };
+    // JSONC, which OpenCode accepts.
+    const user = `{
+      // local models
+      "providers": { "local": { "name": "local" } },
+      "policies": [${JSON.stringify(providerLimit)}, ${JSON.stringify(pluginAllow)}],
+      "plugins": ["acme.reviewer"],
+      "agents": { "reviewer": { "system": "review" } },
+    }`;
     const config = JSON.parse(buildOpenCodeConfigContent("rules", user));
 
     expect(config.providers).toEqual({ local: { name: "local" } });
-    expect(config.policies).toEqual(buildOpenCodeConfig().policies);
-    expect(config.plugins).toEqual(buildOpenCodeConfig().plugins);
+    // Within one document the last matching policy wins.
+    expect(config.policies).toEqual([
+      providerLimit,
+      pluginAllow,
+      ...(buildOpenCodeConfig().policies as unknown[]),
+    ]);
+    expect(config.plugins).toEqual([
+      "acme.reviewer",
+      ...(buildOpenCodeConfig().plugins as unknown[]),
+    ]);
     expect(Object.keys(config.agents)).toEqual(["reviewer", "ai-git"]);
   });
 
@@ -305,7 +325,7 @@ describe("opencodeAdapter", () => {
   let version = "opencode v2.3.0\n";
   let idle: Record<string, unknown> = { type: "idle", outcome: "succeeded" };
   let pollsBeforeIdle = 0;
-  let sessionList: unknown[] = [];
+  let sessionList: Record<string, unknown>[] = [];
 
   beforeEach(() => {
     spawnCalls = [];
@@ -335,7 +355,12 @@ describe("opencodeAdapter", () => {
           return Response.json({ data: { id: "ses_test" } });
         }
         if (request.method === "GET" && url.pathname === "/api/session") {
-          return Response.json({ data: sessionList });
+          const archived = url.searchParams.get("archived") === "true";
+          return Response.json({
+            data: sessionList.filter(
+              (session) => ((session as { archived?: boolean }).archived ?? true) === archived,
+            ),
+          });
         }
         if (request.method === "GET" && url.searchParams.get("type") === "idle") {
           if (pollsBeforeIdle > 0) {
@@ -412,6 +437,7 @@ describe("opencodeAdapter", () => {
     const directory = getOpenCodeWorkDirectory();
     expect(apiRequests.map((request) => `${request.method} ${request.path}`)).toEqual([
       `GET /api/session?archived=true&limit=50&directory=${encodeURIComponent(directory)}`,
+      `GET /api/session?archived=false&limit=50&directory=${encodeURIComponent(directory)}`,
       "POST /api/session",
       "PATCH /api/session/ses_test",
       "POST /api/session/ses_test/prompt",
@@ -420,15 +446,15 @@ describe("opencodeAdapter", () => {
       "GET /api/session/ses_test/message?type=assistant&order=desc&limit=1",
       "DELETE /api/session/ses_test",
     ]);
-    expect(apiRequests[1]!.body).toEqual({
+    expect(apiRequests[2]!.body).toEqual({
       title: "ai-git",
       agent: "ai-git",
       model: { providerID: "openai", id: "gpt-6-luna", variant: "low" },
       permissions: [{ action: "*", resource: "*", effect: "deny" }],
       location: { directory },
     });
-    expect(apiRequests[2]!.body).toEqual({ archived: true });
-    expect(apiRequests[3]!.body).toEqual({ text: "--diff context", delivery: "steer" });
+    expect(apiRequests[3]!.body).toEqual({ archived: true });
+    expect(apiRequests[4]!.body).toEqual({ text: "--diff context", delivery: "steer" });
 
     const password = spawnCalls[1]!.opts.env!.OPENCODE_PASSWORD!;
     for (const request of apiRequests) {
@@ -450,6 +476,15 @@ describe("opencodeAdapter", () => {
         time: { created: Date.now() - 60 * 60_000 },
       },
       {
+        // Killed between creating and archiving the session.
+        id: "ses_unarchived",
+        archived: false,
+        title: "ai-git",
+        agent: "ai-git",
+        location: { directory },
+        time: { created: Date.now() - 60 * 60_000 },
+      },
+      {
         id: "ses_other_terminal",
         title: "ai-git",
         agent: "ai-git",
@@ -463,6 +498,7 @@ describe("opencodeAdapter", () => {
     const deletes = apiRequests.filter((request) => request.method === "DELETE");
     expect(deletes.map((request) => request.path)).toEqual([
       "/api/session/ses_left",
+      "/api/session/ses_unarchived",
       "/api/session/ses_test",
     ]);
   });
@@ -497,6 +533,20 @@ describe("opencodeAdapter", () => {
     ).rejects.toThrow("OpenCode CLI error:\nFree usage limit reached.");
     expect(apiRequests.at(-1)).toMatchObject({ method: "DELETE", path: "/api/session/ses_test" });
     expect(serverProcess!.stdinEnded).toBe(true);
+  });
+
+  it("explains the failure when OpenCode's background service takes over the session", async () => {
+    idle = { type: "idle", outcome: "failed", error: { message: 'Agent not found: "ai-git"' } };
+
+    await expect(
+      opencodeAdapter.invoke({ model: "opencode/big-pickle", system: "s", prompt: "p" }),
+    ).rejects.toThrow("OpenCode's background service started during generation");
+  });
+
+  it("restores process.exit when generation ends", async () => {
+    const exit = process.exit;
+    await opencodeAdapter.invoke({ model: "opencode/big-pickle", system: "s", prompt: "p" });
+    expect(process.exit).toBe(exit);
   });
 
   it("rejects a model ID without a provider before starting a server", async () => {

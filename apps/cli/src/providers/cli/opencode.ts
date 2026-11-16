@@ -30,10 +30,15 @@ const OPENCODE_POLICIES = [
 
 /**
  * Built-in plugins to turn off. `opencode.config.instruction` adds AGENTS.md
- * and other instruction files to the prompt, and `opencode.config.mcp`
- * registers the user's MCP servers.
+ * and other instruction files to the prompt, `opencode.config.reference` adds
+ * the user's references, and `opencode.config.mcp` registers the user's MCP
+ * servers.
  */
-const OPENCODE_PLUGINS = ["-opencode.config.instruction", "-opencode.config.mcp"];
+const OPENCODE_PLUGINS = [
+  "-opencode.config.instruction",
+  "-opencode.config.reference",
+  "-opencode.config.mcp",
+];
 
 interface OpenCodeModelRecord {
   id?: unknown;
@@ -53,18 +58,22 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * Config passed through OPENCODE_CONFIG_CONTENT. OpenCode reads it only in the
  * process that loads config, so every call starts a private server instead of
  * using the shared background service. `base` is the user's own
- * OPENCODE_CONFIG_CONTENT, kept so providers defined there still work; its
- * policies and plugin directives are replaced by ai-git's.
+ * OPENCODE_CONFIG_CONTENT, kept so providers and policies defined there still
+ * apply. ai-git's policies and plugin directives go after the user's: within
+ * one config document the last matching rule wins, so the user's other rules,
+ * such as `provider.use` limits, still hold.
  */
 export function buildOpenCodeConfig(
   system?: string,
   base: Record<string, unknown> = {},
 ): Record<string, unknown> {
   const baseAgents = isPlainObject(base.agents) ? base.agents : {};
+  const basePolicies = Array.isArray(base.policies) ? base.policies : [];
+  const basePlugins = Array.isArray(base.plugins) ? base.plugins : [];
   return {
     ...base,
-    policies: OPENCODE_POLICIES,
-    plugins: OPENCODE_PLUGINS,
+    policies: [...basePolicies, ...OPENCODE_POLICIES],
+    plugins: [...basePlugins, ...OPENCODE_PLUGINS],
     ...(system === undefined
       ? {}
       : {
@@ -84,10 +93,11 @@ export function buildOpenCodeConfig(
 function parseUserConfigContent(content: string | undefined): Record<string, unknown> {
   if (!content) return {};
   try {
-    const parsed = JSON.parse(content) as unknown;
+    // OpenCode parses config as JSONC (comments and trailing commas).
+    const parsed = Bun.JSONC.parse(content) as unknown;
     return isPlainObject(parsed) ? parsed : {};
   } catch {
-    // JSONC or invalid content cannot be merged; OpenCode would reject it too.
+    // Content OpenCode could not parse either.
     return {};
   }
 }
@@ -288,6 +298,8 @@ const POLL_INTERVAL_MS = 100;
 interface OpenCodeServer {
   request(method: string, path: string, body?: unknown, timeoutMs?: number): Promise<unknown>;
   stop(): Promise<void>;
+  /** SIGKILL the server if it is still running. */
+  kill(): void;
 }
 
 /**
@@ -313,9 +325,9 @@ async function drain(stream: ReadableStream<Uint8Array>, sink = { text: "" }): P
 }
 
 /**
- * Send one request with node:http. Bun's fetch sends even loopback requests
- * through HTTP_PROXY, which would hand the server password and the prompt to
- * the proxy.
+ * Send one request with node:http and no agent. Bun's fetch sends even
+ * loopback requests through HTTP_PROXY, which would hand the server password
+ * and the prompt to the proxy.
  */
 function sendRequest(
   url: URL,
@@ -329,6 +341,8 @@ function sendRequest(
       url,
       {
         method,
+        // No agent: the global agent honours HTTP_PROXY when NODE_USE_ENV_PROXY is set.
+        agent: false,
         headers:
           body === undefined
             ? headers
@@ -461,6 +475,9 @@ async function startOpenCodeServer(directory: string, system: string): Promise<O
       return response.text ? (JSON.parse(response.text) as unknown) : undefined;
     },
     stop,
+    kill() {
+      if (exitCode === undefined) proc.kill("SIGKILL");
+    },
   };
 }
 
@@ -553,7 +570,7 @@ function readSessionId(response: unknown): string {
 
 /**
  * IDs of sessions in the work directory left by an ai-git run that was killed
- * before its delete ran, from `GET /api/session?archived=true&directory=...`.
+ * before its delete ran, from `GET /api/session?archived=...&directory=...`.
  */
 export function findStaleOpenCodeSessions(
   response: unknown,
@@ -571,16 +588,19 @@ export function findStaleOpenCodeSessions(
 }
 
 async function deleteStaleSessions(server: OpenCodeServer, directory: string): Promise<void> {
-  try {
-    const response = await server.request(
-      "GET",
-      `/api/session?archived=true&limit=50&directory=${encodeURIComponent(directory)}`,
-    );
-    for (const id of findStaleOpenCodeSessions(response, directory, Date.now())) {
-      await server.request("DELETE", `/api/session/${id}`).catch(() => {});
+  // A run killed between creating and archiving its session leaves it unarchived.
+  for (const archived of ["true", "false"]) {
+    try {
+      const response = await server.request(
+        "GET",
+        `/api/session?archived=${archived}&limit=50&directory=${encodeURIComponent(directory)}`,
+      );
+      for (const id of findStaleOpenCodeSessions(response, directory, Date.now())) {
+        await server.request("DELETE", `/api/session/${id}`).catch(() => {});
+      }
+    } catch {
+      // Best effort: a leftover session must not block generation.
     }
-  } catch {
-    // Best effort: a leftover session must not block generation.
   }
 }
 
@@ -591,7 +611,14 @@ async function waitForReply(server: OpenCodeServer, sessionId: string): Promise<
       await server.request("GET", `/api/session/${sessionId}/message?type=idle&order=desc&limit=1`),
     );
     if (idle) {
-      if (idle.error) throw new Error(`OpenCode CLI error:\n${idle.error}`);
+      if (idle.error) {
+        // OpenCode's background service resumes running sessions when it starts,
+        // and it has no ai-git agent.
+        const hint = idle.error.includes(`Agent not found: "${OPENCODE_AGENT}"`)
+          ? "\nOpenCode's background service started during generation and took over the session. Run ai-git again."
+          : "";
+        throw new Error(`OpenCode CLI error:\n${idle.error}${hint}`);
+      }
       return parseOpenCodeAssistantText(
         await server.request(
           "GET",
@@ -606,24 +633,53 @@ async function waitForReply(server: OpenCodeServer, sessionId: string): Promise<
   }
 }
 
+/** Never settles: used while guardExit finishes cleanup and exits. */
+const WAIT_FOR_EXIT = () => new Promise<never>(() => {});
+
+const EXIT_SIGNALS = { SIGINT: 130, SIGTERM: 143, SIGHUP: 129 } as const;
+
+interface ExitGuard {
+  /** True once ai-git has started exiting. */
+  readonly exiting: boolean;
+  remove(): void;
+}
+
 /**
- * Delete the session and stop the server when ai-git gets SIGINT or SIGTERM,
- * then exit. Returns the function that removes the handlers.
+ * Run `cleanup` before ai-git exits while a generation is in flight. The
+ * spinner puts the terminal in raw mode and calls `process.exit(0)` on Ctrl-C
+ * instead of raising SIGINT, so `process.exit` is wrapped as well as the
+ * signals. Cleanup gets INTERRUPT_CLEANUP_MS; then `kill` stops the server for
+ * good, because the detached server would outlive ai-git otherwise.
  */
-function onInterrupt(cleanup: () => Promise<void>): () => void {
-  let interrupted = false;
-  const handler = (signal: NodeJS.Signals) => {
-    if (interrupted) process.exit(signal === "SIGINT" ? 130 : 143);
-    interrupted = true;
-    void Promise.race([cleanup(), Bun.sleep(INTERRUPT_CLEANUP_MS)]).finally(() =>
-      process.exit(signal === "SIGINT" ? 130 : 143),
-    );
+function guardExit(cleanup: () => Promise<void>, kill: () => void): ExitGuard {
+  const originalExit = process.exit;
+  let exiting = false;
+  const exitAfterCleanup = (code: number) => {
+    if (exiting) originalExit.call(process, code);
+    exiting = true;
+    void Promise.race([cleanup(), Bun.sleep(INTERRUPT_CLEANUP_MS)]).finally(() => {
+      kill();
+      originalExit.call(process, code);
+    });
   };
-  process.on("SIGINT", handler);
-  process.on("SIGTERM", handler);
-  return () => {
-    process.off("SIGINT", handler);
-    process.off("SIGTERM", handler);
+  const handlers = Object.entries(EXIT_SIGNALS).map(([signal, code]) => {
+    const handler = () => exitAfterCleanup(code);
+    process.on(signal, handler);
+    return [signal, handler] as const;
+  });
+  const wrappedExit = ((code?: number | string | null) => {
+    exitAfterCleanup(typeof code === "number" ? code : Number(code ?? 0) || 0);
+  }) as typeof process.exit;
+  process.exit = wrappedExit;
+
+  return {
+    get exiting() {
+      return exiting;
+    },
+    remove() {
+      for (const [signal, handler] of handlers) process.off(signal, handler);
+      if (process.exit === wrappedExit) process.exit = originalExit;
+    },
   };
 }
 
@@ -656,7 +712,7 @@ export const opencodeAdapter: CLIProviderAdapter = {
         }
         await server.stop();
       })());
-    const removeInterruptHandlers = onInterrupt(cleanup);
+    const exitGuard = guardExit(cleanup, () => server.kill());
 
     try {
       await deleteStaleSessions(server, directory);
@@ -676,10 +732,20 @@ export const opencodeAdapter: CLIProviderAdapter = {
         text: prompt,
         delivery: "steer",
       });
-      return await waitForReply(server, sessionId);
+      const reply = await waitForReply(server, sessionId);
+      // ai-git is exiting; a reply that arrived during cleanup must not be committed.
+      if (exitGuard.exiting) await WAIT_FOR_EXIT();
+      return reply;
+    } catch (error) {
+      // ai-git is exiting and cleanup deleted the session; let the exit finish
+      // instead of reporting a failed generation.
+      if (exitGuard.exiting) await WAIT_FOR_EXIT();
+      throw error;
     } finally {
-      await cleanup();
-      removeInterruptHandlers();
+      if (!exitGuard.exiting) {
+        await cleanup();
+        exitGuard.remove();
+      }
     }
   },
 

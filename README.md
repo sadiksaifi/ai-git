@@ -165,11 +165,13 @@ OpenCode generation starts a private OpenCode server in an empty directory under
 Git passes an agent that denies every tool and policies that stop your OpenCode plugins, MCP servers,
 and skills from loading. A `plugin.use` or `mcp.use` allow policy in your own OpenCode config takes
 precedence over AI Git's, so plugins or MCP servers you allow there still load; tools stay denied.
-Project config and `AGENTS.md` instructions are turned off. AI Git deletes the session once the reply
-arrives or you press Ctrl-C. If AI Git is killed outright, the next run deletes the leftover session.
+Project config, `AGENTS.md` instructions, and your OpenCode references are turned off. AI Git deletes
+the session once the reply arrives or you press Ctrl-C. If AI Git is killed outright, the next run
+deletes the leftover session.
 
 Like any OpenCode server, the private server can run your due OpenCode schedules
-(`experimental.schedules`) when no other OpenCode server is running.
+(`experimental.schedules`) when no other OpenCode server is running. If OpenCode's background service
+starts while AI Git is generating, it takes over the session and the run fails; run AI Git again.
 
 ## Configuration
 
