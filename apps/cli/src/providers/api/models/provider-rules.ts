@@ -66,6 +66,11 @@ function isLegacyModel(metadata: CatalogModelDefinition | null): boolean {
   return metadata.lastUpdated < "2025-01-01";
 }
 
+/**
+ * Assign a ranking tier from model family names, not version numbers, so new
+ * releases in a known family rank correctly without code changes. Within a tier,
+ * ranking sorts newest first using models.dev dates.
+ */
 function resolveTierForCatalogProvider(
   catalogProvider: CatalogProviderId,
   modelId: string,
@@ -73,53 +78,56 @@ function resolveTierForCatalogProvider(
 ): ModelTier {
   const id = modelId.toLowerCase();
 
+  if (isLegacyModel(metadata)) {
+    return "legacy";
+  }
+
   if (catalogProvider === "anthropic") {
-    if (/haiku|mini|flash|lite/.test(id)) {
+    if (/claude-(?:instant|[12](?:\.\d)?(?:$|-)|3-(?:haiku|sonnet|opus))/.test(id)) {
+      return "legacy";
+    }
+    if (/haiku/.test(id)) {
       return "fast";
     }
-    if (/claude-sonnet-(?:5|4-[5-8])|claude-3-7-sonnet/.test(id)) {
+    if (/sonnet/.test(id)) {
       return "default";
     }
     if (/thinking|opus|fable/.test(id)) {
       return "reasoning";
     }
-    if (/claude-3-(haiku|sonnet|opus)/.test(id) || isLegacyModel(metadata)) {
-      return "legacy";
-    }
     return "other";
   }
 
   if (catalogProvider === "openai") {
+    if (/gpt-3\.5|gpt-4(?:$|-turbo|-\d{4})|0314|0613/.test(id)) {
+      return "legacy";
+    }
     if (/luna|mini|nano|flash|lite|spark/.test(id)) {
       return "fast";
-    }
-    if (
-      /^gpt-5(?:$|\.|-chat-latest|-pro)/.test(id) ||
-      /^gpt-4\.1$/.test(id) ||
-      /^gpt-4o$/.test(id)
-    ) {
-      return "default";
     }
     if (/^o\d|reason|deep-research|codex/.test(id)) {
       return "reasoning";
     }
-    if (/gpt-3\.5|gpt-4(?:$|-turbo)|preview|0314|0613/.test(id) || isLegacyModel(metadata)) {
+    if (/^(?:chat)?gpt-\d/.test(id)) {
+      return "default";
+    }
+    if (/preview/.test(id)) {
       return "legacy";
     }
     return "other";
   }
 
-  if (/flash-lite|flash/.test(id)) {
+  if (/gemini-1\.|gemini-2\.0/.test(id)) {
+    return "legacy";
+  }
+  if (/flash/.test(id)) {
     return "fast";
   }
-  if (/gemini-(3\.1-pro-preview|3-pro-preview|2\.5-pro)/.test(id)) {
+  if (/pro/.test(id)) {
     return "default";
   }
-  if (/thinking|pro/.test(id)) {
+  if (/thinking/.test(id)) {
     return "reasoning";
-  }
-  if (/gemini-1\.5|gemini-2\.0/.test(id) || isLegacyModel(metadata)) {
-    return "legacy";
   }
   return "other";
 }

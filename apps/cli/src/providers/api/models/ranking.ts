@@ -46,6 +46,11 @@ function rankModelsDetailed(
       const updatedDiff = b.updatedAt.localeCompare(a.updatedAt);
       if (updatedDiff !== 0) return updatedDiff;
 
+      // Variants of one model (e.g. dated snapshots): the canonical, shorter ID wins.
+      if (rules.dedupeKey(a.id) === rules.dedupeKey(b.id) && a.id.length !== b.id.length) {
+        return a.id.length - b.id.length;
+      }
+
       const nameDiff = a.name.localeCompare(b.name);
       if (nameDiff !== 0) return nameDiff;
 

@@ -280,4 +280,56 @@ describe("provider model ranking", () => {
       "gemini-3.7-flash",
     );
   });
+
+  it("ranks new releases in known families without version-specific rules", () => {
+    const catalog = createCatalogFromRaw(
+      {
+        anthropic: {
+          models: {
+            "claude-sonnet-7": { last_updated: "2027-06-01" },
+            "claude-opus-7": { last_updated: "2027-06-01" },
+          },
+        },
+        openai: {
+          models: {
+            "gpt-7": { last_updated: "2027-06-01" },
+            "gpt-7-luna": { last_updated: "2027-06-01" },
+            "gpt-7-codex": { last_updated: "2027-06-01" },
+          },
+        },
+        google: {
+          models: {
+            "gemini-5-pro": { last_updated: "2027-06-01" },
+            "gemini-5-flash": { last_updated: "2027-06-01" },
+          },
+        },
+      },
+      "snapshot",
+    );
+
+    const ids = (providerId: "anthropic" | "openai" | "google-ai-studio", list: string[]) =>
+      list.map((id) => ({ id, name: id }));
+
+    expect(
+      findRecommendedModel(
+        "anthropic",
+        ids("anthropic", ["claude-opus-7", "claude-sonnet-7"]),
+        catalog,
+      ),
+    ).toBe("claude-sonnet-7");
+    expect(
+      rankProviderModels(
+        "openai",
+        ids("openai", ["gpt-7-codex", "gpt-7-luna", "gpt-7"]),
+        catalog,
+      ).map((model) => model.id),
+    ).toEqual(["gpt-7", "gpt-7-luna", "gpt-7-codex"]);
+    expect(
+      findRecommendedModel(
+        "google-ai-studio",
+        ids("google-ai-studio", ["gemini-5-flash", "gemini-5-pro"]),
+        catalog,
+      ),
+    ).toBe("gemini-5-pro");
+  });
 });

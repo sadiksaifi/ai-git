@@ -8,6 +8,7 @@ import {
   formatProviderError,
 } from "./utils.ts";
 import { dedupeProviderModels, getModelCatalog, rankProviderModels } from "./models/index.ts";
+import type { ModelCatalog } from "./models/types.ts";
 
 // ==============================================================================
 // OPENAI API ADAPTER
@@ -29,57 +30,35 @@ interface OpenAIModelsResponse {
 
 /**
  * Get a human-readable name for an OpenAI model.
+ * Uses the models.dev name when the catalog lists the exact ID.
  */
-function getModelDisplayName(modelId: string): string {
-  // Convert model IDs to readable names
-  const nameMap: Record<string, string> = {
-    "gpt-4o": "GPT-4o",
-    "gpt-4o-mini": "GPT-4o Mini",
-    "gpt-4-turbo": "GPT-4 Turbo",
-    "gpt-4": "GPT-4",
-    "gpt-3.5-turbo": "GPT-3.5 Turbo",
-    o1: "o1 (Reasoning)",
-    "o1-mini": "o1 Mini (Reasoning)",
-    "o1-preview": "o1 Preview",
-    "o1-pro": "o1 Pro (Reasoning)",
-    o3: "o3 (Reasoning)",
-    "o3-mini": "o3 Mini (Reasoning)",
-    "o3-pro": "o3 Pro (Reasoning)",
-    "o4-mini": "o4 Mini (Reasoning)",
-    "gpt-4.1": "GPT-4.1",
-    "gpt-4.1-mini": "GPT-4.1 Mini",
-    "gpt-5": "GPT-5",
-    "gpt-5-mini": "GPT-5 Mini",
-    "gpt-5-pro": "GPT-5 Pro",
-    "gpt-5.2": "GPT-5.2",
-    "gpt-5.2-chat-latest": "GPT-5.2 Chat",
-  };
+export function getModelDisplayName(modelId: string, catalog: ModelCatalog): string {
+  const catalogName = catalog.providers.openai.models[modelId]?.name;
+  if (catalogName) return catalogName;
 
-  // Check for exact match
-  if (nameMap[modelId]) return nameMap[modelId];
-
-  // Check for prefix match
-  for (const [prefix, name] of Object.entries(nameMap)) {
-    if (modelId.startsWith(prefix)) {
-      const suffix = modelId.slice(prefix.length);
-      if (suffix) return `${name} ${suffix}`;
-      return name;
-    }
-  }
-
-  // Fall back to formatted ID
   return modelId
     .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => (/^gpt$/i.test(word) ? "GPT" : word.charAt(0).toUpperCase() + word.slice(1)))
     .join(" ");
 }
 
 /**
  * Check if a model ID is a reasoning model that doesn't support temperature.
- * Covers o-series (o1, o3, o4) and GPT-5 family (hybrid reasoning).
+ * Uses the models.dev `reasoning` flag when the catalog lists the model;
+ * otherwise treats o-series and GPT-5 or later as reasoning models.
  */
-function isReasoningModel(modelId: string): boolean {
-  return /^(o1|o3|o4|gpt-5)/.test(modelId);
+export function isReasoningModel(modelId: string, catalog: ModelCatalog | null): boolean {
+  const metadata = catalog?.providers.openai.models[modelId];
+  if (metadata) return metadata.reasoning;
+  return /^(?:o\d|gpt-(?:[5-9]|\d{2,}))/.test(modelId);
+}
+
+async function loadCatalogForInvoke(): Promise<ModelCatalog | null> {
+  try {
+    return await getModelCatalog({ signal: AbortSignal.timeout(2000) });
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -94,6 +73,7 @@ export const openAIAdapter: APIProviderAdapter = {
     const apiKey = await getApiKey("openai");
 
     const openai = createOpenAI({ apiKey });
+    const reasoning = isReasoningModel(model, await loadCatalogForInvoke());
 
     const { text } = await generateText({
       model: openai(model),
@@ -102,10 +82,10 @@ export const openAIAdapter: APIProviderAdapter = {
       maxOutputTokens: 1024,
       timeout: 60_000,
       maxRetries: 2,
-      ...(isReasoningModel(model) ? {} : { temperature: 0 }),
+      ...(reasoning ? {} : { temperature: 0 }),
       providerOptions: {
         openai: {
-          ...(isReasoningModel(model) ? { reasoningEffort: "low" as const } : {}),
+          ...(reasoning ? { reasoningEffort: "low" as const } : {}),
           store: false,
         },
       },
@@ -148,7 +128,7 @@ export const openAIAdapter: APIProviderAdapter = {
 
       const models: APIModelDefinition[] = data.data.map((m) => ({
         id: m.id,
-        name: getModelDisplayName(m.id),
+        name: getModelDisplayName(m.id, catalog),
       }));
 
       const ranked = rankProviderModels("openai", models, catalog);
