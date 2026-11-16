@@ -161,10 +161,10 @@ profile. AI Git installs deny-all permissions and a deny-all tool hook for the i
 slash-command expansion, validates structured output, and removes the temporary conversation data
 afterward.
 
-OpenCode generation runs `opencode run --standalone` in an empty temporary directory. AI Git passes
-an agent that denies every tool and policies that stop your OpenCode plugins, MCP servers, and skills
-from loading. Project config and `AGENTS.md` instructions are turned off, and the session is archived
-so it stays out of your session list.
+OpenCode generation starts a private OpenCode server in an empty directory under AI Git's cache. AI
+Git passes an agent that denies every tool and policies that stop your OpenCode plugins, MCP servers,
+and skills from loading. Project config and `AGENTS.md` instructions are turned off. AI Git deletes
+the session once the reply arrives, so nothing stays in your OpenCode history.
 
 ## Configuration
 

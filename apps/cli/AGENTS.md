@@ -81,9 +81,11 @@ No provider has a hardcoded model list. CLI providers list models during `config
 
 - Codex: `codex debug models` (falls back to `--bundled`)
 - Claude Code: models.dev Anthropic families plus the `--effort` levels from `claude --help`
-- OpenCode: `opencode api model.list --standalone`; requires 2.2.6 or newer (first release with
-  `opencode run --archived`). OpenCode 1.x ignores the `agents` config, so generation checks the
-  version too.
+- OpenCode: `opencode api model.list --standalone`; requires 2.2.6 or newer (oldest release
+  verified). OpenCode 1.x ignores the `agents` config, so generation checks the version too.
+  Generation runs `opencode serve --stdio` and drives the session API (create, archive, prompt,
+  poll messages, delete), so no session stays in the user's OpenCode database. Both calls run in
+  one stable work directory under the ai-git cache, because OpenCode records a project per directory.
 - Pi: `get_available_models` over `pi --mode rpc` (falls back to `pi --list-models`)
 - Pi: requires 0.72.0 or newer for setup (first release with `thinkingLevelMap`)
 - Antigravity CLI: its own listing command
