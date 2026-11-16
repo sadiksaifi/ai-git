@@ -37,7 +37,7 @@ error message templates, and utility functions.
 ## Adding a new provider
 
 1. Add a `ProviderDoc` (or `CLIProviderDoc` for CLI providers) to `PROVIDERS` in `src/providers.ts`
-2. The runtime provider registration stays in `apps/cli/src/providers/registry.ts`
+2. `apps/cli/src/providers/registry.ts` derives the runtime provider list from this record; add the adapter in `apps/cli`
 
 ## Conventions
 

@@ -98,19 +98,22 @@ Info:
 ai-git
 
 # Override provider for this run
-ai-git --provider antigravity-cli --model gemini-3.7-flash-low
+ai-git --provider antigravity-cli --model gemini-3.8-flash-low
 
-# Use Codex with reasoning effort baked in
-ai-git --provider codex --model gpt-5.6-luna-low
+# Use Codex with a reasoning effort
+ai-git --provider codex --model gpt-6.1-sol#low
+
+# Use Claude Code with an effort level
+ai-git --provider claude-code --model haiku#low
 
 # Use OpenCode with a runtime variant
 ai-git --provider opencode --model opencode/gpt-5-nano#minimal
 
 # Use Pi with a thinking level
-ai-git --provider pi --model openai-codex/gpt-5.6-luna#low
+ai-git --provider pi --model openai-codex/gpt-6.1-sol#low
 
 # Use OpenRouter
-ai-git --provider openrouter --model anthropic/claude-sonnet-4-6
+ai-git --provider openrouter --model anthropic/claude-sonnet-5-5
 
 # Exclude files/directories from staging
 ai-git -A --exclude "tests/" --exclude "*.test.ts"
@@ -139,12 +142,21 @@ ai-git --dry-run -A
 
 Configure with `ai-git configure`
 
-Codex defaults to `gpt-5.6-luna-low` and Claude Code defaults to `haiku` for fast,
-repeatable commit-message generation. Antigravity CLI, Pi, OpenCode, and API provider models are
-discovered at runtime. Antigravity recommends the newest Gemini Flash Low model available to the
-signed-in account. Existing Gemini CLI configurations are migrated to Antigravity CLI with a live,
-account-compatible model. Retired Codex configurations are migrated to the corresponding GPT-5.6
-family while preserving their supported effort level.
+AI Git ships with no hardcoded model list. When you run `ai-git configure`, it asks each tool
+what it can run right now, so new models show up without an AI Git release:
+
+- **Codex** reads `codex debug models`, the same catalog Codex uses for its own model picker. It
+  recommends Codex's first-listed model at its lowest effort.
+- **Claude Code** has no model listing command, so AI Git builds the choices from the
+  [models.dev](https://models.dev) Anthropic catalog: one entry per current family alias
+  (`haiku`, `sonnet`, and so on) for each effort level that `claude --help` accepts. It recommends
+  the cheapest family at its lowest effort.
+- **Pi** reports each model's thinking levels through its RPC mode.
+- **Antigravity CLI**, **OpenCode**, and the API providers list models from the CLI or API.
+
+Model IDs with an effort or variant use `<model>#<effort>`. Older Codex and Claude Code IDs such as
+`gpt-5.6-luna-low` and `sonnet-high` keep working. Existing Gemini CLI configurations are migrated
+to Antigravity CLI with a live, account-compatible model.
 
 Antigravity generation runs with `--sandbox` in an empty workspace and an isolated temporary
 profile. AI Git installs deny-all permissions and a deny-all tool hook for the invocation, disables
@@ -165,7 +177,7 @@ AI Git uses a **three-tier configuration system**:
 {
   "$schema": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
   "provider": "claude-code",
-  "model": "haiku",
+  "model": "haiku#low",
   "defaults": {
     "stageAll": false,
     "commit": false,
@@ -178,7 +190,7 @@ AI Git uses a **three-tier configuration system**:
 {
   "$schema": "https://raw.githubusercontent.com/sadiksaifi/ai-git/main/schema.json",
   "provider": "openrouter",
-  "model": "anthropic/claude-sonnet-4-6"
+  "model": "anthropic/claude-sonnet-5-5"
 }
 ```
 

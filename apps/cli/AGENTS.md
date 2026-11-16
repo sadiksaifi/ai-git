@@ -76,7 +76,17 @@ Two modes with unified adapter interface:
 - **CLI Mode** (`cli/`): Spawns installed binaries (`claude`, `agy`, `codex`, `opencode`, `pi`)
 - **API Mode** (`api/`): HTTP APIs via Vercel AI SDK (OpenRouter, OpenAI, Anthropic, Google AI Studio)
 
-Provider registry in `registry.ts` defines available providers and models.
+`registry.ts` derives the provider list from `@ai-git/meta` and marks recommended providers.
+No provider has a hardcoded model list. CLI providers list models during `configure`:
+
+- Codex: `codex debug models` (falls back to `--bundled`)
+- Claude Code: models.dev Anthropic families plus the `--effort` levels from `claude --help`
+- Pi: `get_available_models` over `pi --mode rpc` (falls back to `pi --list-models`)
+- Antigravity CLI and OpenCode: their own listing commands
+
+Model IDs with an effort or variant use `<model>#<effort>`. Codex and Claude Code still parse the
+legacy `<model>-<effort>` IDs that older releases wrote. Generation never re-validates CLI model IDs;
+the CLI reports unknown models.
 
 ### API Model Catalog (`src/providers/api/models/`)
 
@@ -168,12 +178,11 @@ expect(snap.output.pushed).toBe(true);
 
 ## Adding New Providers
 
-1. Add entry to `PROVIDERS` array in `src/providers/registry.ts`
-2. Create adapter in `src/providers/cli/` or `src/providers/api/`
-3. Register in the respective `index.ts`
+1. Add a provider doc to `PROVIDERS` in `packages/meta/src/providers.ts` (the runtime registry derives from it)
+2. Create an adapter in `src/providers/cli/` or `src/providers/api/`; CLI adapters must implement `fetchModels()`
+3. Register it in the respective `index.ts`
 4. If API provider behavior/ranking is affected, update `src/providers/api/models/provider-rules.ts`
-5. Refresh and commit snapshot data with `bun run sync:catalog` when needed
-6. Update `schema.json` for config validation
+5. Add an `allOf` entry for the provider in `schema.json`, then run `bun run sync:models` to refresh the snapshot, provider enum, and examples
 
 ## Config Migrations
 
